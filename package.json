@@ -24,10 +24,13 @@
   "dependencies": {
     "@grpc/grpc-js": "^1.9.2",
     "@grpc/proto-loader": "^0.7.9",
+    "@nestjs/axios": "^3.0.0",
     "@nestjs/common": "^10.0.0",
+    "@nestjs/config": "^3.1.0",
     "@nestjs/core": "^10.0.0",
     "@nestjs/microservices": "^10.2.4",
     "@nestjs/platform-express": "^10.0.0",
+    "axios": "^1.5.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.0",
     "reflect-metadata": "^0.1.13",
