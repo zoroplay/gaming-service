@@ -9,7 +9,7 @@ import {
   StartGameDto,
   PaginationDto,
   Games,
-} from 'src/common';
+} from 'src/proto/gaming.pb';
 
 @Injectable()
 export class GamesService implements OnModuleInit {
