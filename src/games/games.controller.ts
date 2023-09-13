@@ -1,23 +1,12 @@
 import { Controller } from '@nestjs/common';
-import { GrpcMethod, MessagePattern, Payload } from '@nestjs/microservices';
+import { GrpcMethod } from '@nestjs/microservices';
 import { GamesService } from './games.service';
-import {
-  CreateGameDto,
-  UpdateGameDto,
-  FindOneGameDto,
-  Game,
-  Games,
-  PaginationDto,
-  StartGameDto,
-  StartGameResponse,
-  SyncGameDto,
-} from 'src/proto/gaming.pb';
-import { Observable } from 'rxjs';
+import { CreateGameDto } from 'src/proto/gaming.pb';
 import { GAMING_SERVICE_NAME } from 'src/common';
+import { Game } from 'src/entities/game.entity';
 
 @Controller()
 export class GamesController {
-
   constructor(private readonly gamesService: GamesService) {}
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'CreateGame')
@@ -29,7 +18,7 @@ export class GamesController {
   }
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'FindAllGames')
-  private findAllGames(): Games | Promise<Games> | Promise<Games> {
+  private findAllGames(): Game[] | Promise<Game[]> | Promise<Game[]> {
     return this.gamesService.findAll();
   }
 

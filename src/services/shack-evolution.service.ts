@@ -50,4 +50,20 @@ export class ShackEvolutionService {
       console.error(e.message);
     }
   }
+
+  public async getGames() {
+    try {
+      const url = '/v1/partner/fe/token';
+      const response: AxiosResponse = await lastValueFrom(
+        this.httpClient.post(url, null, this.requestConfig).pipe(
+          map((response) => {
+            return response.data;
+          }),
+        ),
+      );
+      console.log(response);
+    } catch (e) {
+      console.error(e.message);
+    }
+  }
 }

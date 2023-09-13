@@ -45,6 +45,22 @@ $ yarn run start:dev
 $ yarn run start:prod
 ```
 
+## Migration
+
+```bash
+# To generate a migration with sql using created/updated entities
+$ npm run migration:generate --name=Init
+
+# To create a migration with empty sql
+$ npm run migration:create --name=Post
+
+# To run a migration
+$ npm run migration:run
+
+# To revert a migration
+$ npm run migration:revert
+```
+
 ## Test
 
 ```bash

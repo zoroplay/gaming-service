@@ -1,19 +1,22 @@
 import { Module } from '@nestjs/common';
 import { GamesModule } from './games/games.module';
-import { TadaService } from './services/tada.service';
-import { ShackEvolutionService } from './services/shack-evolution.service';
 import { HttpModule } from '@nestjs/axios';
 import { ConfigModule } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { dataSourceOptions } from '../db/data-source';
+import { Game } from './entities/game.entity';
+import { Provider } from './entities/provider.entity';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    GamesModule,
     HttpModule,
+    TypeOrmModule.forRoot(dataSourceOptions),
+    TypeOrmModule.forFeature([Game, Provider]),
   ],
   controllers: [],
-  providers: [TadaService, ShackEvolutionService],
+  providers: [GamesModule],
 })
 export class AppModule {}

@@ -17,7 +17,7 @@ export interface SyncGameDto {
 }
 
 export interface FindOneGameDto {
-  id: number;
+  id: string;
 }
 
 export interface Games {
@@ -26,7 +26,15 @@ export interface Games {
 
 export interface UpdateGameDto {
   id: number;
-  provider: Provider | undefined;
+  gameId: string;
+  title: string;
+  description: string;
+  url: string;
+  imagePath: string;
+  bannerPath: string;
+  status: boolean;
+  type: string;
+  providerId: number;
 }
 
 export interface CreateGameDto {
@@ -38,7 +46,7 @@ export interface CreateGameDto {
   bannerPath: string;
   status: boolean;
   type: string;
-  provider: Provider | undefined;
+  providerId: number;
 }
 
 export interface StartGameDto {
@@ -62,7 +70,8 @@ export interface Game {
   status: boolean;
   type: string;
   provider: Provider | undefined;
-  providerId: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Provider {
@@ -71,7 +80,10 @@ export interface Provider {
   name: string;
   description: string;
   imagePath: string;
+  games?: Games | undefined;
   parentProvider?: string | undefined;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export const GAMING_PACKAGE_NAME = "gaming";
