@@ -49,7 +49,7 @@ export class GamesService {
   async findAll(): Promise<Games> {
     const resp = await this.gameRepository.find();
     // Convert TypeORM entities to proto-generated types
-    const protoResponse: any = resp.map((entity: GameEntity) =>
+    const protoResponse: Game[] = resp.map((entity: GameEntity) =>
       this.entityToProtoService.entityToProto(entity),
     );
     const final = {
