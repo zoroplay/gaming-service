@@ -4,8 +4,6 @@ import { HttpModule } from '@nestjs/axios';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { dataSourceOptions } from '../db/data-source';
-import { Game } from './entities/game.entity';
-import { Provider } from './entities/provider.entity';
 
 @Module({
   imports: [
@@ -14,9 +12,9 @@ import { Provider } from './entities/provider.entity';
     }),
     HttpModule,
     TypeOrmModule.forRoot(dataSourceOptions),
-    TypeOrmModule.forFeature([Game, Provider]),
+    GamesModule,
   ],
   controllers: [],
-  providers: [GamesModule],
+  providers: [],
 })
 export class AppModule {}

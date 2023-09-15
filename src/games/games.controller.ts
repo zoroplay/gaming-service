@@ -1,25 +1,84 @@
 import { Controller } from '@nestjs/common';
-import { GrpcMethod } from '@nestjs/microservices';
+// import { GrpcMethod } from '@nestjs/microservices';
 import { GamesService } from './games.service';
-import { CreateGameDto } from 'src/proto/gaming.pb';
-import { GAMING_SERVICE_NAME } from 'src/common';
-import { Game } from 'src/entities/game.entity';
+import {
+  Game,
+  CreateGameDto,
+  Games,
+  GamingServiceControllerMethods,
+  GamingServiceController,
+  FindOneGameDto,
+  PaginationDto,
+  StartGameDto,
+  StartGameResponse,
+  SyncGameDto,
+  UpdateGameDto,
+} from 'src/proto/gaming.pb';
+import { Observable } from 'rxjs';
 
 @Controller()
-export class GamesController {
+@GamingServiceControllerMethods()
+export class GamesController implements GamingServiceController {
   constructor(private readonly gamesService: GamesService) {}
 
-  @GrpcMethod(GAMING_SERVICE_NAME, 'CreateGame')
-  private createGame(
+  createGame(
     createGameDto: CreateGameDto,
-  ): Game | Promise<Game> | Promise<Game> {
-    throw new Error('Method not implemented.');
+  ): Promise<Game> | Observable<Game> | Game | any {
+    console.log('controller line 27');
+    console.log(createGameDto);
     return this.gamesService.create(createGameDto);
   }
 
-  @GrpcMethod(GAMING_SERVICE_NAME, 'FindAllGames')
-  private findAllGames(): Game[] | Promise<Game[]> | Promise<Game[]> {
-    return this.gamesService.findAll();
+  async findAllGames(): Promise<any> {
+    console.log('finding all games');
+    const resp = await this.gamesService.findAll();
+    console.log('controller line 34');
+    console.log(resp);
+    return resp;
+  }
+
+  syncGames(
+    request: SyncGameDto,
+  ): Promise<Games> | Observable<Games> | Games | any {
+    console.log(request);
+    throw new Error('Method not implemented.');
+  }
+
+  findOneGame(
+    request: FindOneGameDto,
+  ): Promise<Game> | Observable<Game> | Game | any {
+    console.log(request);
+    throw new Error('Method not implemented.');
+  }
+
+  updateGame(
+    request: UpdateGameDto,
+  ): Promise<Game> | Observable<Game> | Game | any {
+    console.log(request);
+    throw new Error('Method not implemented.');
+  }
+
+  removeGame(
+    request: UpdateGameDto,
+  ): Promise<Game> | Observable<Game> | Game | any {
+    console.log(request);
+    throw new Error('Method not implemented.');
+  }
+
+  startGame(
+    request: StartGameDto,
+  ):
+    | Promise<StartGameResponse>
+    | Observable<StartGameResponse>
+    | StartGameResponse
+    | any {
+    console.log(request);
+    throw new Error('Method not implemented.');
+  }
+
+  queryGames(request: Observable<PaginationDto>): Observable<Games> | any {
+    console.log(request);
+    throw new Error('Method not implemented.');
   }
 
   // @GrpcMethod(GAMING_SERVICE_NAME, 'SyncGames')

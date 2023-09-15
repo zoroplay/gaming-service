@@ -9,9 +9,11 @@ import {
   SyncGameDto,
   StartGameDto,
   PaginationDto,
+  Games,
+  Game,
 } from 'src/proto/gaming.pb';
-import { ShackEvolutionService } from 'src/services';
 import { Repository } from 'typeorm';
+import { EntityToProtoService } from 'src/services/entity-to-proto.service';
 
 @Injectable()
 export class GamesService {
@@ -20,10 +22,10 @@ export class GamesService {
     private gameRepository: Repository<GameEntity>,
     @InjectRepository(ProviderEntity)
     private providerRepository: Repository<ProviderEntity>,
-    private shackService: ShackEvolutionService,
+    private readonly entityToProtoService: EntityToProtoService,
   ) {}
 
-  async create(createGameDto: CreateGameDto): Promise<GameEntity> {
+  async create(createGameDto: CreateGameDto): Promise<Game> {
     const provider: ProviderEntity = await this.providerRepository.findOneBy({
       id: createGameDto.providerId,
     });
@@ -40,11 +42,22 @@ export class GamesService {
     newGame.type = createGameDto.type;
     newGame.provider = provider;
     const savedGame = await this.gameRepository.save(newGame);
-    return savedGame;
+    const final = this.entityToProtoService.entityToProto(savedGame);
+    return final;
   }
 
-  async findAll(): Promise<GameEntity[]> {
-    return await this.gameRepository.find();
+  async findAll(): Promise<Games> {
+    const resp = await this.gameRepository.find();
+    // Convert TypeORM entities to proto-generated types
+    const protoResponse: any = resp.map((entity: GameEntity) =>
+      this.entityToProtoService.entityToProto(entity),
+    );
+    const final = {
+      games: protoResponse,
+    };
+    console.log('service line 58');
+    console.log(final);
+    return final;
   }
 
   async queryGames(

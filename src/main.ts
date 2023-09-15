@@ -12,7 +12,6 @@ async function bootstrap(): Promise<void> {
     {
       transport: Transport.GRPC,
       options: {
-        url: process.env.GAMING_SERVICE_URL,
         package: protobufPackage,
         protoPath: join('node_modules/sbe-service-proto/proto/gaming.proto'),
       },
