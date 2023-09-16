@@ -15,16 +15,7 @@ export class EntityToProtoService {
       bannerPath: entity.bannerPath,
       status: entity.status,
       type: entity.type,
-      provider: {
-        id: entity.provider.id,
-        slug: entity.provider.slug,
-        name: entity.provider.name,
-        description: entity.provider.description,
-        imagePath: entity.provider.imagePath,
-        parentProvider: entity.provider.parentProvider,
-        createdAt: entity.provider.createdAt as any,
-        updatedAt: entity.provider.updatedAt as any,
-      },
+      provider: entity.provider as any,
       createdAt: entity.createdAt as any,
       updatedAt: entity.updatedAt as any,
     };

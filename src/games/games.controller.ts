@@ -24,24 +24,18 @@ export class GamesController implements GamingServiceController {
   createGame(
     createGameDto: CreateGameDto,
   ): Promise<Game> | Observable<Game> | Game | any {
-    console.log('controller line 27');
-    console.log(createGameDto);
     return this.gamesService.create(createGameDto);
   }
 
   async findAllGames(): Promise<any> {
-    console.log('finding all games');
     const resp = await this.gamesService.findAll();
-    console.log('controller line 34');
-    console.log(resp);
     return resp;
   }
 
   syncGames(
-    request: SyncGameDto,
+    syncGameDto: SyncGameDto,
   ): Promise<Games> | Observable<Games> | Games | any {
-    console.log(request);
-    throw new Error('Method not implemented.');
+    return this.gamesService.sync(syncGameDto);
   }
 
   findOneGame(

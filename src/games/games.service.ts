@@ -14,6 +14,7 @@ import {
 } from 'src/proto/gaming.pb';
 import { Repository } from 'typeorm';
 import { EntityToProtoService } from 'src/services/entity-to-proto.service';
+import { ShackEvolutionService } from 'src/services';
 
 @Injectable()
 export class GamesService {
@@ -23,6 +24,7 @@ export class GamesService {
     @InjectRepository(ProviderEntity)
     private providerRepository: Repository<ProviderEntity>,
     private readonly entityToProtoService: EntityToProtoService,
+    private readonly shacksEvolutionService: ShackEvolutionService,
   ) {}
 
   async create(createGameDto: CreateGameDto): Promise<Game> {
@@ -47,15 +49,22 @@ export class GamesService {
   }
 
   async findAll(): Promise<Games> {
-    const resp = await this.gameRepository.find();
+    const resp = await this.gameRepository.find({
+      relations: {
+        provider: true,
+      },
+    });
+    console.log(`entity response`);
+    console.log(resp[0]);
     // Convert TypeORM entities to proto-generated types
     const protoResponse: Game[] = resp.map((entity: GameEntity) =>
       this.entityToProtoService.entityToProto(entity),
     );
+    console.log(`proto response: ${JSON.stringify(protoResponse)}`);
     const final = {
       games: protoResponse,
     };
-    console.log('service line 58');
+    console.log('service line 63');
     console.log(final);
     return final;
   }
@@ -124,12 +133,63 @@ export class GamesService {
     return `This action starts a game`;
   }
 
-  sync(syncGameDto: SyncGameDto) {
-    console.log(syncGameDto);
-    return `This action synchronizes games from provider source to database`;
+  async sync(syncGameDto: SyncGameDto) {
+    switch (syncGameDto.provider) {
+      case 'shack-evolution':
+        return await this.syncShackGames();
+        break;
+      default:
+        throw new NotFoundException('Unknown provider');
+        break;
+    }
   }
 
-  private syncShackGames() {
-    return true;
+  async syncShackGames(): Promise<Game[]> {
+    // Fetch the game list from your API (adjust the method name and params accordingly)
+    const gameList = await this.shacksEvolutionService.getGames();
+    // Find or create the 'Shack Evolution' provider
+    let provider = await this.providerRepository.findOneBy({
+      name: 'Shack Evolution',
+    });
+    if (!provider) {
+      provider = await this.providerRepository.save(
+        this.providerRepository.create({
+          name: 'Shack Evolution',
+          slug: 'shack-evolution',
+          description: 'Shack Evolution',
+          parentProvider: 'Shack Evolution',
+        }),
+      );
+    }
+
+    // Save the games to the database and return the created/updated records
+    const savedGames = await Promise.all(
+      gameList.data.data.map(async (game) => {
+        const existingGame = await this.gameRepository.findOneBy({
+          gameId: game.gameId,
+        });
+        const gameData = {
+          gameId: game.gameId,
+          title: game.gameId,
+          description: `${game.gameId} Casino Game`,
+          url: game.url,
+          imagePath: game.assets.logo,
+          bannerPath: game.assets.banner,
+          type: 'casino',
+          provider: provider,
+        };
+
+        if (existingGame) {
+          // Update the existing game
+          this.gameRepository.merge(existingGame, gameData);
+          return this.gameRepository.save(existingGame);
+        } else {
+          // Create a new game
+          return this.gameRepository.save(this.gameRepository.create(gameData));
+        }
+      }),
+    );
+
+    return savedGames;
   }
 }
