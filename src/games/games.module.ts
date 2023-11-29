@@ -6,11 +6,21 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Game } from 'src/entities/game.entity';
 import { Provider } from 'src/entities/provider.entity';
 import { EntityToProtoService } from 'src/services/entity-to-proto.service';
-import { ShackEvolutionService } from 'src/services';
+import {
+  C2GamingService,
+  ShackEvolutionService,
+  TadaGamingService,
+} from 'src/services';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Game, Provider]), HttpModule],
   controllers: [GamesController],
-  providers: [GamesService, EntityToProtoService, ShackEvolutionService],
+  providers: [
+    GamesService,
+    EntityToProtoService,
+    ShackEvolutionService,
+    C2GamingService,
+    TadaGamingService,
+  ],
 })
 export class GamesModule {}
