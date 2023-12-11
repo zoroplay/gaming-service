@@ -13,6 +13,7 @@ import {
   StartGameResponse,
   SyncGameDto,
   UpdateGameDto,
+  CallbackGameDto,
 } from 'src/proto/gaming.pb';
 import { Observable } from 'rxjs';
 
@@ -20,7 +21,6 @@ import { Observable } from 'rxjs';
 @GamingServiceControllerMethods()
 export class GamesController implements GamingServiceController {
   constructor(private readonly gamesService: GamesService) {}
-
   createGame(
     createGameDto: CreateGameDto,
   ): Promise<Game> | Observable<Game> | Game | any {
@@ -71,6 +71,13 @@ export class GamesController implements GamingServiceController {
   }
 
   queryGames(request: Observable<PaginationDto>): Observable<Games> | any {
+    console.log(request);
+    throw new Error('Method not implemented.');
+  }
+
+  handleGamesCallback(
+    request: CallbackGameDto,
+  ): Games | Promise<Games> | Observable<Games> {
     console.log(request);
     throw new Error('Method not implemented.');
   }

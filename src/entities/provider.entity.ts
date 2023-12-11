@@ -8,7 +8,7 @@ import {
 } from 'typeorm';
 import { Game } from './game.entity';
 
-@Entity({ name: 'provider' })
+@Entity({ name: 'providers' })
 export class Provider {
   @PrimaryGeneratedColumn()
   id: number;

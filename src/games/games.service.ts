@@ -11,6 +11,7 @@ import {
   PaginationDto,
   Games,
   Game,
+  CallbackGameDto,
 } from 'src/proto/gaming.pb';
 import { Repository } from 'typeorm';
 import { EntityToProtoService } from 'src/services/entity-to-proto.service';
@@ -359,5 +360,33 @@ export class GamesService {
     // );
 
     // return savedGames;
+  }
+
+  async handleGamesCallback(_data: CallbackGameDto): Promise<Game[] | any> {
+    switch (_data.provider) {
+      case 'shack-evolution':
+        return 0;
+        break;
+      case 'c27':
+        return await this.handleC2Games(_data.data);
+        break;
+      case 'tada-games':
+        return 0;
+        break;
+      case 'evo-play':
+        return 0;
+        break;
+      default:
+        throw new NotFoundException('Unknown provider');
+        break;
+    }
+    // Fetch the game list from your API (adjust the method name and params accordingly)
+    const gameList = await this.c2GamingService.getGames();
+
+    return gameList;
+  }
+  async handleC2Games(_request: any): Promise<any> {
+    console.log(_request);
+    throw new Error('Method not implemented.');
   }
 }

@@ -41,13 +41,13 @@ export class TadaGamingService {
       'CLIENT-ID': this.publicKey,
       'PARTNER-EMAIL': this.emailId,
     };
-    console.log(this.requestConfig);
+    //console.log(this.requestConfig);
   }
 
   public async getGames() {
     try {
       const url = '/v2/games';
-      console.log(this.requestConfig);
+      //console.log(this.requestConfig);
       const response: AxiosResponse = await this.httpClient.axiosRef.get(
         url,
         this.requestConfig,

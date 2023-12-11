@@ -44,7 +44,7 @@ export class ShackEvolutionService {
       'CLIENT-ID': this.publicKey,
       'PARTNER-EMAIL': this.emailId,
     };
-    console.log(this.requestConfig);
+    // console.log(this.requestConfig);
     // try {
     //   const expiredAt: any = await this.cacheManager.get(
     //     'shack_token_expires_at',
@@ -104,7 +104,7 @@ export class ShackEvolutionService {
       const url = '/v2/games';
       this.token = await this.generateToken();
       this.authorizeHeader();
-      console.log(this.requestConfig);
+      // console.log(this.requestConfig);
       const response: AxiosResponse = await this.httpClient.axiosRef.get(
         url,
         this.requestConfig,

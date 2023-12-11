@@ -1,4 +1,5 @@
 /* eslint-disable */
+import { Any } from "@grpc/grpc-js/build/src/generated/google/protobuf/Any";
 import { GrpcMethod, GrpcStreamMethod } from "@nestjs/microservices";
 import { Observable } from "rxjs";
 
@@ -14,6 +15,11 @@ export interface Empty {
 
 export interface SyncGameDto {
   provider: string;
+}
+
+export interface CallbackGameDto {
+  provider: string;
+  data: Any | undefined;
 }
 
 export interface FindOneGameDto {
@@ -95,6 +101,8 @@ export interface GamingServiceClient {
 
   syncGames(request: SyncGameDto): Observable<Games>;
 
+  handleGamesCallback(request: CallbackGameDto): Observable<Games>;
+
   findOneGame(request: FindOneGameDto): Observable<Game>;
 
   updateGame(request: UpdateGameDto): Observable<Game>;
@@ -113,6 +121,8 @@ export interface GamingServiceController {
 
   syncGames(request: SyncGameDto): Promise<Games> | Observable<Games> | Games;
 
+  handleGamesCallback(request: CallbackGameDto): Promise<Games> | Observable<Games> | Games;
+
   findOneGame(request: FindOneGameDto): Promise<Game> | Observable<Game> | Game;
 
   updateGame(request: UpdateGameDto): Promise<Game> | Observable<Game> | Game;
@@ -130,6 +140,7 @@ export function GamingServiceControllerMethods() {
       "createGame",
       "findAllGames",
       "syncGames",
+      "handleGamesCallback",
       "findOneGame",
       "updateGame",
       "removeGame",

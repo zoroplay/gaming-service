@@ -3,9 +3,11 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config'; // Import your SettingService
-import { AxiosRequestConfig, AxiosResponse } from 'axios';
+
+import axios, { AxiosRequestConfig, AxiosInstance, AxiosResponse } from 'axios';
 import { Game } from 'src/proto/gaming.pb';
 import * as fs from 'fs';
+import * as https from 'https';
 import { join } from 'path';
 
 @Injectable()
@@ -13,11 +15,10 @@ export class C2GamingService {
   private operatorId: string;
   private sslKeyPath: string;
   private bankGroupId: string;
-  private token: string;
   private baseUrl: string;
-  private emailId: string;
-  private dialCode: string;
   private requestConfig: AxiosRequestConfig;
+  private client: AxiosInstance;
+  private response: AxiosResponse;
 
   constructor(
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
@@ -35,53 +36,68 @@ export class C2GamingService {
    * Set options for making the Client request
    */
   private async setRequestOptions() {
-    this.requestConfig = {
+    const certFile = fs.readFileSync(
+      join(__dirname, '../../../', this.sslKeyPath, 'client.crt'),
+    );
+    const privateKeyFile = fs.readFileSync(
+      join(__dirname, '../../../', this.sslKeyPath, 'client.key'),
+    );
+    const agent = new https.Agent({
+      cert: certFile,
+      key: privateKeyFile,
+    });
+
+    this.client = axios.create({
       baseURL: this.baseUrl,
-      timeout: 10.0,
+      timeout: 10000,
       headers: {
         'Content-Type': 'application/json',
         Accept: 'application/json',
       },
-      httpsAgent: {
-        cert: fs.readFileSync(join(this.sslKeyPath)),
-      },
-    };
-    console.log(this.requestConfig);
+      httpsAgent: agent,
+    });
+    const res = await this.getGames();
+    console.log(res);
   }
 
-  private async generateToken() {
+  private async setHttpResponse(
+    method: string,
+    params: any = null,
+  ): Promise<C2GamingService> {
+    const data = {
+      jsonrpc: '2.0',
+      id: this.operatorId,
+      method: method,
+    };
+    if (params !== null) {
+      data['params'] = params;
+    }
     try {
-      const url = '/v1/partner/fe/token';
-      const response: AxiosResponse = await this.httpClient.axiosRef.get(
-        url,
-        this.requestConfig,
-      );
-      return response.data['meta']['token'];
-    } catch (e) {
-      console.log('error on shacks service line 97');
-      console.error(e);
+      const res = await this.client.post('', data);
+      this.response = res;
+      return this;
+    } catch (error) {
+      // Handle the case where this.response is null or undefined
+      throw new Error('No response available');
+    }
+  }
+
+  private getResponse(): any {
+    if (this.response) {
+      return this.response.data;
+    } else {
+      // Handle the case where this.response is null or undefined
+      throw new Error('No response available');
     }
   }
 
   public async getGames() {
     try {
-      this.token = await this.generateToken();
-      const body = {
-        json: {
-          jsonrpc: '2.0',
-          id: this.operatorId,
-          method: 'Game.List',
-        },
-      };
-      console.log(this.requestConfig);
-      const response: AxiosResponse = await this.httpClient.axiosRef.post(
-        '',
-        body,
-        this.requestConfig,
-      );
-      return response;
+      // this.token = await this.generateToken();
+      await this.setHttpResponse('Game.List');
+      return this.getResponse();
     } catch (e) {
-      console.log('error on c2 gaming service line 86');
+      console.log('error on c2 gaming service line 99');
       console.error(e.message);
     }
   }
@@ -95,21 +111,9 @@ export class C2GamingService {
       Nick: user.username,
       BankGroupId: this.bankGroupId,
     };
-    const body = {
-      json: {
-        jsonrpc: '2.0',
-        id: this.operatorId,
-        method: 'Player.Set',
-        params: params,
-      },
-    };
-    console.log(this.requestConfig);
-    const response: AxiosResponse = await this.httpClient.axiosRef.post(
-      '',
-      body,
-      this.requestConfig,
-    );
-    return response;
+
+    this.setHttpResponse('Player.Set', params);
+    return this.getResponse();
   }
 
   public async getReconciliation(data) {
@@ -133,20 +137,81 @@ export class C2GamingService {
         freeround_denomination: 0.3,
       },
     };
-    const body = {
-      json: {
-        jsonrpc: '2.0',
-        id: this.operatorId,
-        method: 'Session.Create',
-        params: params,
+    this.setHttpResponse('Session.Create', params);
+    return this.getResponse();
+  }
+
+  /**
+   * start a demo game Session
+   */
+  public async constructDemoGameUrl(game: Game) {
+    //TODO: get user from identity service
+    const user = {
+      username: 'ken',
+      available_balance: 100,
+    };
+    //set player on c2 gaming provider
+    this.setPlayer(user);
+    // create params
+    const params = {
+      BankGroupId: this.bankGroupId,
+      GameId: game.gameId,
+      StartBalance: 100000,
+    };
+    this.setHttpResponse('Session.CreateDemo', params);
+    return this.getResponse();
+  }
+
+  /**
+   * close a game Session
+   */
+  public async closeSession(sessionId) {
+    const params = {
+      SessionId: sessionId,
+    };
+    this.setHttpResponse('Session.Close', params);
+    return this.getResponse();
+  }
+
+  /**
+   *  ===================
+   * | Seamless Section |
+   *  ===================
+   */
+
+  /**
+   * get a player Balance
+   */
+  public async getBalance(data: any): Promise<any> {
+    //TODO: GET user from identity service;
+    const user = {
+      username: data.username,
+      available_balance: 10000,
+    };
+    if (!user) {
+      return this.customError('ErrUserNotFound');
+    }
+    return this.customSucces(user.available_balance);
+  }
+
+  private customSucces(available_balance: number): any {
+    return {
+      jsonrpc: '2.0',
+      id: this.operatorId,
+      result: {
+        balance: (available_balance * 100) as number,
       },
     };
-    console.log(this.requestConfig);
-    const response: AxiosResponse = await this.httpClient.axiosRef.post(
-      '',
-      body,
-      this.requestConfig,
-    );
-    return response;
+  }
+
+  private customError(_message: string) {
+    return {
+      jsonrpc: '2.0',
+      id: this.operatorId,
+      error: {
+        code: 7,
+        message: _message,
+      },
+    };
   }
 }
