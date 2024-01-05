@@ -135,8 +135,30 @@ export class GamesService {
     return await this.gameRepository.delete(id);
   }
 
-  start(StartGameDto: StartGameDto) {
+  async start(StartGameDto: StartGameDto) {
     console.log(StartGameDto);
+    switch (StartGameDto.providerSlug) {
+      case 'shack-evolution':
+        return 0;
+        break;
+      case 'c27':
+        const game: GameEntity = await this.gameRepository.findOne({
+          where: {
+            gameId: StartGameDto.gameId,
+          },
+        });
+        return await this.c2GamingService.startGameSession(game);
+        break;
+      case 'tada-games':
+        return 0;
+        break;
+      case 'evo-play':
+        return 0;
+        break;
+      default:
+        throw new NotFoundException('Unknown provider');
+        break;
+    }
     return `This action starts a game`;
   }
 

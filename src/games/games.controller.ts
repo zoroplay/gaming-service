@@ -67,7 +67,8 @@ export class GamesController implements GamingServiceController {
     | StartGameResponse
     | any {
     console.log(request);
-    throw new Error('Method not implemented.');
+    return this.gamesService.start(request);
+    // throw new Error('Method not implemented.');
   }
 
   queryGames(request: Observable<PaginationDto>): Observable<Games> | any {
@@ -79,7 +80,8 @@ export class GamesController implements GamingServiceController {
     request: CallbackGameDto,
   ): Games | Promise<Games> | Observable<Games> {
     console.log(request);
-    throw new Error('Method not implemented.');
+    return this.gamesService.handleGamesCallback(request);
+    // throw new Error('Method not implemented.');
   }
 
   // @GrpcMethod(GAMING_SERVICE_NAME, 'SyncGames')

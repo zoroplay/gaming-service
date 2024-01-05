@@ -5,7 +5,9 @@ import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config'; // Import your SettingService
 
 import axios, { AxiosRequestConfig, AxiosInstance, AxiosResponse } from 'axios';
-import { Game } from 'src/proto/gaming.pb';
+// import { Game } from 'src/proto/gaming.pb';
+
+import { Game as GameEntity } from '../entities/game.entity';
 import * as fs from 'fs';
 import * as https from 'https';
 import { join } from 'path';
@@ -105,10 +107,10 @@ export class C2GamingService {
   /**
    * Set the Player
    */
-  private async setPlayer(user) {
+  private async setPlayer(clientId, user) {
     const params = {
-      Id: user.username,
-      Nick: user.username,
+      Id: clientId + '-' + user.username,
+      Nick: clientId + '-' + user.username,
       BankGroupId: this.bankGroupId,
     };
 
@@ -120,14 +122,16 @@ export class C2GamingService {
     console.log(data);
   }
 
-  public async constructGameUrl(game: Game) {
+  public async startGameSession(game: GameEntity) {
     //TODO: get user from identity service
     const user = {
       username: 'ken',
       available_balance: 100,
     };
+    //TODO: Set User and Client Id
+    const clientId = 1;
     //set player on c2 gaming provider
-    this.setPlayer(user);
+    this.setPlayer(clientId, user);
     // create params
     const params = {
       playerId: user.username,
@@ -144,14 +148,14 @@ export class C2GamingService {
   /**
    * start a demo game Session
    */
-  public async constructDemoGameUrl(game: Game) {
+  public async startGameDemoSession(game: GameEntity) {
     //TODO: get user from identity service
     const user = {
       username: 'ken',
       available_balance: 100,
     };
     //set player on c2 gaming provider
-    this.setPlayer(user);
+    this.setPlayer(1, user);
     // create params
     const params = {
       BankGroupId: this.bankGroupId,
