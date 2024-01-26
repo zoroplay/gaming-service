@@ -1,0 +1,101 @@
+syntax = "proto3";
+import "google/protobuf/any.proto";
+package gaming;
+
+service GamingService {
+    rpc CreateGame (CreateGameDto) returns (Game) {}
+    rpc FindAllGames (Empty) returns (Games) {}
+    rpc SyncGames (SyncGameDto) returns (Games) {}
+    rpc HandleGamesCallback (CallbackGameDto) returns (Games) {}
+    rpc FindOneGame (FindOneGameDto) returns (Game) {}
+    rpc UpdateGame (UpdateGameDto) returns (Game) {}
+    rpc RemoveGame (UpdateGameDto) returns (Game) {}
+    rpc StartGame (StartGameDto) returns (StartGameResponse) {}
+    rpc QueryGames (stream PaginationDto) returns (stream Games) {}
+}
+
+message PaginationDto {
+    int32 page = 1;
+    int32 skip = 2;
+};
+
+message Empty {};
+
+message SyncGameDto {
+    string provider = 1;
+};
+
+message CallbackGameDto {
+    string provider = 1;
+    google.protobuf.Any data = 2;
+};
+
+message FindOneGameDto {
+    string id = 1;
+};
+
+message Games {
+    repeated Game games = 1;
+};
+
+message UpdateGameDto {
+    int32 id = 1;
+    string game_id = 2;
+    string title = 3;
+    string description = 4;
+    string url = 5;
+    string image_path = 6;
+    string banner_path = 7;
+    bool status = 8;
+    string type = 9;
+    int32 providerId = 10;
+}
+
+message CreateGameDto {
+    string game_id = 1;
+    string title = 2;
+    string description = 3;
+    string url = 4;
+    string image_path = 5;
+    string banner_path = 6;
+    bool status = 7;
+    string type = 8;
+    int32 providerId = 9;
+}
+
+message StartGameDto {
+    string game_id = 1;
+    string provider_slug = 2;
+    optional string demo = 3;
+};
+
+message StartGameResponse {
+    string url = 1;
+}
+
+message Game {
+    int32 id = 1;
+    string gameId = 2;
+    string title = 3;
+    string description = 4;
+    string url = 5;
+    string imagePath = 6;
+    string bannerPath = 7;
+    bool status = 8;
+    string type = 9;
+    Provider provider = 10;
+    string createdAt = 11;
+    string updatedAt = 12;
+}
+
+message Provider {
+    int32 id = 1;
+    string slug = 2;
+    string name = 3;
+    string description = 4;
+    string imagePath = 5;
+    optional Games games = 6;
+    optional string parentProvider = 7;
+    string createdAt = 8;
+    string updatedAt = 9;
+}

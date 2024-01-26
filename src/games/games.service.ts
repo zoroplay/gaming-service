@@ -71,7 +71,7 @@ export class GamesService {
     const final = {
       games: protoResponse,
     };
-    console.log('service line 63');
+    console.log('service line 74');
     console.log(final);
     return final;
   }

@@ -1,25 +1,27 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { Transport } from '@nestjs/microservices';
+import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { join } from 'path';
-import { INestMicroservice, ValidationPipe } from '@nestjs/common';
 import { protobufPackage } from './proto/gaming.pb';
-import { HttpExceptionFilter } from './common/filter/http-exception.filter';
+import { JsonLoggerService } from 'json-logger-service';
 
 async function bootstrap(): Promise<void> {
-  const app: INestMicroservice = await NestFactory.createMicroservice(
+  const app = await NestFactory.createMicroservice<MicroserviceOptions>(
     AppModule,
     {
       transport: Transport.GRPC,
       options: {
+        url: `${process.env.GRPC_HOST}:${process.env.GRPC_PORT}`,
         package: protobufPackage,
-        protoPath: join('node_modules/sbe-service-proto/proto/gaming.proto'),
+        protoPath: join(__dirname, '../proto/gaming.proto'),
       },
     },
   );
-
-  app.useGlobalFilters(new HttpExceptionFilter());
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+  app.useLogger(
+    new JsonLoggerService(
+      `Gaming service on ${process.env.GRPC_HOST}:${process.env.GRPC_PORT}`,
+    ),
+  );
   await app.listen();
 }
 bootstrap();

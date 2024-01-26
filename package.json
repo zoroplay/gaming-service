@@ -41,11 +41,14 @@
     "cache-manager": "^5.2.3",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.0",
-    "pg": "^8.11.3",
     "reflect-metadata": "^0.1.13",
-    "rxjs": "^7.8.1",
     "sbe-service-proto": "github:zoroplay/sbe-service-proto",
     "ts-proto": "^1.157.0",
+    "dayjs": "^1.11.10",
+    "dotenv": "^16.3.1",
+    "json-logger-service": "^9.0.1",
+    "mysql2": "^3.6.1",
+    "rxjs": "^7.8.1",
     "typeorm": "^0.3.17"
   },
   "devDependencies": {
