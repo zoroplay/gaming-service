@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Provider } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Observable, Subject } from 'rxjs';
 import { Game as GameEntity } from '../entities/game.entity';
@@ -12,6 +12,8 @@ import {
   Games,
   Game,
   CallbackGameDto,
+  CreateProviderDto,
+  Providers,
 } from 'src/proto/gaming.pb';
 import { Repository } from 'typeorm';
 import { EntityToProtoService } from 'src/services/entity-to-proto.service';
@@ -19,6 +21,7 @@ import {
   ShackEvolutionService,
   C2GamingService,
   TadaGamingService,
+  SmartSoftService,
 } from 'src/services';
 
 @Injectable()
@@ -32,7 +35,20 @@ export class GamesService {
     private readonly shacksEvolutionService: ShackEvolutionService,
     private readonly c2GamingService: C2GamingService,
     private readonly tadaGamingService: TadaGamingService,
+    private readonly smartSoftService: SmartSoftService,
   ) {}
+
+  async createProvider(
+    createProviderDto: CreateProviderDto,
+  ): Promise<Provider> {
+    const newProvider: ProviderEntity = new ProviderEntity();
+    newProvider.name = createProviderDto.name;
+    newProvider.slug = createProviderDto.slug;
+    newProvider.description = createProviderDto.description;
+    newProvider.imagePath = createProviderDto.imagePath;
+    const savedProvider = await this.providerRepository.save(newProvider);
+    return savedProvider as unknown as Provider;
+  }
 
   async create(createGameDto: CreateGameDto): Promise<Game> {
     const provider: ProviderEntity = await this.providerRepository.findOneBy({
@@ -53,6 +69,17 @@ export class GamesService {
     const savedGame = await this.gameRepository.save(newGame);
     const final = this.entityToProtoService.entityToProto(savedGame);
     return final;
+  }
+
+  async findAllProvider(): Promise<Providers> {
+    const resp = await this.providerRepository.find({});
+    const protoResponse: Provider[] = resp.map(
+      (entity: ProviderEntity) => entity as unknown as Provider,
+    );
+    const final = {
+      providers: protoResponse,
+    };
+    return final as unknown as Providers;
   }
 
   async findAll(): Promise<Games> {
@@ -98,12 +125,32 @@ export class GamesService {
 
     return subject.asObservable();
   }
-
+  async findOneProvider(id: number): Promise<ProviderEntity | null> {
+    return await this.providerRepository.findOneBy({ id });
+  }
   async findOne(id: number): Promise<GameEntity | null> {
     return await this.gameRepository.findOneBy({ id });
   }
 
-  async update(id: number, updateGameDto: UpdateGameDto): Promise<GameEntity> {
+  async updateProvider(
+    createProviderDto: CreateProviderDto,
+  ): Promise<Provider> {
+    const updateProvider: ProviderEntity =
+      await this.providerRepository.findOneBy({
+        id: createProviderDto.id,
+      });
+    if (!updateProvider) {
+      throw new NotFoundException(`Provider ${createProviderDto.id} not found`);
+    }
+    updateProvider.name = createProviderDto.name;
+    updateProvider.slug = createProviderDto.slug;
+    updateProvider.description = createProviderDto.description;
+    updateProvider.imagePath = createProviderDto.imagePath;
+    const savedProvider = await this.providerRepository.save(updateProvider);
+    return savedProvider as unknown as Provider;
+  }
+
+  async update(updateGameDto: UpdateGameDto): Promise<GameEntity> {
     const provider: ProviderEntity = await this.providerRepository.findOneBy({
       id: updateGameDto.providerId,
     });
@@ -113,10 +160,10 @@ export class GamesService {
       );
     }
     const updateGame: GameEntity = await this.gameRepository.findOneBy({
-      id,
+      id: updateGameDto.id,
     });
     if (!updateGame) {
-      throw new NotFoundException(`Game ${id} not found`);
+      throw new NotFoundException(`Game ${updateGameDto.id} not found`);
     }
     updateGame.gameId = updateGameDto.gameId;
     updateGame.title = updateGameDto.title;
@@ -131,29 +178,35 @@ export class GamesService {
     return savedGame;
   }
 
-  async remove(id: string) {
+  async remove(id: number) {
     return await this.gameRepository.delete(id);
   }
 
   async start(StartGameDto: StartGameDto) {
     console.log(StartGameDto);
+    const game: GameEntity = await this.gameRepository.findOne({
+      where: {
+        gameId: StartGameDto.gameId,
+      },
+    });
     switch (StartGameDto.providerSlug) {
       case 'shack-evolution':
-        return 0;
+        return await this.smartSoftService.constructGameUrl(StartGameDto, game);
         break;
       case 'c27':
-        const game: GameEntity = await this.gameRepository.findOne({
-          where: {
-            gameId: StartGameDto.gameId,
-          },
-        });
-        return await this.c2GamingService.startGameSession(game);
+        return await this.c2GamingService.startGameSession(StartGameDto, game);
         break;
       case 'tada-games':
-        return 0;
+        return await this.smartSoftService.constructGameUrl(StartGameDto, game);
         break;
       case 'evo-play':
-        return 0;
+        return await this.smartSoftService.constructGameUrl(StartGameDto, game);
+        break;
+      case 'evolution':
+        return await this.smartSoftService.constructGameUrl(StartGameDto, game);
+        break;
+      case 'smart-soft':
+        return await this.smartSoftService.constructGameUrl(StartGameDto, game);
         break;
       default:
         throw new NotFoundException('Unknown provider');
@@ -170,14 +223,16 @@ export class GamesService {
       case 'c27':
         return await this.syncC2Games();
         break;
-      case 'tada-games':
-        return await this.syncTadaGames();
+      case 'tada':
+        return await this.tadaGamingService.syncGames();
         break;
       case 'evo-play':
         return await this.syncEvoPlayGames();
         break;
       default:
-        throw new NotFoundException('Unknown provider');
+        throw new NotFoundException(
+          'Specified provider does not support sync feature',
+        );
         break;
     }
   }
@@ -387,16 +442,22 @@ export class GamesService {
   async handleGamesCallback(_data: CallbackGameDto): Promise<Game[] | any> {
     switch (_data.provider) {
       case 'shack-evolution':
-        return 0;
+        return await this.handleC2Games(_data.body, _data.header);
         break;
       case 'c27':
-        return await this.handleC2Games(_data.data);
+        return await this.handleC2Games(_data.body, _data.header);
         break;
       case 'tada-games':
-        return 0;
+        return await this.handleC2Games(_data.body, _data.header);
+        break;
+      case 'smart-soft':
+        return await this.handleC2Games(_data.body, _data.header);
+        break;
+      case 'evolution':
+        return await this.handleC2Games(_data.body, _data.header);
         break;
       case 'evo-play':
-        return 0;
+        return await this.handleC2Games(_data.body, _data.header);
         break;
       default:
         throw new NotFoundException('Unknown provider');
@@ -407,8 +468,9 @@ export class GamesService {
 
     return gameList;
   }
-  async handleC2Games(_request: any): Promise<any> {
-    console.log(_request);
+  async handleC2Games(body: any, headers: any): Promise<any> {
+    console.log(body);
+    console.log(headers);
     throw new Error('Method not implemented.');
   }
 }

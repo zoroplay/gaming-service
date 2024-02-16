@@ -9,6 +9,7 @@ import { EntityToProtoService } from 'src/services/entity-to-proto.service';
 import {
   C2GamingService,
   ShackEvolutionService,
+  SmartSoftService,
   TadaGamingService,
 } from 'src/services';
 
@@ -21,6 +22,7 @@ import {
     ShackEvolutionService,
     C2GamingService,
     TadaGamingService,
+    SmartSoftService,
   ],
 })
 export class GamesModule {}

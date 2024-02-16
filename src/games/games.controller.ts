@@ -13,52 +13,109 @@ import {
   StartGameResponse,
   SyncGameDto,
   UpdateGameDto,
-  CallbackGameDto,
+  GAMING_SERVICE_NAME,
+  EvolutionCallback,
+  EvoplayCallback,
+  ShackEvolutionCallback,
+  SmartSoftCallback,
+  TadaCallback,
+  CreateProviderDto,
+  Empty,
+  Provider,
+  Providers,
 } from 'src/proto/gaming.pb';
 import { Observable } from 'rxjs';
+import { GrpcMethod } from '@nestjs/microservices';
 
 @Controller()
 @GamingServiceControllerMethods()
 export class GamesController implements GamingServiceController {
   constructor(private readonly gamesService: GamesService) {}
-  createGame(
-    createGameDto: CreateGameDto,
-  ): Promise<Game> | Observable<Game> | Game | any {
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'createProvider')
+  createProvider(
+    request: CreateProviderDto,
+  ): Provider | Observable<Provider> | Promise<Provider> | Promise<any> {
+    console.log('createProvider', request);
+    return this.gamesService.createProvider(request);
+  }
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'updateProvider')
+  updateProvider(
+    request: CreateProviderDto,
+  ): Provider | Observable<Provider> | Promise<Provider> | Promise<any> {
+    console.log('updateProvider', request);
+    return this.gamesService.updateProvider(request);
+  }
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'findOneProvider')
+  findOneProvider(request: FindOneGameDto): Promise<any> {
+    console.log('findOneProvider', request);
+    return this.gamesService.findOneProvider(request.id);
+  }
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'removeProvider')
+  removeProvider(
+    request: CreateProviderDto,
+  ): Provider | Observable<Provider> | Promise<Provider> | any {
+    console.log('removeProvider', request);
+  }
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'findAllProviders')
+  findAllProviders(
+    request: Empty,
+  ): Providers | Observable<Providers> | Promise<Providers> {
+    console.log('findAllProviders', request);
+    return this.gamesService.findAllProvider();
+  }
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'createGame')
+  createGame(createGameDto: CreateGameDto): Promise<any> {
+    console.log('createGame', createGameDto);
     return this.gamesService.create(createGameDto);
   }
 
-  async findAllGames(): Promise<any> {
-    const resp = await this.gamesService.findAll();
+  @GrpcMethod(GAMING_SERVICE_NAME, 'findAllGames')
+  findAllGames(): Promise<any> {
+    console.log('findAllGames');
+    const resp = this.gamesService.findAll();
     return resp;
   }
 
+  @GrpcMethod(GAMING_SERVICE_NAME, 'syncGames')
   syncGames(
     syncGameDto: SyncGameDto,
   ): Promise<Games> | Observable<Games> | Games | any {
+    console.log('syncGames', syncGameDto);
     return this.gamesService.sync(syncGameDto);
   }
 
+  @GrpcMethod(GAMING_SERVICE_NAME, 'findOneGame')
   findOneGame(
     request: FindOneGameDto,
   ): Promise<Game> | Observable<Game> | Game | any {
     console.log(request);
-    throw new Error('Method not implemented.');
+    console.log('findOneGame', request);
+    return this.gamesService.findOne(request.id);
   }
 
+  @GrpcMethod(GAMING_SERVICE_NAME, 'updateGame')
   updateGame(
     request: UpdateGameDto,
   ): Promise<Game> | Observable<Game> | Game | any {
-    console.log(request);
-    throw new Error('Method not implemented.');
+    console.log('updateGame', request);
+    return this.gamesService.update(request);
   }
 
+  @GrpcMethod(GAMING_SERVICE_NAME, 'removeGame')
   removeGame(
     request: UpdateGameDto,
   ): Promise<Game> | Observable<Game> | Game | any {
-    console.log(request);
-    throw new Error('Method not implemented.');
+    console.log('removeGame', request);
+    return this.gamesService.remove(request.id);
   }
 
+  @GrpcMethod(GAMING_SERVICE_NAME, 'startGame')
   startGame(
     request: StartGameDto,
   ):
@@ -66,85 +123,64 @@ export class GamesController implements GamingServiceController {
     | Observable<StartGameResponse>
     | StartGameResponse
     | any {
-    console.log(request);
+    console.log('startGame', request);
     return this.gamesService.start(request);
-    // throw new Error('Method not implemented.');
   }
 
+  @GrpcMethod(GAMING_SERVICE_NAME, 'queryGames')
   queryGames(request: Observable<PaginationDto>): Observable<Games> | any {
-    console.log(request);
-    throw new Error('Method not implemented.');
+    console.log('queryGames', request);
+    return this.gamesService.queryGames(request);
   }
 
-  handleGamesCallback(
-    request: CallbackGameDto,
-  ): Games | Promise<Games> | Observable<Games> {
-    console.log(request);
-    return this.gamesService.handleGamesCallback(request);
-    // throw new Error('Method not implemented.');
+  @GrpcMethod(GAMING_SERVICE_NAME, 'handleSmartSoftCallback')
+  handleSmartSoftCallback(
+    request: SmartSoftCallback,
+  ):
+    | SmartSoftCallback
+    | Observable<SmartSoftCallback>
+    | Promise<SmartSoftCallback>
+    | any {
+    console.log('handleSmartSoftCallback', request);
   }
 
-  // @GrpcMethod(GAMING_SERVICE_NAME, 'SyncGames')
-  // syncGames(
-  //   syncGameDto: SyncGameDto,
-  // ): Games | Promise<Games> | Observable<Games> {
-  //   throw new Error('Method not implemented.');
-  //   return this.gamesService.sync(syncGameDto);
-  // }
+  @GrpcMethod(GAMING_SERVICE_NAME, 'handleTadaCallback')
+  handleTadaCallback(
+    request: TadaCallback,
+  ): TadaCallback | Observable<TadaCallback> | Promise<TadaCallback> | any {
+    console.log('handleTadaCallback', request);
+  }
 
-  // findOneGame(
-  //   findOneGameDto: FindOneGameDto,
-  // ): Game | Promise<Game> | Observable<Game> {
-  //   throw new Error('Method not implemented.');
-  //   return this.gamesService.findOne(findOneGameDto.id);
-  // }
-  // updateGame(
-  //   updateGameDto: UpdateGameDto,
-  // ): Game | Promise<Game> | Observable<Game> {
-  //   return this.gamesService.update(updateGameDto.id, updateGameDto);
-  // }
+  @GrpcMethod(GAMING_SERVICE_NAME, 'handleShackEvolutionCallback')
+  handleShackEvolutionCallback(
+    request: ShackEvolutionCallback,
+  ):
+    | ShackEvolutionCallback
+    | Observable<ShackEvolutionCallback>
+    | Promise<ShackEvolutionCallback>
+    | any {
+    console.log('handleShackEvolutionCallback', request);
+  }
 
-  // removeGame(
-  //   updateGameDto: UpdateGameDto,
-  // ): Game | Promise<Game> | Observable<Game> {
-  //   throw new Error('Method not implemented.');
-  //   return this.gamesService.remove(updateGameDto.id);
-  // }
-  // startGame(
-  //   startGameDto: StartGameDto,
-  //   // eslint-disable-next-line prettier/prettier
-  // ): StartGameResponse | Promise<StartGameResponse> | Observable<StartGameResponse> {
-  //   throw new Error('Method not implemented.');
-  //   return this.gamesService.start(startGameDto);
-  // }
-  // queryGames(
-  //   paginationDtoStream: Observable<PaginationDto>,
-  // ): Observable<Games> {
-  //   return this.gamesService.queryGames(paginationDtoStream);
-  // }
+  @GrpcMethod(GAMING_SERVICE_NAME, 'handleEvoplayCallback')
+  handleEvoplayCallback(
+    request: EvoplayCallback,
+  ):
+    | EvoplayCallback
+    | Observable<EvoplayCallback>
+    | Promise<EvoplayCallback>
+    | any {
+    console.log('handleEvoplayCallback', request);
+  }
 
-  // @MessagePattern('createGame')
-  // create(@Payload() createGameDto: CreateGameDto) {
-  //   return this.gamesService.create(createGameDto);
-  // }
-
-  // @MessagePattern('findAllGames')
-  // findAll() {
-  //   return this.gamesService.findAll();
-  // }
-
-  // @MessagePattern('findOneGame')
-  // findOne(@Payload() id: number) {
-  //   return this.gamesService.findOne(id);
-  // }
-
-  // @MessagePattern('updateGame')
-  // update(@Payload() updateGameDto: UpdateGameDto) {
-  //   return this.gamesService.update(updateGameDto.id, updateGameDto);
-  // }
-
-  // @MessagePattern('removeGame')
-  // remove(@Payload() id: number) {
-  //   return this.gamesService.remove(id);
-  // }
+  @GrpcMethod(GAMING_SERVICE_NAME, 'handleEvolutionCallback')
+  handleEvolutionCallback(
+    request: EvolutionCallback,
+  ):
+    | EvolutionCallback
+    | Observable<EvolutionCallback>
+    | Promise<EvolutionCallback>
+    | any {
+    console.log('handleEvolutionCallback', request);
+  }
 }

@@ -122,7 +122,7 @@ export class C2GamingService {
     console.log(data);
   }
 
-  public async startGameSession(game: GameEntity) {
+  public async startGameSession(data: any, game: GameEntity) {
     //TODO: get user from identity service
     const user = {
       username: 'ken',

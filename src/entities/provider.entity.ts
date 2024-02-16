@@ -13,7 +13,9 @@ export class Provider {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({
+    unique: true,
+  })
   slug: string;
 
   @Column()
@@ -28,7 +30,9 @@ export class Provider {
   @OneToMany(() => Game, (game) => game.provider)
   games: Game[];
 
-  @Column()
+  @Column({
+    nullable: true,
+  })
   parentProvider: string;
 
   @CreateDateColumn({ type: 'timestamp' })
