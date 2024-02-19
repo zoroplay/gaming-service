@@ -25,7 +25,6 @@ import {
 } from 'src/proto/gaming.pb';
 import { Observable } from 'rxjs';
 import { GrpcMethod } from '@nestjs/microservices';
-import { StartGameResponse } from 'src/common';
 
 @Controller()
 @GamingServiceControllerMethods()
@@ -116,20 +115,14 @@ export class GamesController implements GamingServiceController {
   }
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'startGame')
-  startGame(
-    request: StartGameDto,
-  ):
-    | Promise<StartGameResponse>
-    | Observable<StartGameResponse>
-    | StartGameResponse
-    | any {
+  async startGame(request: StartGameDto): Promise<any> {
     console.log('here');
     console.log('startGame');
     try {
-      return request.depositUrl;
-      // const resp = this.gamesService.start(request);
-      // return resp;
+      const resp = await this.gamesService.start(request);
+      return resp;
     } catch (error) {
+      console.error('grpc error');
       console.error(error.message);
     }
   }

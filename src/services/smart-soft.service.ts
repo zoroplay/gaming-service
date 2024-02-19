@@ -60,7 +60,7 @@ export class SmartSoftService {
     };
   }
 
-  public async constructGameUrl(data, game: GameEntity) {
+  async constructGameUrl(data, game: GameEntity) {
     try {
       let gameCategory = game.type;
       if (data.isMobile) {

@@ -183,10 +183,12 @@ export class GamesService {
   }
 
   async start(StartGameDto: StartGameDto): Promise<any> {
-    console.log(StartGameDto);
     const game: GameEntity = await this.gameRepository.findOne({
       where: {
         id: StartGameDto.gameId,
+      },
+      relations: {
+        provider: true,
       },
     });
     switch (game.provider.slug) {
@@ -215,9 +217,6 @@ export class GamesService {
         throw new NotFoundException('Unknown provider');
         break;
     }
-    return {
-      url: '',
-    };
   }
 
   async sync(syncGameDto: SyncGameDto) {

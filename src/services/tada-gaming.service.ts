@@ -2,9 +2,7 @@ import { HttpService } from '@nestjs/axios';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config'; // Import your SettingService
 import { AxiosRequestConfig, AxiosResponse } from 'axios';
-import { v4 as uuidv4 } from 'uuid';
 import * as crypto from 'crypto';
-import { DateTime } from 'luxon';
 import { StartGameDto } from 'src/proto/gaming.pb';
 import { lastValueFrom, map } from 'rxjs';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -50,8 +48,16 @@ export class TadaGamingService {
     console.log(this.requestConfig);
   }
 
-  public generateParamsWithKey(queryString: string) {
-    const now = DateTime.now().toFormat('yyMMdd');
+  private getCurrentDate(): string {
+    const now = new Date();
+    const year = now.getFullYear().toString().slice(2); // Extract last two digits of the year
+    const month = (now.getMonth() + 1).toString().padStart(2, '0'); // Month is zero-based
+    const day = now.getDate().toString().padStart(2, '0');
+    return year + month + day;
+  }
+
+  private generateParamsWithKey(queryString: string) {
+    const now = this.getCurrentDate();
     const keyG = crypto
       .createHash('md5')
       .update(now + this.agentId + this.agentKey)
@@ -60,13 +66,13 @@ export class TadaGamingService {
       .createHash('md5')
       .update(queryString + keyG)
       .digest('hex');
-    const randomStringPadFront = uuidv4().slice(0, 6);
-    const randomStringPadBack = uuidv4().slice(0, 6);
+    const randomStringPadFront = Math.random().toString(36).substring(2, 8);
+    const randomStringPadBack = Math.random().toString(36).substring(2, 8);
     const key = randomStringPadFront + md5String + randomStringPadBack;
     return key;
   }
 
-  public async getGames() {
+  async getGames() {
     try {
       const params = 'AgentId=' + this.agentId;
       const key = this.generateParamsWithKey(params);
@@ -91,47 +97,41 @@ export class TadaGamingService {
     }
   }
 
-  public async constructGameUrl(data: StartGameDto, game: GameEntity) {
-    try {
+  async constructGameUrl(data: StartGameDto, game: GameEntity) {
+    //TODO: Create User entity  TO USE AUTH TOKEN FIELD HERE
+    const token = `${data.userId}:${data.clientId}`;
+    const gameId: number = parseInt(game.gameId.split('-')[1]);
+    const params = `Token=${token}&GameId=${gameId}&Lang=en-US&AgentId=${this.agentId}`;
+    const key = this.generateParamsWithKey(params);
+    const url = '/singleWallet/LoginWithoutRedirect';
+    const body = {
+      Token: 'Demo',
+      GameId: gameId,
+      Lang: 'en-US',
+      HomeUrl: data.homeUrl,
+      AgentId: this.agentId,
+      Key: key,
+    };
+    // this.requestConfig.params = body;
+    //console.log(this.requestConfig);
+    const response: AxiosResponse = await lastValueFrom(
+      this.httpClient.get(this.baseUrl + url, { params: body }).pipe(
+        map((response) => {
+          return response;
+        }),
+      ),
+    );
+    console.log('construct game url response');
+    if (response.data.ErrorCode === 0) {
       return {
-        url: 'http://example.com',
+        url: response.data.Data,
       };
-      //TODO: Create User entity  TO USE AUTH TOKEN FIELD HERE
-      const token = `${data.userId}:${data.clientId}`;
-      const gameId = game.gameId.split('-')[1];
-      const params = `Token=${token}&GameId=${gameId}&Lang=en-US&AgentId=${this.agentId}`;
-      const key = this.generateParamsWithKey(params);
-      const url = '/singleWallet/LoginWithoutRedirect';
-      const body = {
-        Token: token,
-        GameId: gameId,
-        Lang: 'en-US',
-        HomeUrl: data.homeUrl,
-        AgentId: this.agentId,
-        Key: key,
-      };
-      this.requestConfig.data = body;
-      //console.log(this.requestConfig);
-      const response: AxiosResponse = await lastValueFrom(
-        this.httpClient
-          .post(url, this.requestConfig.data, this.requestConfig)
-          .pipe(
-            map((response) => {
-              return response.data;
-            }),
-          ),
-      );
-      if (response.data) {
-        const session_url = response;
-        return {
-          ...response,
-          session_url: session_url,
-        };
-      }
-      return response.data;
-    } catch (e) {
-      console.error(e.message);
     }
+    console.error('error caught');
+    console.error(response.data.Message);
+    return {
+      url: response.data.Message,
+    };
   }
 
   public async syncGames() {
@@ -161,6 +161,9 @@ export class TadaGamingService {
           where: {
             gameId: gameData.gameId,
             title: gameData.title,
+          },
+          relations: {
+            provider: true,
           },
         });
         if (gameExist) {
