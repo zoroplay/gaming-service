@@ -182,14 +182,14 @@ export class GamesService {
     return await this.gameRepository.delete(id);
   }
 
-  async start(StartGameDto: StartGameDto) {
+  async start(StartGameDto: StartGameDto): Promise<any> {
     console.log(StartGameDto);
     const game: GameEntity = await this.gameRepository.findOne({
       where: {
-        gameId: StartGameDto.gameId,
+        id: StartGameDto.gameId,
       },
     });
-    switch (StartGameDto.providerSlug) {
+    switch (game.provider.slug) {
       case 'shack-evolution':
         return await this.smartSoftService.constructGameUrl(StartGameDto, game);
         break;
@@ -197,7 +197,10 @@ export class GamesService {
         return await this.c2GamingService.startGameSession(StartGameDto, game);
         break;
       case 'tada-games':
-        return await this.smartSoftService.constructGameUrl(StartGameDto, game);
+        return await this.tadaGamingService.constructGameUrl(
+          StartGameDto,
+          game,
+        );
         break;
       case 'evo-play':
         return await this.smartSoftService.constructGameUrl(StartGameDto, game);
@@ -212,7 +215,9 @@ export class GamesService {
         throw new NotFoundException('Unknown provider');
         break;
     }
-    return `This action starts a game`;
+    return {
+      url: '',
+    };
   }
 
   async sync(syncGameDto: SyncGameDto) {

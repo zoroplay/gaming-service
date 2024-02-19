@@ -5,8 +5,8 @@ import { AxiosRequestConfig, AxiosResponse } from 'axios';
 import { v4 as uuidv4 } from 'uuid';
 import * as crypto from 'crypto';
 import { DateTime } from 'luxon';
-import { Game } from 'src/proto/gaming.pb';
-import { firstValueFrom, map } from 'rxjs';
+import { StartGameDto } from 'src/proto/gaming.pb';
+import { lastValueFrom, map } from 'rxjs';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Game as GameEntity } from '../entities/game.entity';
@@ -75,7 +75,7 @@ export class TadaGamingService {
         AgentId: this.agentId,
         Key: key,
       };
-      const response: AxiosResponse = await firstValueFrom(
+      const response: AxiosResponse = await lastValueFrom(
         this.httpClient
           .post(url, this.requestConfig.data, this.requestConfig)
           .pipe(
@@ -91,10 +91,13 @@ export class TadaGamingService {
     }
   }
 
-  public async constructGameUrl(data, game: Game) {
+  public async constructGameUrl(data: StartGameDto, game: GameEntity) {
     try {
+      return {
+        url: 'http://example.com',
+      };
       //TODO: Create User entity  TO USE AUTH TOKEN FIELD HERE
-      const token = `${data.userId}:${data.clientId}`; // You need to replace this with your actual authentication logic to get the token
+      const token = `${data.userId}:${data.clientId}`;
       const gameId = game.gameId.split('-')[1];
       const params = `Token=${token}&GameId=${gameId}&Lang=en-US&AgentId=${this.agentId}`;
       const key = this.generateParamsWithKey(params);
@@ -103,15 +106,20 @@ export class TadaGamingService {
         Token: token,
         GameId: gameId,
         Lang: 'en-US',
-        HomeUrl: data.HomeUrl,
+        HomeUrl: data.homeUrl,
         AgentId: this.agentId,
         Key: key,
       };
       this.requestConfig.data = body;
       //console.log(this.requestConfig);
-      const response: AxiosResponse = await this.httpClient.axiosRef.get(
-        url,
-        this.requestConfig,
+      const response: AxiosResponse = await lastValueFrom(
+        this.httpClient
+          .post(url, this.requestConfig.data, this.requestConfig)
+          .pipe(
+            map((response) => {
+              return response.data;
+            }),
+          ),
       );
       if (response.data) {
         const session_url = response;

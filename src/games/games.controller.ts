@@ -10,7 +10,6 @@ import {
   FindOneGameDto,
   PaginationDto,
   StartGameDto,
-  StartGameResponse,
   SyncGameDto,
   UpdateGameDto,
   GAMING_SERVICE_NAME,
@@ -26,6 +25,7 @@ import {
 } from 'src/proto/gaming.pb';
 import { Observable } from 'rxjs';
 import { GrpcMethod } from '@nestjs/microservices';
+import { StartGameResponse } from 'src/common';
 
 @Controller()
 @GamingServiceControllerMethods()
@@ -123,8 +123,15 @@ export class GamesController implements GamingServiceController {
     | Observable<StartGameResponse>
     | StartGameResponse
     | any {
-    console.log('startGame', request);
-    return this.gamesService.start(request);
+    console.log('here');
+    console.log('startGame');
+    try {
+      return request.depositUrl;
+      // const resp = this.gamesService.start(request);
+      // return resp;
+    } catch (error) {
+      console.error(error.message);
+    }
   }
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'queryGames')
