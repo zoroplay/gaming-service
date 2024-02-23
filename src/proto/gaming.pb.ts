@@ -1,7 +1,8 @@
 /* eslint-disable */
 import { GrpcMethod, GrpcStreamMethod } from "@nestjs/microservices";
+import { wrappers } from "protobufjs";
 import { Observable } from "rxjs";
-import { Any } from "./google/protobuf/any.pb";
+import { Struct } from "./google/protobuf/struct.pb";
 
 export const protobufPackage = "gaming";
 
@@ -19,8 +20,10 @@ export interface SyncGameDto {
 
 export interface CallbackGameDto {
   provider: string;
-  header: Any | undefined;
-  body: Any | undefined;
+  action?: string | undefined;
+  method?: string | undefined;
+  header: { [key: string]: any } | undefined;
+  body: { [key: string]: any } | undefined;
 }
 
 export interface FindOneGameDto {
@@ -72,9 +75,12 @@ export interface StartGameDto {
   gameId: number;
   clientId: number;
   userId: number;
+  username: string;
+  email: string;
   homeUrl?: string | undefined;
   depositUrl?: string | undefined;
   demo?: boolean | undefined;
+  isMobile?: boolean | undefined;
 }
 
 export interface StartGameResponse {
@@ -227,7 +233,15 @@ export interface EvolutionCallback {
   timestamp: number;
 }
 
+export interface CallbackResponse {
+  success: boolean;
+  message: string;
+  data: { [key: string]: any } | undefined;
+}
+
 export const GAMING_PACKAGE_NAME = "gaming";
+
+wrappers[".google.protobuf.Struct"] = { fromObject: Struct.wrap, toObject: Struct.unwrap } as any;
 
 export interface GamingServiceClient {
   createGame(request: CreateGameDto): Observable<Game>;
@@ -256,15 +270,7 @@ export interface GamingServiceClient {
 
   queryGames(request: Observable<PaginationDto>): Observable<Games>;
 
-  handleSmartSoftCallback(request: SmartSoftCallback): Observable<SmartSoftCallback>;
-
-  handleTadaCallback(request: TadaCallback): Observable<TadaCallback>;
-
-  handleShackEvolutionCallback(request: ShackEvolutionCallback): Observable<ShackEvolutionCallback>;
-
-  handleEvoplayCallback(request: EvoplayCallback): Observable<EvoplayCallback>;
-
-  handleEvolutionCallback(request: EvolutionCallback): Observable<EvolutionCallback>;
+  handleCallback(request: CallbackGameDto): Observable<CallbackResponse>;
 }
 
 export interface GamingServiceController {
@@ -294,23 +300,7 @@ export interface GamingServiceController {
 
   queryGames(request: Observable<PaginationDto>): Observable<Games>;
 
-  handleSmartSoftCallback(
-    request: SmartSoftCallback,
-  ): Promise<SmartSoftCallback> | Observable<SmartSoftCallback> | SmartSoftCallback;
-
-  handleTadaCallback(request: TadaCallback): Promise<TadaCallback> | Observable<TadaCallback> | TadaCallback;
-
-  handleShackEvolutionCallback(
-    request: ShackEvolutionCallback,
-  ): Promise<ShackEvolutionCallback> | Observable<ShackEvolutionCallback> | ShackEvolutionCallback;
-
-  handleEvoplayCallback(
-    request: EvoplayCallback,
-  ): Promise<EvoplayCallback> | Observable<EvoplayCallback> | EvoplayCallback;
-
-  handleEvolutionCallback(
-    request: EvolutionCallback,
-  ): Promise<EvolutionCallback> | Observable<EvolutionCallback> | EvolutionCallback;
+  handleCallback(request: CallbackGameDto): Promise<CallbackResponse> | Observable<CallbackResponse> | CallbackResponse;
 }
 
 export function GamingServiceControllerMethods() {
@@ -328,11 +318,7 @@ export function GamingServiceControllerMethods() {
       "removeProvider",
       "findAllProviders",
       "startGame",
-      "handleSmartSoftCallback",
-      "handleTadaCallback",
-      "handleShackEvolutionCallback",
-      "handleEvoplayCallback",
-      "handleEvolutionCallback",
+      "handleCallback",
     ];
     for (const method of grpcMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);

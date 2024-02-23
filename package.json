@@ -20,6 +20,8 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "proto:install": "npm i git+https://github.com/zoroplay/sbe-service-proto.git",
     "proto:gaming": "protoc --plugin=node_modules/.bin/protoc-gen-ts_proto -I=./node_modules/sbe-service-proto/proto --ts_proto_out=src/proto/ node_modules/sbe-service-proto/proto/gaming.proto --ts_proto_opt=nestJs=true --ts_proto_opt=fileSuffix=.pb",
+    "proto:wallet": "protoc --plugin=node_modules/.bin/protoc-gen-ts_proto -I=./node_modules/sbe-service-proto/proto --ts_proto_out=src/proto/ node_modules/sbe-service-proto/proto/wallet.proto --ts_proto_opt=nestJs=true --ts_proto_opt=fileSuffix=.pb",
+    "proto:betting": "protoc --plugin=node_modules/.bin/protoc-gen-ts_proto -I=./node_modules/sbe-service-proto/proto --ts_proto_out=src/proto/ node_modules/sbe-service-proto/proto/betting.proto --ts_proto_opt=nestJs=true --ts_proto_opt=fileSuffix=.pb",
     "typeorm": "npm run build && npx typeorm -d dist/db/data-source.js",
     "migration:generate": "npm run typeorm -- migration:generate ./db/migrations/$npm_config_name",
     "migration:create": "npm run typeorm -- migration:create ./db/migrations/$npm_config_name",

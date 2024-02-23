@@ -1,5 +1,7 @@
 syntax = "proto3";
-import "google/protobuf/any.proto";
+// import "google/protobuf/any.proto";
+import "google/protobuf/struct.proto";
+
 package gaming;
 
 service GamingService {
@@ -18,11 +20,7 @@ service GamingService {
 
     rpc StartGame (StartGameDto) returns (StartGameResponse) {}
     rpc QueryGames (stream PaginationDto) returns (stream Games) {}
-    rpc HandleSmartSoftCallback (SmartSoftCallback) returns (SmartSoftCallback) {}
-    rpc HandleTadaCallback (TadaCallback) returns (TadaCallback) {}
-    rpc HandleShackEvolutionCallback (ShackEvolutionCallback) returns (ShackEvolutionCallback) {}
-    rpc HandleEvoplayCallback(EvoplayCallback) returns (EvoplayCallback) {}
-    rpc HandleEvolutionCallback(EvolutionCallback) returns (EvolutionCallback) {}
+    rpc HandleCallback (CallbackGameDto) returns (CallbackResponse) {}
 }
 
 message PaginationDto {
@@ -38,8 +36,10 @@ message SyncGameDto {
 
 message CallbackGameDto {
     string provider = 1;
-    google.protobuf.Any header = 2;
-    google.protobuf.Any body = 3;
+    optional string action = 2;
+    optional string method = 3;
+    google.protobuf.Struct header = 4;
+    google.protobuf.Struct body = 5;
 };
 
 message FindOneGameDto {
@@ -90,9 +90,12 @@ message StartGameDto {
     int32 gameId = 1;
     int32 clientId = 2;
     int32 userId = 3;
-    optional string homeUrl = 4;
-    optional string depositUrl = 5;
-    optional bool demo = 6;
+    string username = 4;
+    string email = 5;
+    optional string homeUrl = 6;
+    optional string depositUrl = 7;
+    optional bool demo = 8;
+    optional bool isMobile = 9;
 };
 
 message StartGameResponse {
@@ -245,4 +248,10 @@ message EvolutionCallback {
     int32 platformId = 12;
     optional int32 tableId = 13;
     int32 timestamp = 14;
+}
+
+message CallbackResponse {
+    bool success = 1;
+    string message = 2;
+    google.protobuf.Struct data = 3;
 }

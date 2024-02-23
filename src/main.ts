@@ -15,6 +15,9 @@ async function bootstrap(): Promise<void> {
         package: protobufPackage,
         protoPath: join('node_modules/sbe-service-proto/proto/gaming.proto'),
         // protoPath: join(__dirname, '../proto/gaming.proto'),
+        loader: {
+          objects: true, // This property
+        },
       },
     },
   );

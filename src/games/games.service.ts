@@ -1,8 +1,10 @@
 import { Injectable, NotFoundException, Provider } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Observable, Subject } from 'rxjs';
+import { Player as PlayerEntity } from '../entities/player.entity';
 import { Game as GameEntity } from '../entities/game.entity';
 import { Provider as ProviderEntity } from '../entities/provider.entity';
+import { v4 as uuidv4 } from 'uuid';
 import {
   CreateGameDto,
   UpdateGameDto,
@@ -23,12 +25,15 @@ import {
   TadaGamingService,
   SmartSoftService,
 } from 'src/services';
+import dayjs from 'dayjs';
 
 @Injectable()
 export class GamesService {
   constructor(
     @InjectRepository(GameEntity)
     private gameRepository: Repository<GameEntity>,
+    @InjectRepository(PlayerEntity)
+    private playerRepository: Repository<PlayerEntity>,
     @InjectRepository(ProviderEntity)
     private providerRepository: Repository<ProviderEntity>,
     private readonly entityToProtoService: EntityToProtoService,
@@ -182,36 +187,61 @@ export class GamesService {
     return await this.gameRepository.delete(id);
   }
 
-  async start(StartGameDto: StartGameDto): Promise<any> {
+  async start(startGameDto: StartGameDto): Promise<any> {
     const game: GameEntity = await this.gameRepository.findOne({
       where: {
-        id: StartGameDto.gameId,
+        id: startGameDto.gameId,
       },
       relations: {
         provider: true,
       },
     });
+    let player = await this.playerRepository.findOne({
+      where: {
+        userId: startGameDto.userId,
+        clientId: startGameDto.clientId,
+      },
+    });
+    if (!player) {
+      player = await this.createPlayer(startGameDto);
+    }
     switch (game.provider.slug) {
       case 'shack-evolution':
-        return await this.smartSoftService.constructGameUrl(StartGameDto, game);
+        return await this.smartSoftService.constructGameUrl(
+          startGameDto,
+          player,
+          game,
+        );
         break;
       case 'c27':
-        return await this.c2GamingService.startGameSession(StartGameDto, game);
+        return await this.c2GamingService.startGameSession(startGameDto, game);
         break;
       case 'tada-games':
         return await this.tadaGamingService.constructGameUrl(
-          StartGameDto,
+          startGameDto,
           game,
         );
         break;
       case 'evo-play':
-        return await this.smartSoftService.constructGameUrl(StartGameDto, game);
+        return await this.smartSoftService.constructGameUrl(
+          startGameDto,
+          player,
+          game,
+        );
         break;
       case 'evolution':
-        return await this.smartSoftService.constructGameUrl(StartGameDto, game);
+        return await this.smartSoftService.constructGameUrl(
+          startGameDto,
+          player,
+          game,
+        );
         break;
       case 'smart-soft':
-        return await this.smartSoftService.constructGameUrl(StartGameDto, game);
+        return await this.smartSoftService.constructGameUrl(
+          startGameDto,
+          player,
+          game,
+        );
         break;
       default:
         throw new NotFoundException('Unknown provider');
@@ -239,6 +269,20 @@ export class GamesService {
         );
         break;
     }
+  }
+
+  private async createPlayer(startGameDto: StartGameDto) {
+    const player = new PlayerEntity();
+    player.userId = startGameDto.userId;
+    player.clientId = startGameDto.clientId;
+    player.username = startGameDto.username;
+    player.email = startGameDto.email;
+    player.authCode = uuidv4();
+    player.authCodeExpiresAt = dayjs().add(1, 'day').format('YYYY-MM-DD');
+    player.virtualToken = uuidv4();
+    player.virtualTokenExpiresAt = dayjs().add(1, 'day').format('YYYY-MM-DD');
+    await this.playerRepository.save(player);
+    return player;
   }
 
   async syncShackGames(): Promise<Game[]> {
@@ -443,7 +487,12 @@ export class GamesService {
     // return savedGames;
   }
 
-  async handleGamesCallback(_data: CallbackGameDto): Promise<Game[] | any> {
+  async handleGamesCallback(_data: CallbackGameDto): Promise<any> {
+    return {
+      success: true,
+      message: 'success',
+      data: _data,
+    };
     switch (_data.provider) {
       case 'shack-evolution':
         return await this.handleC2Games(_data.body, _data.header);
@@ -455,7 +504,7 @@ export class GamesService {
         return await this.handleC2Games(_data.body, _data.header);
         break;
       case 'smart-soft':
-        return await this.handleC2Games(_data.body, _data.header);
+        return await this.smartSoftService.handleCallback(_data);
         break;
       case 'evolution':
         return await this.handleC2Games(_data.body, _data.header);
@@ -476,5 +525,11 @@ export class GamesService {
     console.log(body);
     console.log(headers);
     throw new Error('Method not implemented.');
+  }
+
+  async getPlayerBalance(clientId: string, userId: string) {
+    console.log(clientId);
+    console.log(userId);
+    return 1000;
   }
 }

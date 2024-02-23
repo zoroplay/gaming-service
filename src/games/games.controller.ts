@@ -13,15 +13,11 @@ import {
   SyncGameDto,
   UpdateGameDto,
   GAMING_SERVICE_NAME,
-  EvolutionCallback,
-  EvoplayCallback,
-  ShackEvolutionCallback,
-  SmartSoftCallback,
-  TadaCallback,
   CreateProviderDto,
   Empty,
   Provider,
   Providers,
+  CallbackGameDto,
 } from 'src/proto/gaming.pb';
 import { Observable } from 'rxjs';
 import { GrpcMethod } from '@nestjs/microservices';
@@ -133,54 +129,16 @@ export class GamesController implements GamingServiceController {
     return this.gamesService.queryGames(request);
   }
 
-  @GrpcMethod(GAMING_SERVICE_NAME, 'handleSmartSoftCallback')
-  handleSmartSoftCallback(
-    request: SmartSoftCallback,
-  ):
-    | SmartSoftCallback
-    | Observable<SmartSoftCallback>
-    | Promise<SmartSoftCallback>
-    | any {
-    console.log('handleSmartSoftCallback', request);
-  }
-
-  @GrpcMethod(GAMING_SERVICE_NAME, 'handleTadaCallback')
-  handleTadaCallback(
-    request: TadaCallback,
-  ): TadaCallback | Observable<TadaCallback> | Promise<TadaCallback> | any {
-    console.log('handleTadaCallback', request);
-  }
-
-  @GrpcMethod(GAMING_SERVICE_NAME, 'handleShackEvolutionCallback')
-  handleShackEvolutionCallback(
-    request: ShackEvolutionCallback,
-  ):
-    | ShackEvolutionCallback
-    | Observable<ShackEvolutionCallback>
-    | Promise<ShackEvolutionCallback>
-    | any {
-    console.log('handleShackEvolutionCallback', request);
-  }
-
-  @GrpcMethod(GAMING_SERVICE_NAME, 'handleEvoplayCallback')
-  handleEvoplayCallback(
-    request: EvoplayCallback,
-  ):
-    | EvoplayCallback
-    | Observable<EvoplayCallback>
-    | Promise<EvoplayCallback>
-    | any {
-    console.log('handleEvoplayCallback', request);
-  }
-
-  @GrpcMethod(GAMING_SERVICE_NAME, 'handleEvolutionCallback')
-  handleEvolutionCallback(
-    request: EvolutionCallback,
-  ):
-    | EvolutionCallback
-    | Observable<EvolutionCallback>
-    | Promise<EvolutionCallback>
-    | any {
-    console.log('handleEvolutionCallback', request);
+  @GrpcMethod(GAMING_SERVICE_NAME, 'handleCallback')
+  async handleCallback(request: any): Promise<any> {
+    console.log('handleCallback start');
+    console.log(request);
+    console.log('handleCallback finish');
+    try {
+      return await this.gamesService.handleGamesCallback(request);
+    } catch (error) {
+      console.error('handleCallback error');
+      console.error(error.message);
+    }
   }
 }
