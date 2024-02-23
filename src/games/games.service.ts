@@ -488,11 +488,6 @@ export class GamesService {
   }
 
   async handleGamesCallback(_data: CallbackGameDto): Promise<any> {
-    return {
-      success: true,
-      message: 'success',
-      data: _data,
-    };
     switch (_data.provider) {
       case 'shack-evolution':
         return await this.handleC2Games(_data.body, _data.header);

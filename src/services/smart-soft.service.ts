@@ -47,6 +47,7 @@ export class SmartSoftService {
     this.portal = this.configService.get<string>('SMART_SOFT_PORTAL');
   }
 
+  // start game here
   async constructGameUrl(data, player: PlayerEntity, game: GameEntity) {
     try {
       let gameCategory = game.type;
@@ -70,44 +71,93 @@ export class SmartSoftService {
     }
   }
 
+  // callback handler
   async handleCallback(resp: CallbackGameDto) {
-    if (
-      resp.header['x-signature'] !== this.generateMd5(resp.method, resp.body)
-    ) {
+    const hash = await this.generateMd5(resp.method, resp.body);
+    if (resp.header['x-signature'] !== hash) {
+      return {
+        success: false,
+        message: 'Invalid Hash Signature',
+      };
     }
+    const player = await this.playerRepository.findOne({
+      where: {
+        virtualToken: resp.header['x-sessionid'],
+      },
+    });
+    if (!player)
+      return {
+        success: false,
+        message: 'Invalid Hash Signature',
+      };
+    const game = await this.gameRepository.findOne({
+      where: {
+        title: resp.body['TransactionInfo']['GameName'],
+      },
+    });
     switch (resp.action) {
       case 'ActivateSession':
-        // return await this.activateSession();
+        return await this.activateSession(resp.body['Token']);
         break;
       case 'GetBalance':
-        // return await this.activateSession();
+        return await this.getBalance(resp.header['x-sessionid']);
         break;
       case 'Deposit':
+        if (!game)
+          return {
+            success: false,
+            message: 'Game not in system',
+          };
         // return await this.activateSession();
-
+        const placeBetPayload: PlaceCasinoBetRequest = {
+          userId: player.userId,
+          clientId: player.clientId,
+          roundId: resp.body.TransactionId,
+          transactionId: resp.body.TransactionId,
+          gameId: game.gameId,
+          stake: resp.body.Amount,
+          winnings: 0,
+        };
+        return await this.placeBet(placeBetPayload);
         break;
       case 'Withdraw':
-        // return await this.activateSession();
-
+        const settlePayload: CreditCasinoBetRequest = {
+          transactionId: resp.body.TransactionId,
+          winnings: resp.body.Amount,
+        };
+        return await this.settle(settlePayload);
         break;
       case 'IssueClientGifts':
-        // return await this.activateSession();
-
+        const reversePayload: RollbackCasinoBetRequest = {
+          transactionId: resp.body.TransactionId,
+        };
+        return await this.rollbackTransaction(reversePayload);
         break;
     }
   }
 
   // support
+  generateMd5(requestMethod: string, payload) {
+    console.log('payload start');
 
-  async generateMd5(requestMethod: string, payload: any) {
+    console.log(this.secretKey);
+    console.log(requestMethod);
+    console.log(JSON.stringify(payload));
+    console.log(this.secretKey + requestMethod + JSON.stringify(payload));
     const md5Hash = crypto
       .createHash('md5')
       .update(this.secretKey + requestMethod + JSON.stringify(payload))
       .digest('hex');
+
+    console.log('payload hash');
+    console.log(md5Hash);
+    console.log('payload ends');
     return md5Hash;
   }
 
   // Webhook Section
+
+  // Activate Player Session
   async activateSession(token) {
     const player = await this.playerRepository.findOne({
       where: {
@@ -121,14 +171,19 @@ export class SmartSoftService {
     player.virtualToken = uuidv4();
     this.playerRepository.save(player);
     return {
-      UserName: player.username,
-      SessionId: player.virtualToken,
-      ClientExternalKey: player.userId,
-      PortalName: 'sportsbookengine',
-      CurrencyCode: 'NGN',
+      success: true,
+      message: 'Activation Successful',
+      data: {
+        UserName: player.username,
+        SessionId: player.virtualToken,
+        ClientExternalKey: player.userId,
+        PortalName: 'sportsbookengine',
+        CurrencyCode: 'NGN',
+      },
     };
   }
 
+  // Get Player Balance
   async getBalance(token) {
     const player = await this.playerRepository.findOne({
       where: {
@@ -141,37 +196,43 @@ export class SmartSoftService {
         .getWallet({ userId: player.userId, clientId: player.clientId })
         .toPromise();
       if (wallet.success) {
-        const user = wallet.data;
-        console.log(user);
+        return {
+          success: true,
+          message: 'Wallet',
+          data: {
+            Amount: wallet.data.availableBalance,
+            CurrencyCode: 'NGN',
+          },
+        };
+      } else {
+        return {
+          success: false,
+          message: 'Could not retrieve balance',
+        };
       }
     }
   }
 
+  // Place Bet
   async placeBet(data: PlaceCasinoBetRequest) {
-    const placeBetPayload: PlaceCasinoBetRequest = {
-      userId: data.userId,
-      clientId: data.userId,
-      roundId: data.roundId,
-      transactionId: data.transactionId,
-      gameId: data.gameId,
-      stake: data.userId,
-      winnings: 0,
-    };
-    return await this.betService.placeCasinoBet(placeBetPayload);
+    const resp = await this.betService.placeCasinoBet(data).toPromise();
+    if (resp.success) {
+      return resp.data;
+    }
   }
 
+  // Settle Bet
   async settle(data: CreditCasinoBetRequest) {
-    const settlePayload: CreditCasinoBetRequest = {
-      transactionId: data.transactionId,
-      winnings: data.winnings,
-    };
-    return await this.betService.settleCasinoBet(settlePayload);
+    const resp = await this.betService.settleCasinoBet(data).toPromise();
+    if (resp.success) {
+      return resp.data;
+    }
   }
-
+  // Reverse Bet
   async rollbackTransaction(data: RollbackCasinoBetRequest) {
-    const reversePayload: RollbackCasinoBetRequest = {
-      transactionId: data.transactionId,
-    };
-    return await this.betService.cancelCasinoBet(reversePayload);
+    const resp = await this.betService.cancelCasinoBet(data).toPromise();
+    if (resp.success) {
+      return resp.data;
+    }
   }
 }

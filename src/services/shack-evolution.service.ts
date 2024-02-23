@@ -153,11 +153,16 @@ export class ShackEvolutionService {
       if (response.data.status === true) {
         const session_url = `${game.url}?clientId=${response.data.data}`;
         return {
-          ...response,
-          session_url: session_url,
+          success: true,
+          message: 'Url returned successfully',
+          data: session_url,
         };
       }
-      return response.data;
+      return {
+        success: true,
+        message: 'Url returned successfully',
+        data: '',
+      };
     } catch (e) {
       console.error(e.message);
     }
