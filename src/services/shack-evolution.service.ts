@@ -5,7 +5,22 @@ import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config'; // Import your SettingService
 import { AxiosRequestConfig, AxiosResponse } from 'axios';
 import { firstValueFrom, map } from 'rxjs';
-import { Game } from 'src/proto/gaming.pb';
+import { CallbackGameDto } from 'src/proto/gaming.pb';
+import { BetService } from 'src/bet/bet.service';
+import * as crypto from 'crypto';
+import {
+  PlaceCasinoBetRequest,
+  CreditCasinoBetRequest,
+  RollbackCasinoBetRequest,
+} from 'src/proto/betting.pb';
+import {
+  Game as GameEntity,
+  Player as PlayerEntity,
+  Provider as ProviderEntity,
+} from '../entities';
+import { WalletService } from 'src/wallet/wallet.service';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class ShackEvolutionService {
@@ -19,9 +34,17 @@ export class ShackEvolutionService {
   private requestConfig: AxiosRequestConfig;
 
   constructor(
+    @InjectRepository(GameEntity)
+    private gameRepository: Repository<GameEntity>,
+    @InjectRepository(PlayerEntity)
+    private playerRepository: Repository<PlayerEntity>,
+    @InjectRepository(ProviderEntity)
+    private providerRepository: Repository<ProviderEntity>,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
     private readonly configService: ConfigService,
     private readonly httpClient: HttpService,
+    private readonly walletService: WalletService,
+    private readonly betService: BetService,
   ) {
     this.baseUrl = this.configService.get<string>('SHACK_BASE_URL');
     this.publicKey = this.configService.get<string>('SHACK_PUBLIC_KEY');
@@ -134,17 +157,21 @@ export class ShackEvolutionService {
     }
   }
 
-  public async constructGameUrl(data, game: Game) {
+  // start game here
+  async constructGameUrl(data, player: PlayerEntity, game: GameEntity) {
     try {
       const url = '/v2/partner/cl/tokenize';
       this.token = await this.generateToken();
       this.authorizeHeader();
-      data = {
-        ...data,
+      const newData = {
+        playerId: player.authCode,
+        playerEmail: player.email,
+        gameType: game.gameId,
+        email: this.emailId,
         publicKey: this.publicKey,
       };
       const response: AxiosResponse = await firstValueFrom(
-        this.httpClient.post(url, data, this.requestConfig).pipe(
+        this.httpClient.post(url, newData, this.requestConfig).pipe(
           map((response) => {
             return response.data;
           }),
@@ -155,16 +182,133 @@ export class ShackEvolutionService {
         return {
           success: true,
           message: 'Url returned successfully',
-          data: session_url,
+          url: session_url,
         };
       }
       return {
-        success: true,
-        message: 'Url returned successfully',
-        data: '',
+        success: false,
+        message: 'Url not returned',
+        url: '',
       };
     } catch (e) {
       console.error(e.message);
     }
+  }
+
+  // callback handler
+  async handleCallback(resp: CallbackGameDto) {
+    if (resp.body.signature !== this.generateMD5Hash()) {
+      return {
+        success: false,
+        message: 'Invalid Signature',
+      };
+    }
+    const player = await this.playerRepository.findOne({
+      where: {
+        authCode: resp.body.playerId,
+      },
+    });
+    if (!player)
+      return {
+        success: false,
+        message: 'Invalid Player Token',
+      };
+    const game = await this.gameRepository.findOne({
+      where: {
+        title: resp.body['gameType'],
+      },
+    });
+    if (resp.body.type) {
+      switch (resp.body.type) {
+        case 'debit':
+          if (!game)
+            return {
+              success: false,
+              message: 'Game not in system',
+            };
+          // return await this.activateSession();
+          const placeBetPayload: PlaceCasinoBetRequest = {
+            userId: player.userId,
+            clientId: player.clientId,
+            roundId: resp.body.data.roundId,
+            transactionId: resp.body.roundId,
+            gameId: game.gameId,
+            stake: resp.body.amount,
+            winnings: 0,
+          };
+          return await this.placeBet(placeBetPayload);
+          break;
+        case 'credit':
+          const settlePayload: CreditCasinoBetRequest = {
+            transactionId: resp.body.roundId,
+            winnings: resp.body.amount,
+          };
+          return await this.settle(settlePayload);
+          break;
+      }
+    } else {
+      return await this.activateSession(resp.body.token);
+    }
+  }
+  generateMD5Hash() {
+    const md5Hash = crypto
+      .createHash('md5')
+      .update(`${this.publicKey}${this.secretKey}`)
+      .digest('hex');
+    return md5Hash;
+  }
+  // Webhook Section
+  // Activate Player Session
+  async activateSession(token) {
+    const player = await this.playerRepository.findOne({
+      where: {
+        authCode: token,
+      },
+    });
+    if (!player) {
+      console.log('Could not find player');
+      return {
+        success: false,
+        message: 'Could not find player',
+      };
+    }
+    if (player) {
+      //TODO: USE PLAYER UserID AND ClientID to get balance from wallet service;
+      const wallet = await this.walletService
+        .getWallet({ userId: player.userId, clientId: player.clientId })
+        .toPromise();
+      if (wallet.success) {
+        return {
+          success: true,
+          message: 'Wallet',
+          data: {
+            balance: wallet.data.availableBalance,
+            username: player.username,
+            userId: player.authCode,
+            currency: 'NGN',
+          },
+        };
+      } else {
+        return {
+          success: false,
+          message: 'Could not retrieve balance',
+        };
+      }
+    }
+  }
+
+  // Place Bet
+  async placeBet(data: PlaceCasinoBetRequest) {
+    return await this.betService.placeCasinoBet(data).toPromise();
+  }
+
+  // Settle Bet
+  async settle(data: CreditCasinoBetRequest) {
+    return await this.betService.settleCasinoBet(data).toPromise();
+  }
+
+  // Reverse Bet
+  async rollbackTransaction(data: RollbackCasinoBetRequest) {
+    return await this.betService.cancelCasinoBet(data).toPromise();
   }
 }

@@ -3,12 +3,22 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config'; // Import your SettingService
 import { AxiosRequestConfig, AxiosResponse } from 'axios';
 import * as crypto from 'crypto';
-import { StartGameDto } from 'src/proto/gaming.pb';
+import { CallbackGameDto } from 'src/proto/gaming.pb';
 import { lastValueFrom, map } from 'rxjs';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Game as GameEntity } from '../entities/game.entity';
-import { Provider as ProviderEntity } from '../entities/provider.entity';
+import {
+  Game as GameEntity,
+  Player as PlayerEntity,
+  Provider as ProviderEntity,
+} from '../entities';
+import { BetService } from 'src/bet/bet.service';
+import {
+  PlaceCasinoBetRequest,
+  CreditCasinoBetRequest,
+  RollbackCasinoBetRequest,
+} from 'src/proto/betting.pb';
+import { WalletService } from 'src/wallet/wallet.service';
 
 @Injectable()
 export class TadaGamingService {
@@ -21,10 +31,14 @@ export class TadaGamingService {
   constructor(
     @InjectRepository(GameEntity)
     private gameRepository: Repository<GameEntity>,
+    @InjectRepository(PlayerEntity)
+    private playerRepository: Repository<PlayerEntity>,
     @InjectRepository(ProviderEntity)
     private providerRepository: Repository<ProviderEntity>,
     private readonly configService: ConfigService,
     private readonly httpClient: HttpService,
+    private readonly walletService: WalletService,
+    private readonly betService: BetService,
   ) {
     this.baseUrl = this.configService.get<string>('TADA_BASE_URL');
     this.agentId = this.configService.get<string>('TADA_AGENT_ID');
@@ -97,41 +111,76 @@ export class TadaGamingService {
     }
   }
 
-  async constructGameUrl(data: StartGameDto, game: GameEntity) {
-    //TODO: Create User entity  TO USE AUTH TOKEN FIELD HERE
-    const token = `${data.userId}:${data.clientId}`;
-    const gameId: number = parseInt(game.gameId.split('-')[1]);
-    const params = `Token=${token}&GameId=${gameId}&Lang=en-US&AgentId=${this.agentId}`;
-    const key = this.generateParamsWithKey(params);
-    const url = '/singleWallet/LoginWithoutRedirect';
-    const body = {
-      Token: 'Demo',
-      GameId: gameId,
-      Lang: 'en-US',
-      HomeUrl: data.homeUrl,
-      AgentId: this.agentId,
-      Key: key,
-    };
-    // this.requestConfig.params = body;
-    //console.log(this.requestConfig);
-    const response: AxiosResponse = await lastValueFrom(
-      this.httpClient.get(this.baseUrl + url, { params: body }).pipe(
-        map((response) => {
-          return response;
-        }),
-      ),
-    );
-    console.log('construct game url response');
-    if (response.data.ErrorCode === 0) {
-      return {
-        url: response.data.Data,
+  // async constructGameUrl(data: StartGameDto, game: GameEntity) {
+  //   //TODO: Create User entity  TO USE AUTH TOKEN FIELD HERE
+  //   const token = `${data.userId}:${data.clientId}`;
+  //   const gameId: number = parseInt(game.gameId.split('-')[1]);
+  //   const params = `Token=${token}&GameId=${gameId}&Lang=en-US&AgentId=${this.agentId}`;
+  //   const key = this.generateParamsWithKey(params);
+  //   const url = '/singleWallet/LoginWithoutRedirect';
+  //   const body = {
+  //     Token: 'Demo',
+  //     GameId: gameId,
+  //     Lang: 'en-US',
+  //     HomeUrl: data.homeUrl,
+  //     AgentId: this.agentId,
+  //     Key: key,
+  //   };
+  //   // this.requestConfig.params = body;
+  //   //console.log(this.requestConfig);
+  //   const response: AxiosResponse = await lastValueFrom(
+  //     this.httpClient.get(this.baseUrl + url, { params: body }).pipe(
+  //       map((response) => {
+  //         return response;
+  //       }),
+  //     ),
+  //   );
+  //   console.log('construct game url response');
+  //   if (response.data.ErrorCode === 0) {
+  //     return {
+  //       url: response.data.Data,
+  //     };
+  //   }
+  //   console.error('error caught');
+  //   console.error(response.data.Message);
+  //   return {
+  //     url: response.data.Message,
+  //   };
+  // }
+
+  // start game here
+
+  async constructGameUrl(data, player: PlayerEntity, game: GameEntity) {
+    try {
+      const token = player.authCode;
+      const gameId: number = parseInt(game.gameId.split('-')[1]);
+      const params = `Token=${token}&GameId=${gameId}&Lang=en-US&AgentId=${this.agentId}`;
+      const key = this.generateParamsWithKey(params);
+      const url = '/singleWallet/LoginWithoutRedirect';
+      const body = {
+        Token: 'Demo',
+        GameId: gameId,
+        Lang: 'en-US',
+        HomeUrl: data.homeUrl,
+        AgentId: this.agentId,
+        Key: key,
       };
+      this.requestConfig.params = body;
+      const response: AxiosResponse = await this.httpClient.axiosRef.get(
+        url,
+        this.requestConfig,
+      );
+      if (response.data.ErrorCode === 0) {
+        return {
+          url: response.data.Data,
+        };
+      }
+      return {
+        url: response.data.Message,
+      };
+    } catch (e) {
+      console.error(e.message);
     }
-    console.error('error caught');
-    console.error(response.data.Message);
-    return {
-      url: response.data.Message,
-    };
   }
 
   public async syncGames() {
@@ -186,5 +235,115 @@ export class TadaGamingService {
     );
 
     return savedGames;
+  }
+
+  // callback handler
+  async handleCallback(resp: CallbackGameDto) {
+    const player = await this.playerRepository.findOne({
+      where: {
+        authCode: resp.body.token,
+      },
+    });
+    if (!player)
+      return {
+        success: false,
+        message: 'Invalid Player Token',
+      };
+    const game = await this.gameRepository.findOne({
+      where: {
+        title: resp.body['data']['details']['game']['game_id'],
+      },
+    });
+    switch (resp.body.name) {
+      case 'auth':
+        return await this.activateSession(resp.body.token);
+        break;
+      case 'bet':
+        if (!game)
+          return {
+            success: false,
+            message: 'Game not in system',
+          };
+        // return await this.activateSession();
+        const placeBetPayload: PlaceCasinoBetRequest = {
+          userId: player.userId,
+          clientId: player.clientId,
+          roundId: resp.body.data.round,
+          transactionId: resp.body.round,
+          gameId: game.gameId,
+          stake: resp.body.betAmount,
+          winnings: 0,
+        };
+        const response = await this.placeBet(placeBetPayload);
+        if (response.success) {
+          const settlePayload: CreditCasinoBetRequest = {
+            transactionId: resp.body.round,
+            winnings: resp.body.winloseAmount,
+          };
+          return await this.settle(settlePayload);
+        }
+        break;
+      case 'cancelBet':
+        const reversePayload: RollbackCasinoBetRequest = {
+          transactionId: resp.body.action_id,
+        };
+        return await this.rollbackTransaction(reversePayload);
+        break;
+    }
+  }
+  // Webhook Section
+  // Activate Player Session
+  async activateSession(token) {
+    const player = await this.playerRepository.findOne({
+      where: {
+        authCode: token,
+      },
+    });
+    if (!player) {
+      console.log('Could not find player');
+      return {
+        success: false,
+        message: 'Could not find player',
+      };
+    }
+    if (player) {
+      //TODO: USE PLAYER UserID AND ClientID to get balance from wallet service;
+      const wallet = await this.walletService
+        .getWallet({ userId: player.userId, clientId: player.clientId })
+        .toPromise();
+      if (wallet.success) {
+        return {
+          success: true,
+          message: 'Wallet',
+          data: {
+            ErrorCode: 0,
+            Message: 'Success',
+            Username: player.username,
+            Balance: wallet.data.availableBalance,
+            Currency: 'NGN',
+          },
+        };
+      } else {
+        return {
+          success: false,
+          message: 'Could not retrieve balance',
+        };
+      }
+    }
+  }
+
+  // Place Bet
+  async placeBet(data: PlaceCasinoBetRequest) {
+    return await this.betService.placeCasinoBet(data).toPromise();
+  }
+
+  // Settle Bet
+  async settle(data: CreditCasinoBetRequest) {
+    return await this.betService.settleCasinoBet(data).toPromise();
+  }
+
+  // Reverse Bet
+  async rollbackTransaction(data: RollbackCasinoBetRequest) {
+    return await this.betService.cancelCasinoBet(data).toPromise();
   }
 }
