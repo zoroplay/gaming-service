@@ -219,6 +219,7 @@ export class GamesService {
       case 'tada-games':
         return await this.tadaGamingService.constructGameUrl(
           startGameDto,
+          player,
           game,
         );
         break;
