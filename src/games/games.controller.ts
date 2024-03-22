@@ -17,7 +17,6 @@ import {
   Empty,
   Provider,
   Providers,
-  CallbackGameDto,
 } from 'src/proto/gaming.pb';
 import { Observable } from 'rxjs';
 import { GrpcMethod } from '@nestjs/microservices';
@@ -119,7 +118,7 @@ export class GamesController implements GamingServiceController {
       return resp;
     } catch (error) {
       console.error('grpc error');
-      console.error(error.message);
+      console.error(error);
     }
   }
 

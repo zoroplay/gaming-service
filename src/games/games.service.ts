@@ -25,7 +25,7 @@ import {
   TadaGamingService,
   SmartSoftService,
 } from 'src/services';
-import dayjs from 'dayjs';
+import * as dayjs from 'dayjs';
 
 @Injectable()
 export class GamesService {
@@ -273,6 +273,7 @@ export class GamesService {
   }
 
   private async createPlayer(startGameDto: StartGameDto) {
+    // const d = new Date();
     const player = new PlayerEntity();
     player.userId = startGameDto.userId;
     player.clientId = startGameDto.clientId;
