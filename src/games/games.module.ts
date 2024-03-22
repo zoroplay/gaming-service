@@ -13,6 +13,7 @@ import {
 import { Bet, Player, Provider, Game } from 'src/entities';
 import { WalletModule } from 'src/wallet/wallet.module';
 import { BetModule } from 'src/bet/bet.module';
+import { EvoPlayService } from 'src/services/evo-play.service';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { BetModule } from 'src/bet/bet.module';
     C2GamingService,
     TadaGamingService,
     SmartSoftService,
+    EvoPlayService,
   ],
 })
 export class GamesModule {}

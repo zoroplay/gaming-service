@@ -77,9 +77,7 @@ export class GamesController implements GamingServiceController {
   }
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'syncGames')
-  syncGames(
-    syncGameDto: SyncGameDto,
-  ): Promise<Games> | Observable<Games> | Games | any {
+  syncGames(syncGameDto: SyncGameDto) {
     console.log('syncGames', syncGameDto);
     return this.gamesService.sync(syncGameDto);
   }

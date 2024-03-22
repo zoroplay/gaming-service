@@ -16,7 +16,7 @@ export class Game {
   @Column()
   gameId: string;
 
-  @Column({ length: 255, unique: true })
+  @Column({ length: 255 })
   title: string;
 
   @Column({ length: 150 })

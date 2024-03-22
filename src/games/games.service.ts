@@ -26,6 +26,7 @@ import {
   SmartSoftService,
 } from 'src/services';
 import * as dayjs from 'dayjs';
+import { EvoPlayService } from 'src/services/evo-play.service';
 
 @Injectable()
 export class GamesService {
@@ -41,6 +42,7 @@ export class GamesService {
     private readonly c2GamingService: C2GamingService,
     private readonly tadaGamingService: TadaGamingService,
     private readonly smartSoftService: SmartSoftService,
+    private readonly evoPlayService: EvoPlayService,
   ) {}
 
   async createProvider(
@@ -250,7 +252,7 @@ export class GamesService {
     }
   }
 
-  async sync(syncGameDto: SyncGameDto) {
+  async sync(syncGameDto: SyncGameDto): Promise<any> {
     switch (syncGameDto.provider) {
       case 'shack-evolution':
         return await this.syncShackGames();
@@ -262,7 +264,8 @@ export class GamesService {
         return await this.tadaGamingService.syncGames();
         break;
       case 'evo-play':
-        return await this.syncEvoPlayGames();
+        console.log('syncing here');
+        return await this.evoPlayService.syncGames();
         break;
       default:
         throw new NotFoundException(

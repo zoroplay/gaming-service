@@ -172,14 +172,14 @@ export class TadaGamingService {
       );
       if (response.data.ErrorCode === 0) {
         return {
-          url: response.data.Data,
+          url: response.data,
         };
       }
       return {
-        url: response.data.Message,
+        url: response.data,
       };
     } catch (e) {
-      console.error(e.message);
+      console.error(e);
     }
   }
 
@@ -234,7 +234,9 @@ export class TadaGamingService {
       }),
     );
 
-    return savedGames;
+    return {
+      games: savedGames,
+    };
   }
 
   // callback handler

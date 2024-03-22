@@ -74,13 +74,13 @@ export class EvoPlayService {
         this.token,
       );
       // $url = $this->project_id."*".$this->version."*".$this->token;
-      const url = `Game/getURL?project=${this.project}&version=${this.version}&signature=${signature}`;
+      const url = `Game/getList?project=${this.project}&version=${this.version}&signature=${signature}`;
       const response: AxiosResponse = await this.httpClient.axiosRef.get(
         url,
         this.requestConfig,
       );
-      console.log(response);
-      return response;
+      console.log(response.data.data);
+      return response.data.data;
     } catch (e) {
       console.error(e.message);
     }
@@ -109,44 +109,47 @@ export class EvoPlayService {
         'https://images.pexels.com/photos/414612/pexels-photo-414612.jpeg';
       provider = await this.providerRepository.save(newProvider);
     }
+
     const savedGames = await Promise.all(
-      games.data.map(async (game, key) => {
-        let gameData = {
-          gameId: `${key}-${this.slugify(game['name'])}`,
-          title: game['name'],
-          description: `${game['absolute_name']}`,
-          type: game['game_sub_type'],
-          provider: provider,
-        };
-        const gameExist = await this.gameRepository.findOne({
-          where: {
-            gameId: gameData.gameId,
-            title: gameData.title,
-          },
-          relations: {
-            provider: true,
-          },
-        });
-        if (gameExist) {
-          this.gameRepository.merge(gameExist, gameData);
-          return this.gameRepository.save(gameExist);
-        } else {
-          gameData = {
-            ...gameData,
-            ...{
-              status: true,
-              imagePath:
-                'https://images.pexels.com/photos/414612/pexels-photo-414612.jpeg',
-              bannerPath:
-                'https://images.pexels.com/photos/414612/pexels-photo-414612.jpeg',
-            },
+      Object.keys(games).map(async (key) => {
+        if (Object.prototype.hasOwnProperty.call(games, key)) {
+          const gameData = {
+            gameId: `${key}-${this.slugify(games[key].name)}`,
+            title: games[key].name,
+            description: games[key].absolute_name,
+            type: games[key].game_sub_type,
+            provider: provider,
+            status: true,
+            imagePath:
+              'https://images.pexels.com/photos/414612/pexels-photo-414612.jpeg',
+            bannerPath:
+              'https://images.pexels.com/photos/414612/pexels-photo-414612.jpeg',
           };
-          return this.gameRepository.save(this.gameRepository.create(gameData));
+          const gameExist = await this.gameRepository.findOne({
+            where: {
+              gameId: gameData.gameId,
+              title: gameData.title,
+            },
+            relations: {
+              provider: true,
+            },
+          });
+
+          if (gameExist) {
+            this.gameRepository.merge(gameExist, gameData);
+            return this.gameRepository.save(gameExist);
+          } else {
+            return this.gameRepository.save(
+              this.gameRepository.create(gameData),
+            );
+          }
         }
       }),
     );
 
-    return savedGames;
+    return {
+      games: savedGames,
+    };
   }
 
   // start game here
