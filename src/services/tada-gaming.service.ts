@@ -157,26 +157,45 @@ export class TadaGamingService {
       const params = `Token=${token}&GameId=${gameId}&Lang=en-US&AgentId=${this.agentId}`;
       const key = this.generateParamsWithKey(params);
       const url = '/singleWallet/LoginWithoutRedirect';
-      const body = {
-        Token: 'Demo',
+      // const paramsWithKeys = `Token=${token}&GameId=${gameId}&Lang=en-US&HomeUrl=${data.homeUrl}&AgentId=${this.agentId}&Key=${key}`;
+      // const body = {
+      //   Token: 'Demo',
+      //   GameId: gameId,
+      //   Lang: 'en-US',
+      //   HomeUrl: data.homeUrl,
+      //   AgentId: this.agentId,
+      //   Key: key,
+      // };
+      // this.requestConfig.params = paramsWithKeys;
+      // const response: AxiosResponse = await this.httpClient.axiosRef.get(
+      //   url,
+      //   this.requestConfig,
+      // );
+      this.requestConfig.data = {
+        Token: token,
         GameId: gameId,
         Lang: 'en-US',
         HomeUrl: data.homeUrl,
         AgentId: this.agentId,
         Key: key,
       };
-      this.requestConfig.params = body;
-      const response: AxiosResponse = await this.httpClient.axiosRef.get(
-        url,
-        this.requestConfig,
+      const response: AxiosResponse = await lastValueFrom(
+        this.httpClient
+          .post(url, this.requestConfig.data, this.requestConfig)
+          .pipe(
+            map((response) => {
+              return response;
+            }),
+          ),
       );
+      console.log(response.data);
       if (response.data.ErrorCode === 0) {
         return {
-          url: response.data,
+          url: response.data.Data,
         };
       }
       return {
-        url: response.data,
+        url: response.data.Message,
       };
     } catch (e) {
       console.error(e);
