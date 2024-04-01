@@ -72,7 +72,7 @@ export class GamesController implements GamingServiceController {
   @GrpcMethod(GAMING_SERVICE_NAME, 'findAllGames')
   findAllGames(): Promise<any> {
     console.log('findAllGames');
-    const resp = this.gamesService.findAll();
+    const resp = this.gamesService.findAll('');
     return resp;
   }
 

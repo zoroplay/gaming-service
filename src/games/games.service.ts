@@ -17,7 +17,7 @@ import {
   CreateProviderDto,
   Providers,
 } from 'src/proto/gaming.pb';
-import { Repository } from 'typeorm';
+import { FindManyOptions, ILike, Repository } from 'typeorm';
 import { EntityToProtoService } from 'src/services/entity-to-proto.service';
 import {
   ShackEvolutionService,
@@ -89,12 +89,27 @@ export class GamesService {
     return final as unknown as Providers;
   }
 
-  async findAll(): Promise<Games> {
-    const resp = await this.gameRepository.find({
-      relations: {
-        provider: true,
-      },
-    });
+  async findAll(filter: string): Promise<Games> {
+    let options: FindManyOptions<GameEntity>;
+    if (filter) {
+      options = {
+        where: [
+          { gameId: ILike(`%${filter}%`) },
+          { title: ILike(`%${filter}%`) },
+          { provider: { name: ILike(`%${filter}%`) } },
+        ],
+        relations: {
+          provider: true,
+        },
+      };
+    } else {
+      options = {
+        relations: {
+          provider: true,
+        },
+      };
+    }
+    const resp = await this.gameRepository.find(options);
     console.log(`entity response`);
     console.log(resp[0]);
     // Convert TypeORM entities to proto-generated types
