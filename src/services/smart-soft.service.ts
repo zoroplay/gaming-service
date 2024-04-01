@@ -147,10 +147,14 @@ export class SmartSoftService {
     console.log(this.secretKey);
     console.log(requestMethod);
     console.log(JSON.stringify(payload));
-    console.log(this.secretKey + requestMethod + JSON.stringify(payload));
+    console.log(
+      this.secretKey + '|' + requestMethod + '|' + JSON.stringify(payload),
+    );
     const md5Hash = crypto
       .createHash('md5')
-      .update(this.secretKey + requestMethod + JSON.stringify(payload))
+      .update(
+        this.secretKey + '|' + requestMethod + '|' + JSON.stringify(payload),
+      )
       .digest('hex');
 
     console.log('payload hash');
