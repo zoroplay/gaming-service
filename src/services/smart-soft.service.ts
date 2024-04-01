@@ -80,21 +80,25 @@ export class SmartSoftService {
         message: 'Invalid Hash Signature',
       };
     }
-    const player = await this.playerRepository.findOne({
-      where: {
-        virtualToken: resp.header['x-sessionid'],
-      },
-    });
-    if (!player)
-      return {
-        success: false,
-        message: 'Invalid Hash Signature',
-      };
-    const game = await this.gameRepository.findOne({
-      where: {
-        title: resp.body['TransactionInfo']['GameName'],
-      },
-    });
+    let game = null;
+    let player = null;
+    if (resp.header['x-sessionid']) {
+      player = await this.playerRepository.findOne({
+        where: {
+          virtualToken: resp.header['x-sessionid'],
+        },
+      });
+      if (!player)
+        return {
+          success: false,
+          message: 'Invalid Hash Signature',
+        };
+      game = await this.gameRepository.findOne({
+        where: {
+          title: resp.body['TransactionInfo']['GameName'],
+        },
+      });
+    }
     switch (resp.action) {
       case 'ActivateSession':
         return await this.activateSession(resp.body['Token']);
