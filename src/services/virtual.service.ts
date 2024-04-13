@@ -91,6 +91,8 @@ export class VirtualService {
                     }
                 });
 
+                console.log(privateKeyQuery.value);
+                
                 const walletRes = await this.walletService.getWallet({
                     userId: user.id,
                     clientId,
