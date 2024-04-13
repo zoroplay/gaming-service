@@ -23,6 +23,7 @@ export class VirtualService {
     ) {}
 
     async doXpressLogin(params: XpressRequest): Promise<XpressResponse> {
+        console.log('login request', params);
         try{
             const {token, requestId, clientId} = params;
             const res = await this.identityService.xpressLogin({clientId, token});
@@ -73,7 +74,7 @@ export class VirtualService {
     }
 
     async getBalance(params: XpressRequest): Promise<XpressResponse> {
-        // console.log('balance request', params);
+        console.log('balance request', params);
         try {
             const {group, playerId, sessionId, clientId, requestId} = params;
             const isValid = await this.identityService.validateXpressSession({sessionId, clientId});
@@ -109,6 +110,7 @@ export class VirtualService {
             
                 data.fingerprint = MD5(hashStr).toString();
 
+                console.log(data);
                 return {
                     status: true,
                     code: 200,
@@ -125,6 +127,7 @@ export class VirtualService {
     }
 
     async doDebit(params: XpressRequest): Promise<XpressResponse> {
+        console.log('debit request', params);
         try {
             const {clientId, group, playerId, sessionId, requestId, gameId, gameCycle, transactionId, transactionAmount, transactionCategory} = params;
 
