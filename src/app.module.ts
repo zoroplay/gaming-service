@@ -5,7 +5,6 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { dataSourceOptions } from '../db/data-source';
 import { CacheModule } from '@nestjs/cache-manager';
 import { BetModule } from './bet/bet.module';
-// import { WalletModule } from './wallet/wallet.module';
 
 @Module({
   imports: [

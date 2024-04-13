@@ -201,8 +201,8 @@ export class SmartSoftService {
     if (player) {
       //TODO: USE PLAYER UserID AND ClientID to get balance from wallet service;
       const wallet = await this.walletService
-        .getWallet({ userId: player.userId, clientId: player.clientId })
-        .toPromise();
+        .getWallet({ userId: player.userId, clientId: player.clientId });
+        
       if (wallet.success) {
         return {
           success: true,

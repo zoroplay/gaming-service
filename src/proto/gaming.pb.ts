@@ -239,6 +239,54 @@ export interface CallbackResponse {
   data: { [key: string]: any } | undefined;
 }
 
+export interface XpressRequest {
+  clientId: number;
+  action: string;
+  token?: string | undefined;
+  gameId: string;
+  clientPlatform: string;
+  clientIp: string;
+  timestamp: string;
+  requestId: string;
+  siteId: string;
+  fingerprint: string;
+  sessionId?: string | undefined;
+  currency?: string | undefined;
+  group?: string | undefined;
+  playerId?: string | undefined;
+  gameCycle?: string | undefined;
+  transactionId?: string | undefined;
+  transactionAmount?: number | undefined;
+  transactionCategory?: string | undefined;
+  gameCycleClosed?: boolean | undefined;
+  transactionType?: string | undefined;
+}
+
+export interface XpressResponse {
+  status: boolean;
+  code: number;
+  message: string;
+  data?: XpressData | undefined;
+}
+
+export interface XpressData {
+  playerId: string;
+  currency: string;
+  balance: number;
+  sessionId: string;
+  group: string;
+  timestamp: string;
+  requestId: string;
+  fingerprint: string;
+  playerNickname?: string | undefined;
+  oldBalance?: number | undefined;
+  gameCycle?: string | undefined;
+  transactionId?: string | undefined;
+  transactionAmount?: number | undefined;
+  transactionCategory?: string | undefined;
+  transactionType?: string | undefined;
+}
+
 export const GAMING_PACKAGE_NAME = "gaming";
 
 wrappers[".google.protobuf.Struct"] = { fromObject: Struct.wrap, toObject: Struct.unwrap } as any;
@@ -271,6 +319,18 @@ export interface GamingServiceClient {
   queryGames(request: Observable<PaginationDto>): Observable<Games>;
 
   handleCallback(request: CallbackGameDto): Observable<CallbackResponse>;
+
+  xpressLogin(request: XpressRequest): Observable<XpressResponse>;
+
+  xpressBalance(request: XpressRequest): Observable<XpressResponse>;
+
+  xpressDebit(request: XpressRequest): Observable<XpressResponse>;
+
+  xpressCredit(request: XpressRequest): Observable<XpressResponse>;
+
+  xpressRollback(request: XpressRequest): Observable<XpressResponse>;
+
+  xpressLogout(request: XpressRequest): Observable<XpressResponse>;
 }
 
 export interface GamingServiceController {
@@ -301,6 +361,18 @@ export interface GamingServiceController {
   queryGames(request: Observable<PaginationDto>): Observable<Games>;
 
   handleCallback(request: CallbackGameDto): Promise<CallbackResponse> | Observable<CallbackResponse> | CallbackResponse;
+
+  xpressLogin(request: XpressRequest): Promise<XpressResponse> | Observable<XpressResponse> | XpressResponse;
+
+  xpressBalance(request: XpressRequest): Promise<XpressResponse> | Observable<XpressResponse> | XpressResponse;
+
+  xpressDebit(request: XpressRequest): Promise<XpressResponse> | Observable<XpressResponse> | XpressResponse;
+
+  xpressCredit(request: XpressRequest): Promise<XpressResponse> | Observable<XpressResponse> | XpressResponse;
+
+  xpressRollback(request: XpressRequest): Promise<XpressResponse> | Observable<XpressResponse> | XpressResponse;
+
+  xpressLogout(request: XpressRequest): Promise<XpressResponse> | Observable<XpressResponse> | XpressResponse;
 }
 
 export function GamingServiceControllerMethods() {
@@ -319,6 +391,12 @@ export function GamingServiceControllerMethods() {
       "findAllProviders",
       "startGame",
       "handleCallback",
+      "xpressLogin",
+      "xpressBalance",
+      "xpressDebit",
+      "xpressCredit",
+      "xpressRollback",
+      "xpressLogout",
     ];
     for (const method of grpcMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);

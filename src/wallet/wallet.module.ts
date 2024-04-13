@@ -5,6 +5,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import { join } from 'path';
 import 'dotenv/config';
 
+console.log('wallet service', process.env.WALLET_SERVICE_URL)
 @Module({
   imports: [
     ClientsModule.register([
@@ -12,7 +13,7 @@ import 'dotenv/config';
         name: protobufPackage,
         transport: Transport.GRPC,
         options: {
-          url: process.env.WALLET_SERVICE_URI,
+          url: process.env.WALLET_SERVICE_URL,
           package: WALLET_PACKAGE_NAME,
           protoPath: join('node_modules/sbe-service-proto/proto/wallet.proto'),
         },

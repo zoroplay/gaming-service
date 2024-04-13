@@ -87,10 +87,11 @@ function createBaseStruct(): Struct {
 export const Struct = {
   wrap(object: { [key: string]: any } | undefined): Struct {
     const struct = createBaseStruct();
+
     if (object !== undefined) {
-      Object.keys(object).forEach((key) => {
+      for (const key of Object.keys(object)) {
         struct.fields[key] = Value.wrap(object[key]);
-      });
+      }
     }
     return struct;
   },
@@ -98,9 +99,9 @@ export const Struct = {
   unwrap(message: Struct): { [key: string]: any } {
     const object: { [key: string]: any } = {};
     if (message.fields) {
-      Object.keys(message.fields).forEach((key) => {
+      for (const key of Object.keys(message.fields)) {
         object[key] = Value.unwrap(message.fields[key]);
-      });
+      }
     }
     return object;
   },
@@ -121,12 +122,12 @@ export const Value = {
       result.numberValue = value;
     } else if (typeof value === "string") {
       result.stringValue = value;
-    } else if (Array.isArray(value)) {
+    } else if (globalThis.Array.isArray(value)) {
       result.listValue = ListValue.wrap(value);
     } else if (typeof value === "object") {
       result.structValue = Struct.wrap(value);
     } else if (typeof value !== "undefined") {
-      throw new Error("Unsupported any value type: " + typeof value);
+      throw new globalThis.Error("Unsupported any value type: " + typeof value);
     }
     return result;
   },
@@ -161,7 +162,7 @@ export const ListValue = {
   },
 
   unwrap(message: ListValue): Array<any> {
-    if (message?.hasOwnProperty("values") && Array.isArray(message.values)) {
+    if (message?.hasOwnProperty("values") && globalThis.Array.isArray(message.values)) {
       return message.values.map(Value.unwrap);
     } else {
       return message as any;

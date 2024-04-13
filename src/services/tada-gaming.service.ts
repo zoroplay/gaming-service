@@ -59,7 +59,7 @@ export class TadaGamingService {
       },
       data: {},
     };
-    console.log(this.requestConfig);
+    // console.log(this.requestConfig);
   }
 
   private getCurrentDate(): string {
@@ -331,7 +331,7 @@ export class TadaGamingService {
       //TODO: USE PLAYER UserID AND ClientID to get balance from wallet service;
       const wallet = await this.walletService
         .getWallet({ userId: player.userId, clientId: player.clientId })
-        .toPromise();
+        
       if (wallet.success) {
         return {
           success: true,

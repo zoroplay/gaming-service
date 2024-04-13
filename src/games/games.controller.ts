@@ -5,8 +5,6 @@ import {
   Game,
   CreateGameDto,
   Games,
-  GamingServiceControllerMethods,
-  GamingServiceController,
   FindOneGameDto,
   PaginationDto,
   StartGameDto,
@@ -22,8 +20,7 @@ import { Observable } from 'rxjs';
 import { GrpcMethod } from '@nestjs/microservices';
 
 @Controller()
-@GamingServiceControllerMethods()
-export class GamesController implements GamingServiceController {
+export class GamesController {
   constructor(private readonly gamesService: GamesService) {}
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'createProvider')

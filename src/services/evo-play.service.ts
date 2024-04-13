@@ -62,7 +62,7 @@ export class EvoPlayService {
       },
       data: {},
     };
-    console.log(this.requestConfig);
+    // console.log(this.requestConfig);
   }
 
   async getGames() {
@@ -79,7 +79,7 @@ export class EvoPlayService {
         url,
         this.requestConfig,
       );
-      console.log(response.data.data);
+      // console.log(response.data.data);
       return response.data.data;
     } catch (e) {
       console.error(e.message);
@@ -293,8 +293,8 @@ export class EvoPlayService {
     if (player) {
       //TODO: USE PLAYER UserID AND ClientID to get balance from wallet service;
       const wallet = await this.walletService
-        .getWallet({ userId: player.userId, clientId: player.clientId })
-        .toPromise();
+        .getWallet({ userId: player.userId, clientId: player.clientId });
+        
       if (wallet.success) {
         return {
           success: true,

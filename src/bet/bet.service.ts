@@ -3,11 +3,15 @@ import {
   BETTING_SERVICE_NAME,
   BettingServiceClient,
   CreditCasinoBetRequest,
+  GetVirtualBetRequest,
   PlaceCasinoBetRequest,
+  PlaceVirtualBetRequest,
   RollbackCasinoBetRequest,
+  SettleVirtualBetRequest,
   protobufPackage,
 } from '../proto/betting.pb';
 import { ClientGrpc } from '@nestjs/microservices';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class BetService {
@@ -32,4 +36,19 @@ export class BetService {
   public cancelCasinoBet(data: RollbackCasinoBetRequest) {
     return this.bettingService.cancelCasinoBet(data);
   }
+
+  public placeVirtualBet(param: PlaceVirtualBetRequest) {
+    // console.log('place virtual bet', param)
+    return firstValueFrom(this.bettingService.placeVirtualBet(param));
+  }
+
+  public settleVirtualBet(param: SettleVirtualBetRequest) {
+    return firstValueFrom(this.bettingService.settleVirtualBet(param));
+  }
+
+  public validateVirtualBet(param: GetVirtualBetRequest) {
+    // console.log('check virtual bet', param)
+    return firstValueFrom(this.bettingService.getVirtualBet(param));
+  }
+
 }

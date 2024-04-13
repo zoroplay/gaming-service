@@ -124,6 +124,13 @@ export interface PaystackWebhookRequest {
   paystackKey: string;
 }
 
+export interface MonnifyWebhookRequest {
+  clientId: number;
+  reference: string;
+  event: string;
+  body: string;
+}
+
 export interface WebhookResponse {
   success: boolean;
 }
@@ -471,6 +478,8 @@ export interface WalletServiceClient {
 
   paystackWebhook(request: PaystackWebhookRequest): Observable<WebhookResponse>;
 
+  monnifyWebhook(request: MonnifyWebhookRequest): Observable<WebhookResponse>;
+
   opayDepositWebhook(request: OpayWebhookRequest): Observable<OpayWebhookResponse>;
 
   opayLookUpWebhook(request: OpayWebhookRequest): Observable<OpayWebhookResponse>;
@@ -543,6 +552,10 @@ export interface WalletServiceController {
     request: PaystackWebhookRequest,
   ): Promise<WebhookResponse> | Observable<WebhookResponse> | WebhookResponse;
 
+  monnifyWebhook(
+    request: MonnifyWebhookRequest,
+  ): Promise<WebhookResponse> | Observable<WebhookResponse> | WebhookResponse;
+
   opayDepositWebhook(
     request: OpayWebhookRequest,
   ): Promise<OpayWebhookResponse> | Observable<OpayWebhookResponse> | OpayWebhookResponse;
@@ -591,6 +604,7 @@ export function WalletServiceControllerMethods() {
       "getPaymentMethods",
       "savePaymentMethod",
       "paystackWebhook",
+      "monnifyWebhook",
       "opayDepositWebhook",
       "opayLookUpWebhook",
       "listWithdrawals",

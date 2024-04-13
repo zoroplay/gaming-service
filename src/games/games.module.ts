@@ -14,15 +14,20 @@ import { Bet, Player, Provider, Game } from 'src/entities';
 import { WalletModule } from 'src/wallet/wallet.module';
 import { BetModule } from 'src/bet/bet.module';
 import { EvoPlayService } from 'src/services/evo-play.service';
+import { VirtualController } from './virtual.controller';
+import { VirtualService } from 'src/services/virtual.service';
+import { IdentityModule } from 'src/identity/identity.module';
+import { GameKey } from 'src/entities/game-key.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Bet, Game, Player, Provider]),
+    TypeOrmModule.forFeature([Bet, Game, GameKey, Player, Provider]),
     HttpModule,
+    IdentityModule,
     WalletModule,
     BetModule,
   ],
-  controllers: [GamesController],
+  controllers: [GamesController, VirtualController],
   providers: [
     GamesService,
     EntityToProtoService,
@@ -31,6 +36,7 @@ import { EvoPlayService } from 'src/services/evo-play.service';
     TadaGamingService,
     SmartSoftService,
     EvoPlayService,
+    VirtualService,
   ],
 })
 export class GamesModule {}
