@@ -51,7 +51,7 @@ export class VirtualService {
                     balance: user.balance,
                     sessionId: user.sessionId,
                     group: user.group,
-                    timestamp: dayjs().toString(),
+                    timestamp: dayjs().toISOString(),
                     requestId,
                     fingerprint: ''
                 };
@@ -102,7 +102,7 @@ export class VirtualService {
                     balance: walletRes.data.availableBalance,
                     sessionId,
                     group,
-                    timestamp: dayjs().toString(),
+                    timestamp: dayjs().toISOString(),
                     requestId,
                     fingerprint: ''
                 };
@@ -110,7 +110,7 @@ export class VirtualService {
             
                 data.fingerprint = MD5(hashStr).toString();
 
-                console.log(data);
+                console.log('balance response', data);
                 return {
                     status: true,
                     code: 200,
@@ -205,7 +205,7 @@ export class VirtualService {
                     transactionId,
                     sessionId,
                     group,
-                    timestamp: dayjs().toString(),
+                    timestamp: dayjs().toISOString(),
                     requestId,
                     fingerprint: ''
                 };
@@ -289,7 +289,7 @@ export class VirtualService {
                 transactionId,
                 sessionId,
                 group,
-                timestamp: dayjs().toString(),
+                timestamp: dayjs().toISOString(),
                 requestId,
                 fingerprint: ''
             };
@@ -379,7 +379,7 @@ export class VirtualService {
                 transactionId,
                 sessionId,
                 group,
-                timestamp: dayjs().toString(),
+                timestamp: dayjs().toISOString(),
                 requestId,
                 fingerprint: ''
             };
@@ -433,7 +433,7 @@ export class VirtualService {
                     balance: user.balance,
                     sessionId,
                     group,
-                    timestamp: dayjs().toString(),
+                    timestamp: dayjs().toISOString(),
                     requestId,
                     fingerprint: ''
                 };
