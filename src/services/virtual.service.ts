@@ -91,8 +91,6 @@ export class VirtualService {
                     }
                 });
 
-                console.log(privateKeyQuery.value);
-                
                 const walletRes = await this.walletService.getWallet({
                     userId: user.id,
                     clientId,
@@ -110,6 +108,7 @@ export class VirtualService {
                 };
                 const hashStr = `${data.playerId}${data.currency}${data.balance}${data.sessionId}${data.group}${data.timestamp}${data.requestId}${privateKeyQuery.value}`;
             
+                console.log(hashStr);
                 data.fingerprint = MD5(hashStr).toString();
 
                 console.log('balance response', data);
