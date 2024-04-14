@@ -96,6 +96,7 @@ export class VirtualService {
                     clientId,
                 });
 
+
                 const data = {
                     playerId, // operator identifier+playerID
                     currency: 'NGN',
@@ -108,7 +109,6 @@ export class VirtualService {
                 };
                 const hashStr = `${data.playerId}${data.currency}${data.balance}${data.sessionId}${data.group}${data.timestamp}${data.requestId}${privateKeyQuery.value}`;
             
-                console.log(hashStr);
                 data.fingerprint = MD5(hashStr).toString();
 
                 console.log('balance response', data);
@@ -322,6 +322,8 @@ export class VirtualService {
     }
 
     async doRollback(params: XpressRequest): Promise<XpressResponse> {
+        console.log('rollback request', params);
+
         try {
             const {group, playerId, requestId, gameId, gameCycle, sessionId, transactionId, transactionAmount, transactionCategory, clientId} = params;
 
@@ -393,6 +395,8 @@ export class VirtualService {
                     provider: 'xpress'
                 }
             });
+
+            console.log('rollback response', data)
             
             const hashStr = `${data.playerId}${data.currency}${data.balance}${data.oldBalance}${data.transactionId}${data.sessionId}${data.group}${data.timestamp}${data.requestId}${privateKeyQuery.value}`;
         
