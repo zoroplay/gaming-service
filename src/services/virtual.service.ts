@@ -266,26 +266,38 @@ export class VirtualService {
                 category: transactionCategory,
                 gameCycleClosed: gameCycleClosed ? 1 : 0,
             })
+            let balance, oldBalance;
 
-            const creditRes = await this.walletService.credit({
-                clientId,
-                userId: bet.userId,
-                amount: transactionAmount,
-                source: 'system',
-                description: `${gameCycle} - ${transactionCategory}`,
-                username: bet.username,
-                wallet: 'sport',
-                subject: 'Virtual Sport Win',
-                channel: 'goldenrace',
-                
-            });
+            if (transactionAmount > 0) {
 
-            const oldBalance = creditRes.data.balance - transactionAmount;
+                const creditRes = await this.walletService.credit({
+                    clientId,
+                    userId: bet.userId,
+                    amount: transactionAmount,
+                    source: 'system',
+                    description: `${gameCycle} - ${transactionCategory}`,
+                    username: bet.username,
+                    wallet: 'sport',
+                    subject: 'Virtual Sport Win',
+                    channel: 'goldenrace',
+                    
+                });
+
+                oldBalance = creditRes.data.balance - transactionAmount;
+                balance = creditRes.data.balance;
+            } else {
+                const walletRes = await this.walletService.getWallet({
+                    userId: bet.userId,
+                    clientId,
+                });
+                balance = walletRes.data.availableBalance;
+                oldBalance = walletRes.data.availableBalance - transactionAmount;
+            }
 
             const data = {
                 playerId,
                 currency: params.currency,
-                balance: creditRes.data.balance,
+                balance,
                 oldBalance,
                 transactionId,
                 sessionId,
@@ -367,7 +379,7 @@ export class VirtualService {
                 description: `${transactionCategory} - ${gameCycle}`,
                 username: bet.username,
                 wallet: 'sport',
-                subject: 'Virtual Sport Win',
+                subject: 'Virtual Sport Rollback',
                 channel: 'goldenrace',
                 
             });
