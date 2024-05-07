@@ -18,9 +18,15 @@ import { VirtualController } from './virtual.controller';
 import { VirtualService } from 'src/services/virtual.service';
 import { IdentityModule } from 'src/identity/identity.module';
 import { GameKey } from 'src/entities/game-key.entity';
+import { CacheModule } from '@nestjs/cache-manager';
 
 @Module({
   imports: [
+    CacheModule.register({
+      ttl: 30 * 100000,
+      max: 1000,
+      isGlobal: true,
+    }),
     TypeOrmModule.forFeature([Bet, Game, GameKey, Player, Provider]),
     HttpModule,
     IdentityModule,
