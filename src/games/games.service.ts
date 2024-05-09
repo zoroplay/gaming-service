@@ -300,7 +300,7 @@ export class GamesService {
     player.authCode = uuidv4();
     player.authCodeExpiresAt = dayjs().add(1, 'day').format('YYYY-MM-DD');
     player.virtualToken = uuidv4();
-    player.virtualTokenExpiresAt = dayjs().add(1, 'day').format('YYYY-MM-DD');
+    // player.virtualTokenExpiresAt = dayjs().add(1, 'day').format('YYYY-MM-DD');
     await this.playerRepository.save(player);
     return player;
   }

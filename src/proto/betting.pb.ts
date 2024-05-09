@@ -4,6 +4,30 @@ import { Observable } from "rxjs";
 
 export const protobufPackage = "betting";
 
+export interface GetVirtualBetsRequest {
+  clientId: number;
+  from: string;
+  to: string;
+  betType?: number | undefined;
+  username?: string | undefined;
+  page: number;
+}
+
+export interface PaginationResponse {
+  message: string;
+  count: number;
+  currentPage: number;
+  nextPage: number;
+  prevPage: number;
+  lastPage: number;
+  data: string;
+}
+
+export interface SettleCasinoBetRequest {
+  transactionId: string;
+  winnings: number;
+}
+
 export interface SettleVirtualBetRequest {
   userId: number;
   clientId: number;
@@ -12,6 +36,11 @@ export interface SettleVirtualBetRequest {
   roundId: string;
   category: string;
   gameCycleClosed: number;
+}
+
+export interface SettleCasinoBetResponse {
+  success: boolean;
+  message: string;
 }
 
 export interface SettleVirtualBetResponse {
@@ -69,8 +98,12 @@ export interface PlaceCasinoBetRequest {
   roundId: string;
   transactionId: string;
   gameId: string;
+  gameName?: string | undefined;
   stake: number;
   winnings?: number | undefined;
+  gameNumber?: string | undefined;
+  source?: string | undefined;
+  cashierTransactionId?: string | undefined;
 }
 
 export interface CreditCasinoBetRequest {
@@ -220,6 +253,18 @@ export interface BetSlip {
 }
 
 export interface Combo {
+}
+
+export interface PlaceCasinoBetResponse {
+  success: boolean;
+  status: number;
+  message: string;
+  data?: CasinoBetData | undefined;
+}
+
+export interface CasinoBetData {
+  transactionId: string;
+  balance: number;
 }
 
 export interface PlaceBetResponse {
@@ -373,15 +418,15 @@ export interface BettingServiceClient {
 
   placeBet(request: PlaceBetRequest): Observable<PlaceBetResponse>;
 
-  placeCasinoBet(request: PlaceCasinoBetRequest): Observable<PlaceBetResponse>;
+  placeCasinoBet(request: PlaceCasinoBetRequest): Observable<PlaceCasinoBetResponse>;
 
   placeVirtualBet(request: PlaceVirtualBetRequest): Observable<PlaceVirtualBetResponse>;
 
+  settleCasinoBet(request: SettleCasinoBetRequest): Observable<PlaceCasinoBetResponse>;
+
   settleVirtualBet(request: SettleVirtualBetRequest): Observable<SettleVirtualBetResponse>;
 
-  settleCasinoBet(request: CreditCasinoBetRequest): Observable<PlaceBetResponse>;
-
-  cancelCasinoBet(request: RollbackCasinoBetRequest): Observable<PlaceBetResponse>;
+  cancelCasinoBet(request: RollbackCasinoBetRequest): Observable<PlaceCasinoBetResponse>;
 
   betHistory(request: BetHistoryRequest): Observable<BetHistoryResponse>;
 
@@ -396,6 +441,8 @@ export interface BettingServiceClient {
   gamingActivity(request: GamingActivityRequest): Observable<GamingActivityResponse>;
 
   getVirtualBet(request: GetVirtualBetRequest): Observable<GetVirtualBetResponse>;
+
+  getVirtualBets(request: GetVirtualBetsRequest): Observable<PaginationResponse>;
 }
 
 export interface BettingServiceController {
@@ -413,23 +460,23 @@ export interface BettingServiceController {
 
   placeCasinoBet(
     request: PlaceCasinoBetRequest,
-  ): Promise<PlaceBetResponse> | Observable<PlaceBetResponse> | PlaceBetResponse;
+  ): Promise<PlaceCasinoBetResponse> | Observable<PlaceCasinoBetResponse> | PlaceCasinoBetResponse;
 
   placeVirtualBet(
     request: PlaceVirtualBetRequest,
   ): Promise<PlaceVirtualBetResponse> | Observable<PlaceVirtualBetResponse> | PlaceVirtualBetResponse;
 
+  settleCasinoBet(
+    request: SettleCasinoBetRequest,
+  ): Promise<PlaceCasinoBetResponse> | Observable<PlaceCasinoBetResponse> | PlaceCasinoBetResponse;
+
   settleVirtualBet(
     request: SettleVirtualBetRequest,
   ): Promise<SettleVirtualBetResponse> | Observable<SettleVirtualBetResponse> | SettleVirtualBetResponse;
 
-  settleCasinoBet(
-    request: CreditCasinoBetRequest,
-  ): Promise<PlaceBetResponse> | Observable<PlaceBetResponse> | PlaceBetResponse;
-
   cancelCasinoBet(
     request: RollbackCasinoBetRequest,
-  ): Promise<PlaceBetResponse> | Observable<PlaceBetResponse> | PlaceBetResponse;
+  ): Promise<PlaceCasinoBetResponse> | Observable<PlaceCasinoBetResponse> | PlaceCasinoBetResponse;
 
   betHistory(
     request: BetHistoryRequest,
@@ -450,6 +497,10 @@ export interface BettingServiceController {
   getVirtualBet(
     request: GetVirtualBetRequest,
   ): Promise<GetVirtualBetResponse> | Observable<GetVirtualBetResponse> | GetVirtualBetResponse;
+
+  getVirtualBets(
+    request: GetVirtualBetsRequest,
+  ): Promise<PaginationResponse> | Observable<PaginationResponse> | PaginationResponse;
 }
 
 export function BettingServiceControllerMethods() {
@@ -463,8 +514,8 @@ export function BettingServiceControllerMethods() {
       "placeBet",
       "placeCasinoBet",
       "placeVirtualBet",
-      "settleVirtualBet",
       "settleCasinoBet",
+      "settleVirtualBet",
       "cancelCasinoBet",
       "betHistory",
       "findBet",
@@ -473,6 +524,7 @@ export function BettingServiceControllerMethods() {
       "getCoupon",
       "gamingActivity",
       "getVirtualBet",
+      "getVirtualBets",
     ];
     for (const method of grpcMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);

@@ -50,5 +50,4 @@ export class BetService {
     // console.log('check virtual bet', param)
     return firstValueFrom(this.bettingService.getVirtualBet(param));
   }
-
 }
