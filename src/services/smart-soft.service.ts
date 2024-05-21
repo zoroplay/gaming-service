@@ -3,7 +3,12 @@ import { HttpService } from '@nestjs/axios';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import * as crypto from 'crypto';
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  HttpStatus,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config'; // Import your SettingService
 import { AxiosRequestConfig } from 'axios';
 import {
@@ -123,87 +128,134 @@ export class SmartSoftService {
           transactionId: resp.body.TransactionId,
           gameId: game.gameId,
           stake: resp.body.Amount,
+          gameName: game.title,
+          gameNumber: resp.body.TransactionInfo.GameNumber,
+          source: resp.body.TransactionInfo.source,
+          cashierTransactionId: resp.body.TransactionInfo.CashierTransactionId,
           winnings: 0,
         };
-        const bets: [] = await this.cacheManager.get('bets');
-        console.log('cache bets', bets);
-        if (!bets) {
-          const newBets = await this.cacheManager.set('bets', [
-            placeBetPayload,
-          ]);
-          console.log('cache bets 2', newBets);
+        const place_bet = await this.placeBet(placeBetPayload);
+        if (!place_bet.success) {
           return {
-            success: true,
-            message: 'Deposit',
-            data: {
-              Balance: resp.body.Amount,
-              TransactionId: resp.body.TransactionId,
-            },
+            success: false,
+            status: HttpStatus.BAD_REQUEST,
+            message: place_bet.message,
           };
         }
-        const newBets = await this.cacheManager.set('bets', [
-          ...bets,
-          placeBetPayload,
-        ]);
-        console.log('cache bets 3', newBets);
+        const debit = await this.walletService.debit({
+          userId: player.userId,
+          clientId: player.clientId,
+          amount: resp.body.Amount,
+          source: resp.body.TransactionInfo.source,
+          description: `Casino Bet: (${game.title})`,
+          username: player.username,
+          wallet: 'sport',
+          subject: 'Bet Deposit (Casino)',
+          channel: game.gameId,
+        });
 
+        if (!debit.success) {
+          return {
+            success: false,
+            status: HttpStatus.BAD_REQUEST,
+            message: 'Incomplete request',
+          };
+        }
         return {
           success: true,
-          message: 'Deposit',
+          message: 'Deposit, successful',
           data: {
-            Balance: resp.body.Amount,
-            TransactionId: resp.body.TransactionId,
+            Balance: debit.data.balance,
+            TransactionId: place_bet.data.transactionId,
           },
         };
-        // return await this.placeBet(placeBetPayload);
         break;
       case 'Withdraw':
         const settlePayload: CreditCasinoBetRequest = {
           transactionId: resp.body.TransactionId,
           winnings: resp.body.Amount,
         };
-        const bet_s: [] = await this.cacheManager.get('bets');
-        console.log('cache bets 2', bet_s);
 
-        if (!bet_s) {
+        const settle_bet = await this.settle(settlePayload);
+        let creditRes = null;
+        if (resp.body.Amount > 0) {
+          creditRes = await this.walletService.credit({
+            userId: player.userId,
+            clientId: player.clientId,
+            amount: resp.body.Amount,
+            source: resp.body.TransactionInfo.source,
+            description: `Casino Bet: (${game.title})`,
+            username: player.username,
+            wallet: 'sport',
+            subject: 'Bet Withdraw (Casino)',
+            channel: game.gameId,
+          });
           return {
-            success: false,
-            message: 'bET not in system',
+            success: true,
+            message: 'Deposit, successful',
+            data: {
+              Balance: creditRes.data.balance,
+              TransactionId: settle_bet.transactionId,
+            },
+          };
+        } else {
+          creditRes = await this.walletService.getWallet({
+            userId: player.userId,
+            clientId: player.clientId,
+          });
+          return {
+            success: true,
+            message: 'Deposit, successful',
+            data: {
+              Balance: creditRes.data.availableBalance,
+              TransactionId: settle_bet.transactionId,
+            },
           };
         }
-        return {
-          success: true,
-          message: 'Deposit',
-          data: {
-            Balance: resp.body.Amount,
-            TransactionId: resp.body.TransactionId,
-          },
-        };
-        return await this.settle(settlePayload);
+
         break;
       case 'RollbackTransaction':
         const reversePayload: RollbackCasinoBetRequest = {
           transactionId: resp.body.TransactionId,
         };
-        const bet__s: any[] = await this.cacheManager.get('bets');
-        console.log('cache bets 2', bet__s);
 
-        if (!bet__s || !bet__s.length) {
+        const transaction = await this.rollbackTransaction(reversePayload);
+        let rollbackCreditRes = null;
+
+        if (resp.body.Amount > 0) {
+          rollbackCreditRes = await this.walletService.credit({
+            userId: player.userId,
+            clientId: player.clientId,
+            amount: resp.body.Amount,
+            source: resp.body.TransactionInfo.source,
+            description: `Casino Bet: (${game.title})`,
+            username: player.username,
+            wallet: 'sport',
+            subject: 'Bet Rollback (Casino)',
+            channel: game.gameId,
+          });
           return {
-            success: false,
-            message: 'bET not in system',
+            success: true,
+            message: 'Rollback, successful',
+            data: {
+              Balance: rollbackCreditRes.data.balance,
+              TransactionId: transaction.transactionId,
+            },
+          };
+        } else {
+          rollbackCreditRes = await this.walletService.getWallet({
+            userId: player.userId,
+            clientId: player.clientId,
+          });
+          return {
+            success: true,
+            message: 'Rollback, successful',
+            data: {
+              Balance: rollbackCreditRes.data.availableBalance,
+              TransactionId: transaction.transactionId,
+            },
           };
         }
-
-        return {
-          success: true,
-          message: 'Deposit',
-          data: {
-            Balance: resp.body.Amount,
-            TransactionId: resp.body.TransactionId,
-          },
-        };
-        return await this.rollbackTransaction(reversePayload);
         break;
       default:
         throw new NotFoundException('Unknown provider');
@@ -299,10 +351,7 @@ export class SmartSoftService {
 
   // Place Bet
   async placeBet(data: PlaceCasinoBetRequest) {
-    const resp = await this.betService.placeCasinoBet(data).toPromise();
-    if (resp.success) {
-      return resp.data;
-    }
+    return this.betService.placeCasinoBet(data).toPromise();
   }
 
   // Settle Bet

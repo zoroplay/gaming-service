@@ -32,7 +32,7 @@ export class Player {
   @Column({ length: 255, nullable: true })
   virtualToken: string;
 
-  @Column({ type: 'timestamp' })
+  @Column({ type: 'timestamp', nullable: true })
   virtualTokenExpiresAt: string;
 
   @CreateDateColumn({ type: 'timestamp' })
