@@ -578,7 +578,7 @@ export class SmartSoftService {
     }
   }
 
-  @Timeout(10000)
+  // @Timeout(10000)
   async loadGames() {
     try {
       console.log('fetching smart soft games')
