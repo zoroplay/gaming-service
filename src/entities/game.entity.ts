@@ -19,7 +19,7 @@ export class Game {
   @Column({ length: 255 })
   title: string;
 
-  @Column({ length: 150 })
+  @Column({ type: 'text' })
   description: string;
 
   @Column({ nullable: true })

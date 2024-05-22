@@ -10,7 +10,7 @@ import {
   SmartSoftService,
   TadaGamingService,
 } from 'src/services';
-import { Bet, Player, Provider, Game } from 'src/entities';
+import { Bet, CallbackLog, Provider, Game } from 'src/entities';
 import { WalletModule } from 'src/wallet/wallet.module';
 import { BetModule } from 'src/bet/bet.module';
 import { EvoPlayService } from 'src/services/evo-play.service';
@@ -27,7 +27,7 @@ import { CacheModule } from '@nestjs/cache-manager';
       max: 1000,
       isGlobal: true,
     }),
-    TypeOrmModule.forFeature([Bet, Game, GameKey, Player, Provider]),
+    TypeOrmModule.forFeature([Bet, Game, GameKey, CallbackLog, Provider]),
     HttpModule,
     IdentityModule,
     WalletModule,

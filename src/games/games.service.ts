@@ -1,7 +1,6 @@
 import { Injectable, NotFoundException, Provider } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Observable, Subject } from 'rxjs';
-import { Player as PlayerEntity } from '../entities/player.entity';
 import { Game as GameEntity } from '../entities/game.entity';
 import { Provider as ProviderEntity } from '../entities/provider.entity';
 import { v4 as uuidv4 } from 'uuid';
@@ -27,14 +26,13 @@ import {
 } from 'src/services';
 import * as dayjs from 'dayjs';
 import { EvoPlayService } from 'src/services/evo-play.service';
+import { IdentityService } from 'src/identity/identity.service';
 
 @Injectable()
 export class GamesService {
   constructor(
     @InjectRepository(GameEntity)
     private gameRepository: Repository<GameEntity>,
-    @InjectRepository(PlayerEntity)
-    private playerRepository: Repository<PlayerEntity>,
     @InjectRepository(ProviderEntity)
     private providerRepository: Repository<ProviderEntity>,
     private readonly entityToProtoService: EntityToProtoService,
@@ -43,6 +41,7 @@ export class GamesService {
     private readonly tadaGamingService: TadaGamingService,
     private readonly smartSoftService: SmartSoftService,
     private readonly evoPlayService: EvoPlayService,
+    private readonly identityService: IdentityService,
   ) {}
 
   async createProvider(
@@ -205,6 +204,7 @@ export class GamesService {
   }
 
   async start(startGameDto: StartGameDto): Promise<any> {
+
     const game: GameEntity = await this.gameRepository.findOne({
       where: {
         id: startGameDto.gameId,
@@ -213,15 +213,11 @@ export class GamesService {
         provider: true,
       },
     });
-    let player = await this.playerRepository.findOne({
-      where: {
-        userId: startGameDto.userId,
-        clientId: startGameDto.clientId,
-      },
-    });
-    if (!player) {
-      player = await this.createPlayer(startGameDto);
-    }
+    const res = await this.identityService.getDetails({clientId: startGameDto.clientId, userId: startGameDto.userId});
+
+    if (!res.success) return {success: false, message: 'Player not found'}
+    const player = res.data;
+
     switch (game.provider.slug) {
       case 'shack-evolution':
         return await this.smartSoftService.constructGameUrl(
@@ -290,20 +286,6 @@ export class GamesService {
     }
   }
 
-  private async createPlayer(startGameDto: StartGameDto) {
-    // const d = new Date();
-    const player = new PlayerEntity();
-    player.userId = startGameDto.userId;
-    player.clientId = startGameDto.clientId;
-    player.username = startGameDto.username;
-    player.email = startGameDto.email;
-    player.authCode = uuidv4();
-    player.authCodeExpiresAt = dayjs().add(1, 'day').format('YYYY-MM-DD');
-    player.virtualToken = uuidv4();
-    // player.virtualTokenExpiresAt = dayjs().add(1, 'day').format('YYYY-MM-DD');
-    await this.playerRepository.save(player);
-    return player;
-  }
 
   async syncShackGames(): Promise<Game[]> {
     // Fetch the game list from your API (adjust the method name and params accordingly)
@@ -536,15 +518,10 @@ export class GamesService {
 
     return gameList;
   }
+  
   async handleC2Games(body: any, headers: any): Promise<any> {
     console.log(body);
     console.log(headers);
     throw new Error('Method not implemented.');
-  }
-
-  async getPlayerBalance(clientId: string, userId: string) {
-    console.log(clientId);
-    console.log(userId);
-    return 1000;
   }
 }

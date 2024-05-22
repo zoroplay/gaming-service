@@ -15,12 +15,12 @@ import {
 } from 'src/proto/betting.pb';
 import {
   Game as GameEntity,
-  Player as PlayerEntity,
   Provider as ProviderEntity,
 } from '../entities';
 import { WalletService } from 'src/wallet/wallet.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { IdentityService } from 'src/identity/identity.service';
 
 @Injectable()
 export class ShackEvolutionService {
@@ -36,8 +36,6 @@ export class ShackEvolutionService {
   constructor(
     @InjectRepository(GameEntity)
     private gameRepository: Repository<GameEntity>,
-    @InjectRepository(PlayerEntity)
-    private playerRepository: Repository<PlayerEntity>,
     @InjectRepository(ProviderEntity)
     private providerRepository: Repository<ProviderEntity>,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
@@ -45,6 +43,7 @@ export class ShackEvolutionService {
     private readonly httpClient: HttpService,
     private readonly walletService: WalletService,
     private readonly betService: BetService,
+    private readonly identityService: IdentityService
   ) {
     this.baseUrl = this.configService.get<string>('SHACK_BASE_URL');
     this.publicKey = this.configService.get<string>('SHACK_PUBLIC_KEY');
@@ -158,7 +157,7 @@ export class ShackEvolutionService {
   }
 
   // start game here
-  async constructGameUrl(data, player: PlayerEntity, game: GameEntity) {
+  async constructGameUrl(data, player, game: GameEntity) {
     try {
       const url = '/v2/partner/cl/tokenize';
       this.token = await this.generateToken();
@@ -203,16 +202,10 @@ export class ShackEvolutionService {
         message: 'Invalid Signature',
       };
     }
-    const player = await this.playerRepository.findOne({
-      where: {
-        authCode: resp.body.playerId,
-      },
-    });
-    if (!player)
-      return {
-        success: false,
-        message: 'Invalid Player Token',
-      };
+    const res = await this.identityService.validateXpressSession({clientId: resp.clientId, sessionId: resp.body.token});
+
+    if (!res.success) return {success: false, message: 'Invalid player token'}
+    const player = JSON.parse(res.data);
     const game = await this.gameRepository.findOne({
       where: {
         title: resp.body['gameType'],
@@ -259,42 +252,25 @@ export class ShackEvolutionService {
   }
   // Webhook Section
   // Activate Player Session
-  async activateSession(token) {
-    const player = await this.playerRepository.findOne({
-      where: {
-        authCode: token,
-      },
-    });
-    if (!player) {
-      console.log('Could not find player');
+  async activateSession(data) {
+    const res = await this.identityService.xpressLogin({clientId: data.clientId, token: data.body.token});
+
+    if (!res.status) {
       return {
         success: false,
-        message: 'Could not find player',
-      };
-    }
-    if (player) {
-      //TODO: USE PLAYER UserID AND ClientID to get balance from wallet service;
-      const wallet = await this.walletService
-        .getWallet({ userId: player.userId, clientId: player.clientId });
-        
-      if (wallet.success) {
-        return {
-          success: true,
-          message: 'Wallet',
-          data: {
-            balance: wallet.data.availableBalance,
-            username: player.username,
-            userId: player.authCode,
-            currency: 'NGN',
-          },
-        };
-      } else {
-        return {
-          success: false,
-          message: 'Could not retrieve balance',
-        };
+        message: 'Player not found'
       }
     }
+    return {
+      success: true,
+      message: 'Wallet',
+      data: {
+        balance: res.data.balance,
+        username: res.data.playerNickname,
+        userId: res.data.playerId,
+        currency: 'NGN',
+      },
+    };
   }
 
   // Place Bet

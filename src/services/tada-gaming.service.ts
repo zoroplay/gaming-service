@@ -9,7 +9,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import {
   Game as GameEntity,
-  Player as PlayerEntity,
   Provider as ProviderEntity,
 } from '../entities';
 import { BetService } from 'src/bet/bet.service';
@@ -19,6 +18,7 @@ import {
   RollbackCasinoBetRequest,
 } from 'src/proto/betting.pb';
 import { WalletService } from 'src/wallet/wallet.service';
+import { IdentityService } from 'src/identity/identity.service';
 
 @Injectable()
 export class TadaGamingService {
@@ -31,14 +31,13 @@ export class TadaGamingService {
   constructor(
     @InjectRepository(GameEntity)
     private gameRepository: Repository<GameEntity>,
-    @InjectRepository(PlayerEntity)
-    private playerRepository: Repository<PlayerEntity>,
     @InjectRepository(ProviderEntity)
     private providerRepository: Repository<ProviderEntity>,
     private readonly configService: ConfigService,
     private readonly httpClient: HttpService,
     private readonly walletService: WalletService,
     private readonly betService: BetService,
+    private readonly identityService: IdentityService
   ) {
     this.baseUrl = this.configService.get<string>('TADA_BASE_URL');
     this.agentId = this.configService.get<string>('TADA_AGENT_ID');
@@ -150,7 +149,7 @@ export class TadaGamingService {
 
   // start game here
 
-  async constructGameUrl(data, player: PlayerEntity, game: GameEntity) {
+  async constructGameUrl(data, player, game: GameEntity) {
     try {
       const token = player.authCode;
       const gameId: number = parseInt(game.gameId.split('-')[1]);
@@ -260,16 +259,11 @@ export class TadaGamingService {
 
   // callback handler
   async handleCallback(resp: CallbackGameDto) {
-    const player = await this.playerRepository.findOne({
-      where: {
-        authCode: resp.body.token,
-      },
-    });
-    if (!player)
-      return {
-        success: false,
-        message: 'Invalid Player Token',
-      };
+    const res = await this.identityService.validateXpressSession({clientId: resp.clientId, sessionId: resp.body.token});
+
+    if (!res.success) return {success: false, message: 'Invalid player token'}
+    const player = JSON.parse(res.data);
+
     const game = await this.gameRepository.findOne({
       where: {
         title: resp.body['data']['details']['game']['game_id'],
@@ -314,43 +308,27 @@ export class TadaGamingService {
   }
   // Webhook Section
   // Activate Player Session
-  async activateSession(token) {
-    const player = await this.playerRepository.findOne({
-      where: {
-        authCode: token,
-      },
-    });
-    if (!player) {
-      console.log('Could not find player');
+  async activateSession(data) {
+    const res = await this.identityService.xpressLogin({clientId: data.clientId, token: data.body.token});
+
+    if (!res.status) {
       return {
         success: false,
-        message: 'Could not find player',
-      };
-    }
-    if (player) {
-      //TODO: USE PLAYER UserID AND ClientID to get balance from wallet service;
-      const wallet = await this.walletService
-        .getWallet({ userId: player.userId, clientId: player.clientId })
-        
-      if (wallet.success) {
-        return {
-          success: true,
-          message: 'Wallet',
-          data: {
-            ErrorCode: 0,
-            Message: 'Success',
-            Username: player.username,
-            Balance: wallet.data.availableBalance,
-            Currency: 'NGN',
-          },
-        };
-      } else {
-        return {
-          success: false,
-          message: 'Could not retrieve balance',
-        };
+        message: 'Player not found'
       }
     }
+    
+    return {
+      success: true,
+      message: 'Wallet',
+      data: {
+        ErrorCode: 0,
+        Message: 'Success',
+        Username: res.data.playerNickname,
+        Balance: res.data.balance,
+        Currency: 'NGN',
+      },
+    };
   }
 
   // Place Bet

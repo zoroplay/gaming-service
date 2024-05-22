@@ -187,10 +187,10 @@ export class VirtualService {
                     clientId,
                     userId: user.id,
                     amount: transactionAmount,
-                    source: 'system',
+                    source: 'goldenrace',
                     description: `${betRes.data.betId} - ${gameCycle}`,
                     username: user.username,
-                    wallet: 'sport',
+                    wallet: 'main',
                     subject: 'Bet Deposit (Virtual)',
                     channel: 'goldenrace',
                     
@@ -277,7 +277,7 @@ export class VirtualService {
                     source: 'system',
                     description: `${gameCycle} - ${transactionCategory}`,
                     username: bet.username,
-                    wallet: 'sport',
+                    wallet: 'main',
                     subject: 'Virtual Sport Win',
                     channel: 'goldenrace',
                     

@@ -19,6 +19,7 @@ export interface SyncGameDto {
 }
 
 export interface CallbackGameDto {
+  clientId: number;
   provider: string;
   action?: string | undefined;
   method?: string | undefined;

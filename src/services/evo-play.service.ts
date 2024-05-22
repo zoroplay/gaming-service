@@ -7,7 +7,6 @@ import { ConfigService } from '@nestjs/config'; // Import your SettingService
 import { AxiosRequestConfig, AxiosResponse } from 'axios';
 import {
   Game as GameEntity,
-  Player as PlayerEntity,
   Provider as ProviderEntity,
 } from '../entities';
 import { Repository } from 'typeorm';
@@ -20,6 +19,7 @@ import {
   RollbackCasinoBetRequest,
 } from 'src/proto/betting.pb';
 import { CallbackGameDto } from 'src/proto/gaming.pb';
+import { IdentityService } from 'src/identity/identity.service';
 
 @Injectable()
 export class EvoPlayService {
@@ -32,8 +32,6 @@ export class EvoPlayService {
   constructor(
     @InjectRepository(GameEntity)
     private gameRepository: Repository<GameEntity>,
-    @InjectRepository(PlayerEntity)
-    private playerRepository: Repository<PlayerEntity>,
     @InjectRepository(ProviderEntity)
     private providerRepository: Repository<ProviderEntity>,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
@@ -41,6 +39,7 @@ export class EvoPlayService {
     private readonly httpClient: HttpService,
     private readonly walletService: WalletService,
     private readonly betService: BetService,
+    private readonly identityService: IdentityService
   ) {
     this.baseUrl = this.configService.get<string>('EVO_PLAY_BASE_URL');
     this.project = this.configService.get<number>('EVO_PLAY_PROJECT');
@@ -153,7 +152,7 @@ export class EvoPlayService {
   }
 
   // start game here
-  async constructGameUrl(data, player: PlayerEntity, game: GameEntity) {
+  async constructGameUrl(data, player, game: GameEntity) {
     try {
       this.token = player.authCode;
       const newData = {
@@ -223,24 +222,21 @@ export class EvoPlayService {
 
   // callback handler
   async handleCallback(resp: CallbackGameDto) {
-    const player = await this.playerRepository.findOne({
-      where: {
-        authCode: resp.body.token,
-      },
-    });
-    if (!player)
-      return {
-        success: false,
-        message: 'Invalid Player Token',
-      };
+    const res = await this.identityService.validateXpressSession({clientId: resp.clientId, sessionId: resp.body.token});
+
+    if (!res.success) return {success: false, message: 'Invalid player token'}
+    const player = JSON.parse(res.data);
+ 
+
     const game = await this.gameRepository.findOne({
       where: {
         title: resp.body['data']['details']['game']['game_id'],
       },
     });
+
     switch (resp.body.name) {
       case 'init':
-        return await this.activateSession(resp.body.token);
+        return await this.activateSession(resp);
         break;
       case 'bet':
         if (!game)
@@ -250,7 +246,7 @@ export class EvoPlayService {
           };
         // return await this.activateSession();
         const placeBetPayload: PlaceCasinoBetRequest = {
-          userId: player.userId,
+          userId: player.id,
           clientId: player.clientId,
           roundId: resp.body.data.round_id,
           transactionId: resp.body.action_id,
@@ -277,40 +273,24 @@ export class EvoPlayService {
   }
   // Webhook Section
   // Activate Player Session
-  async activateSession(token) {
-    const player = await this.playerRepository.findOne({
-      where: {
-        authCode: token,
-      },
-    });
-    if (!player) {
-      console.log('Could not find player');
+  async activateSession(data) {
+    const res = await this.identityService.xpressLogin({clientId: data.clientId, token: data.body.token});
+
+    if (!res.status) {
       return {
         success: false,
-        message: 'Could not find player',
-      };
-    }
-    if (player) {
-      //TODO: USE PLAYER UserID AND ClientID to get balance from wallet service;
-      const wallet = await this.walletService
-        .getWallet({ userId: player.userId, clientId: player.clientId });
-        
-      if (wallet.success) {
-        return {
-          success: true,
-          message: 'Wallet',
-          data: {
-            balance: wallet.data.availableBalance,
-            currency: 'NGN',
-          },
-        };
-      } else {
-        return {
-          success: false,
-          message: 'Could not retrieve balance',
-        };
+        message: 'Player not found'
       }
     }
+    
+    return {
+      success: true,
+      message: 'Wallet',
+      data: {
+        balance: res.data.balance,
+        currency: res.data.currency,
+      },
+    };
   }
 
   // Place Bet

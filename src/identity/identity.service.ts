@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ClientGrpc } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
-import { IDENTITY_SERVICE_NAME, IdentityServiceClient, SessionRequest, XpressLoginRequest, protobufPackage } from 'src/proto/identity.pb';
+import { GetUserDetailsRequest, IDENTITY_SERVICE_NAME, IdentityServiceClient, SessionRequest, XpressLoginRequest, protobufPackage } from 'src/proto/identity.pb';
 
 @Injectable()
 export class IdentityService {
@@ -13,6 +13,10 @@ export class IdentityService {
     public onModuleInit(): void {
         this.svc = this.client.getService<IdentityServiceClient>(IDENTITY_SERVICE_NAME);
       }
+
+    getDetails(data: GetUserDetailsRequest) {
+        return firstValueFrom(this.svc.getUserDetails(data));
+    }
 
     xpressLogin(data: XpressLoginRequest) {
         return firstValueFrom(this.svc.xpressGameLogin(data));
