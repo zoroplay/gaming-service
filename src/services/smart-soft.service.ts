@@ -88,6 +88,7 @@ export class SmartSoftService {
 
   // callback handler
   async handleCallback(data: CallbackGameDto) {
+    // save callback
     const callback = await this.saveCallbackLog(data);
 
     const hash = await this.generateMd5(data.method, data.body);
@@ -568,7 +569,7 @@ export class SmartSoftService {
     const {action, body} = data;
     try{
       const callback = new CallbackLog();
-      callback.transactionId = action === 'ActivateSession' ? body.Token : action === 'RollbackTransaction' ? body.CurrentTransactionId : body.TransactionId;
+      callback.transactionId = action === 'ActivateSession' ? body.Token : action === 'GetBalance' ? data.header['x-sessionid'] : action === 'RollbackTransaction' ? body.CurrentTransactionId : body.TransactionId;
       callback.request_type = action;
       callback.payload = JSON.stringify(body);
 
