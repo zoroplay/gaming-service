@@ -53,7 +53,7 @@ export class ShackEvolutionService {
     this.requestConfig = {
       baseURL: this.baseUrl,
     };
-    this.setRequestOptions();
+    // this.setRequestOptions();
   }
 
   /**

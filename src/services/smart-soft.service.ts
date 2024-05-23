@@ -567,7 +567,7 @@ export class SmartSoftService {
     const {action, body} = data;
     try{
       const callback = new CallbackLog();
-      callback.transactionId = action === 'RollbackTransaction' ? body.CurrentTransactionId : body.TransactionId;
+      callback.transactionId = action === 'ActivateSession' ? body.Token : action === 'RollbackTransaction' ? body.CurrentTransactionId : body.TransactionId;
       callback.request_type = action;
       callback.payload = JSON.stringify(body);
 

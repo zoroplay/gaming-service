@@ -45,7 +45,7 @@ export class EvoPlayService {
     this.project = this.configService.get<number>('EVO_PLAY_PROJECT');
     this.version = this.configService.get<number>('EVO_PLAY_VERSION');
     this.token = this.configService.get<string>('EVO_PLAY_TOKEN');
-    this.setRequestOptions();
+    // this.setRequestOptions();
   }
 
   /**

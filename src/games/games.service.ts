@@ -85,6 +85,7 @@ export class GamesService {
     const final = {
       providers: protoResponse,
     };
+    console.log(final);
     return final as unknown as Providers;
   }
 

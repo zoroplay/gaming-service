@@ -31,7 +31,7 @@ export class C2GamingService {
     this.sslKeyPath = this.configService.get<string>('C27_KEY_PATH');
     this.operatorId = this.configService.get<string>('C27_OPERATOR_ID');
     this.bankGroupId = this.configService.get<string>('APP_INITIAL');
-    this.setRequestOptions();
+    // this.setRequestOptions();
   }
 
   /**

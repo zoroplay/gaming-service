@@ -43,7 +43,7 @@ export class TadaGamingService {
     this.agentId = this.configService.get<string>('TADA_AGENT_ID');
     this.agentKey = this.configService.get<string>('TADA_AGENT_KEY');
     this.currency = this.configService.get<string>('CUURRENCY');
-    this.setRequestOptions();
+    // this.setRequestOptions();
   }
 
   /**
