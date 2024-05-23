@@ -437,24 +437,25 @@ export class SmartSoftService {
 
   // support
   generateMd5(requestMethod: string, payload) {
-    console.log('payload start');
+    console.log('encryption start');
 
-    console.log(this.secretKey);
-    console.log(requestMethod);
-    console.log(JSON.stringify(payload));
-    console.log(
-      this.secretKey + '|' + requestMethod + '|' + JSON.stringify(payload),
-    );
+    const body = Object.keys(payload).length === 0 ? '' : JSON.stringify(payload)
+
+    // console.log(this.secretKey);
+    // console.log(requestMethod);
+    // console.log(JSON.stringify(payload));
+    console.log(`${this.secretKey}|${requestMethod}|${body}`);
+
     const md5Hash = crypto
       .createHash('md5')
       .update(
-        this.secretKey + '|' + requestMethod + '|' + JSON.stringify(payload),
+        `${this.secretKey}|${requestMethod}|${body}`,
       )
       .digest('hex');
 
-    console.log('payload hash');
+    console.log('encryption hash');
     console.log(md5Hash);
-    console.log('payload ends');
+    console.log('encryption ends');
     return md5Hash;
   }
 
