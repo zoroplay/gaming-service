@@ -115,7 +115,7 @@ export class SmartSoftService {
     if (data.header['x-sessionid']) {
       const res = await this.identityService.validateXpressSession({clientId: data.clientId, sessionId: data.header['x-sessionid']});
 
-      console.log(res)
+      // console.log(res)
       if (!res.success) {
         const response =  {
           success: false,
