@@ -15,6 +15,8 @@ import {
   CallbackGameDto,
   CreateProviderDto,
   Providers,
+  CommonResponse,
+  Categories,
 } from 'src/proto/gaming.pb';
 import { FindManyOptions, ILike, Repository } from 'typeorm';
 import { EntityToProtoService } from 'src/services/entity-to-proto.service';
@@ -27,12 +29,16 @@ import {
 import * as dayjs from 'dayjs';
 import { EvoPlayService } from 'src/services/evo-play.service';
 import { IdentityService } from 'src/identity/identity.service';
+import { Category } from 'src/entities/category.entity';
+import { GameCategory } from 'src/entities/game.category.entity';
 
 @Injectable()
 export class GamesService {
   constructor(
     @InjectRepository(GameEntity)
     private gameRepository: Repository<GameEntity>,
+    @InjectRepository(Category)
+    private categoryRepository: Repository<Category>,
     @InjectRepository(ProviderEntity)
     private providerRepository: Repository<ProviderEntity>,
     private readonly entityToProtoService: EntityToProtoService,
@@ -46,14 +52,18 @@ export class GamesService {
 
   async createProvider(
     createProviderDto: CreateProviderDto,
-  ): Promise<Provider> {
-    const newProvider: ProviderEntity = new ProviderEntity();
-    newProvider.name = createProviderDto.name;
-    newProvider.slug = createProviderDto.slug;
-    newProvider.description = createProviderDto.description;
-    newProvider.imagePath = createProviderDto.imagePath;
-    const savedProvider = await this.providerRepository.save(newProvider);
-    return savedProvider as unknown as Provider;
+  ): Promise<CommonResponse> {
+    try {
+      const newProvider: ProviderEntity = new ProviderEntity();
+      newProvider.name = createProviderDto.name;
+      newProvider.slug = this.slugify(createProviderDto.name);
+      newProvider.description = createProviderDto.description;
+      newProvider.imagePath = createProviderDto.imagePath;
+      const savedProvider = await this.providerRepository.save(newProvider);
+      return {success: true, message: 'Saved succesfully', data: JSON.stringify(savedProvider)}
+    } catch (err) {
+      return {success: false, message: 'Unable to save new provider'}
+    }
   }
 
   async create(createGameDto: CreateGameDto): Promise<Game> {
@@ -77,16 +87,15 @@ export class GamesService {
     return final;
   }
 
-  async findAllProvider(): Promise<Providers> {
-    const resp = await this.providerRepository.find({});
-    const protoResponse: Provider[] = resp.map(
-      (entity: ProviderEntity) => entity as unknown as Provider,
-    );
-    const final = {
-      providers: protoResponse,
-    };
-    console.log(final);
-    return final as unknown as Providers;
+  async findAllProvider(): Promise<CommonResponse> {
+    const providers = await this.providerRepository.find({});
+    // const protoResponse: Provider[] = resp.map(
+    //   (entity: ProviderEntity) => entity as unknown as Provider,
+    // );
+    // const final = {
+    //   providers: protoResponse,
+    // };
+    return {success: true, message: 'Providers retrieved successfully', data: JSON.stringify(providers)}
   }
 
   async findAll(filter: string): Promise<Games> {
@@ -125,6 +134,28 @@ export class GamesService {
     return final;
   }
 
+  async fetchGames(category): Promise<Games> {
+    
+    const query = this.gameRepository.createQueryBuilder('games')
+                    .where("games.status = :status", {status: 1});
+
+    if (category && category !== 1) {
+      query.leftJoin(GameCategory, "gamecat", "gamecat.gameId = games.id")
+          .andWhere("gamecat.categoryId = :category", {category})
+    }
+    const games = await query.getMany();
+    // Convert TypeORM entities to proto-generated types
+    const protoResponse: Game[] = games.map((entity: GameEntity) =>
+      this.entityToProtoService.entityToProto(entity),
+    );
+    
+    const final = {
+      games: protoResponse,
+    };
+
+    return final;
+  }
+
   async queryGames(
     paginationDtoStream: Observable<PaginationDto>,
   ): Promise<Observable<GameEntity[]>> {
@@ -147,9 +178,16 @@ export class GamesService {
 
     return subject.asObservable();
   }
+
   async findOneProvider(id: number): Promise<ProviderEntity | null> {
     return await this.providerRepository.findOneBy({ id });
   }
+
+  async fetchCategories(): Promise<Categories> {
+    const categories = await this.categoryRepository.find();
+    return {data: categories}
+  }
+
   async findOne(id: number): Promise<GameEntity | null> {
     return await this.gameRepository.findOneBy({ id });
   }
@@ -286,7 +324,6 @@ export class GamesService {
         break;
     }
   }
-
 
   async syncShackGames(): Promise<Game[]> {
     // Fetch the game list from your API (adjust the method name and params accordingly)
@@ -524,5 +561,22 @@ export class GamesService {
     console.log(body);
     console.log(headers);
     throw new Error('Method not implemented.');
+  }
+
+  private slugify(text: string) {
+    if (!text) {
+      return;
+    }
+    // Convert to lowercase and replace spaces with hyphens.
+    text = text?.toLowerCase().replace(/\s+/g, "-");
+  
+    // Remove punctuation and other special characters.
+    text = text?.replace(/[^a-z0-9-]+/g, "");
+  
+    // Remove trailing hyphens.
+    text = text?.replace(/^-+|-+$/g, "");
+  
+    console.log(text);
+    return text;
   }
 }

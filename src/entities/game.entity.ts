@@ -46,3 +46,4 @@ export class Game {
   @UpdateDateColumn({ type: 'timestamp' })
   updatedAt: Date;
 }
+

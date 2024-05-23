@@ -21,7 +21,7 @@ export class Provider {
   @Column()
   name: string;
 
-  @Column()
+  @Column({nullable: true})
   description: string;
 
   @Column({ type: 'text', nullable: true })

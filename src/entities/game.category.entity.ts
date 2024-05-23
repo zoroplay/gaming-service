@@ -18,7 +18,7 @@ export class GameCategory {
   @ManyToOne(() => Category, (category) => category.games)
   category: Category;
 
-  @OneToOne(() => Game)
+  @ManyToOne(() => Game)
   @JoinColumn()
   game: Game;
 

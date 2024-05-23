@@ -19,6 +19,8 @@ import { VirtualService } from 'src/services/virtual.service';
 import { IdentityModule } from 'src/identity/identity.module';
 import { GameKey } from 'src/entities/game-key.entity';
 import { CacheModule } from '@nestjs/cache-manager';
+import { Category } from 'src/entities/category.entity';
+import { GameCategory } from 'src/entities/game.category.entity';
 
 @Module({
   imports: [
@@ -27,7 +29,7 @@ import { CacheModule } from '@nestjs/cache-manager';
       max: 1000,
       isGlobal: true,
     }),
-    TypeOrmModule.forFeature([Bet, Game, GameKey, CallbackLog, Provider]),
+    TypeOrmModule.forFeature([Bet, CallbackLog, Category, Game, GameCategory, GameKey, Provider]),
     HttpModule,
     IdentityModule,
     WalletModule,

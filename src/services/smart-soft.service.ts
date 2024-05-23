@@ -114,7 +114,8 @@ export class SmartSoftService {
     if (data.header['x-sessionid']) {
       const res = await this.identityService.validateXpressSession({clientId: data.clientId, sessionId: data.header['x-sessionid']});
 
-      if (!res.status) {
+      console.log(res)
+      if (!res.success) {
         const response =  {
           success: false,
           message: 'Invalid Session ID',

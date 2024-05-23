@@ -11,6 +11,10 @@ export interface PaginationDto {
   skip: number;
 }
 
+export interface FetchGamesRequest {
+  categoryId?: number | undefined;
+}
+
 export interface Empty {
 }
 
@@ -288,6 +292,30 @@ export interface XpressData {
   transactionType?: string | undefined;
 }
 
+export interface CommonResponse {
+  status?: number | undefined;
+  success?: boolean | undefined;
+  message: string;
+  data?: string | undefined;
+}
+
+export interface SaveCategoryRequest {
+  clientId: number;
+  id?: number | undefined;
+  name: string;
+  imagePath?: string | undefined;
+}
+
+export interface Category {
+  id: number;
+  slug: string;
+  name: string;
+}
+
+export interface Categories {
+  data: Category[];
+}
+
 export const GAMING_PACKAGE_NAME = "gaming";
 
 wrappers[".google.protobuf.Struct"] = { fromObject: Struct.wrap, toObject: Struct.unwrap } as any;
@@ -297,6 +325,8 @@ export interface GamingServiceClient {
 
   findAllGames(request: Empty): Observable<Games>;
 
+  fetchGames(request: FetchGamesRequest): Observable<Games>;
+
   syncGames(request: SyncGameDto): Observable<Games>;
 
   findOneGame(request: FindOneGameDto): Observable<Game>;
@@ -305,15 +335,19 @@ export interface GamingServiceClient {
 
   removeGame(request: UpdateGameDto): Observable<Game>;
 
-  createProvider(request: CreateProviderDto): Observable<Provider>;
+  saveCategory(request: SaveCategoryRequest): Observable<CommonResponse>;
 
-  updateProvider(request: CreateProviderDto): Observable<Provider>;
+  fetchCategories(request: Empty): Observable<Categories>;
 
-  findOneProvider(request: FindOneGameDto): Observable<Provider>;
+  createProvider(request: CreateProviderDto): Observable<CommonResponse>;
 
-  removeProvider(request: CreateProviderDto): Observable<Provider>;
+  updateProvider(request: CreateProviderDto): Observable<CommonResponse>;
 
-  findAllProviders(request: Empty): Observable<Providers>;
+  findOneProvider(request: FindOneGameDto): Observable<CommonResponse>;
+
+  removeProvider(request: CreateProviderDto): Observable<CommonResponse>;
+
+  findAllProviders(request: Empty): Observable<CommonResponse>;
 
   startGame(request: StartGameDto): Observable<StartGameResponse>;
 
@@ -339,6 +373,8 @@ export interface GamingServiceController {
 
   findAllGames(request: Empty): Promise<Games> | Observable<Games> | Games;
 
+  fetchGames(request: FetchGamesRequest): Promise<Games> | Observable<Games> | Games;
+
   syncGames(request: SyncGameDto): Promise<Games> | Observable<Games> | Games;
 
   findOneGame(request: FindOneGameDto): Promise<Game> | Observable<Game> | Game;
@@ -347,15 +383,19 @@ export interface GamingServiceController {
 
   removeGame(request: UpdateGameDto): Promise<Game> | Observable<Game> | Game;
 
-  createProvider(request: CreateProviderDto): Promise<Provider> | Observable<Provider> | Provider;
+  saveCategory(request: SaveCategoryRequest): Promise<CommonResponse> | Observable<CommonResponse> | CommonResponse;
 
-  updateProvider(request: CreateProviderDto): Promise<Provider> | Observable<Provider> | Provider;
+  fetchCategories(request: Empty): Promise<Categories> | Observable<Categories> | Categories;
 
-  findOneProvider(request: FindOneGameDto): Promise<Provider> | Observable<Provider> | Provider;
+  createProvider(request: CreateProviderDto): Promise<CommonResponse> | Observable<CommonResponse> | CommonResponse;
 
-  removeProvider(request: CreateProviderDto): Promise<Provider> | Observable<Provider> | Provider;
+  updateProvider(request: CreateProviderDto): Promise<CommonResponse> | Observable<CommonResponse> | CommonResponse;
 
-  findAllProviders(request: Empty): Promise<Providers> | Observable<Providers> | Providers;
+  findOneProvider(request: FindOneGameDto): Promise<CommonResponse> | Observable<CommonResponse> | CommonResponse;
+
+  removeProvider(request: CreateProviderDto): Promise<CommonResponse> | Observable<CommonResponse> | CommonResponse;
+
+  findAllProviders(request: Empty): Promise<CommonResponse> | Observable<CommonResponse> | CommonResponse;
 
   startGame(request: StartGameDto): Promise<StartGameResponse> | Observable<StartGameResponse> | StartGameResponse;
 
@@ -381,10 +421,13 @@ export function GamingServiceControllerMethods() {
     const grpcMethods: string[] = [
       "createGame",
       "findAllGames",
+      "fetchGames",
       "syncGames",
       "findOneGame",
       "updateGame",
       "removeGame",
+      "saveCategory",
+      "fetchCategories",
       "createProvider",
       "updateProvider",
       "findOneProvider",

@@ -15,6 +15,8 @@ import {
   Empty,
   Provider,
   Providers,
+  CommonResponse,
+  FetchGamesRequest,
 } from 'src/proto/gaming.pb';
 import { Observable } from 'rxjs';
 import { GrpcMethod } from '@nestjs/microservices';
@@ -26,7 +28,7 @@ export class GamesController {
   @GrpcMethod(GAMING_SERVICE_NAME, 'createProvider')
   createProvider(
     request: CreateProviderDto,
-  ): Provider | Observable<Provider> | Promise<Provider> | Promise<any> {
+  ): Promise<CommonResponse> {
     console.log('createProvider', request);
     return this.gamesService.createProvider(request);
   }
@@ -55,7 +57,7 @@ export class GamesController {
   @GrpcMethod(GAMING_SERVICE_NAME, 'findAllProviders')
   findAllProviders(
     request: Empty,
-  ): Providers | Observable<Providers> | Promise<Providers> {
+  ): Providers | Observable<Providers> | Promise<CommonResponse> {
     console.log('findAllProviders', request);
     return this.gamesService.findAllProvider();
   }
@@ -71,6 +73,18 @@ export class GamesController {
     console.log('findAllGames');
     const resp = this.gamesService.findAll('');
     return resp;
+  }
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'FetchGames')
+  fetchGames(payload: FetchGamesRequest): Promise<any> {
+    console.log('fetch games');
+    return this.gamesService.fetchGames(payload.categoryId);
+  }
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'FetchCategories')
+  FetchCategories(): Promise<any> {
+    console.log('fetchc categories');
+    return this.gamesService.fetchCategories();
   }
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'syncGames')
