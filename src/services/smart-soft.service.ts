@@ -439,12 +439,12 @@ export class SmartSoftService {
   generateMd5(requestMethod: string, payload) {
     console.log('payload start');
 
-    // console.log(this.secretKey);
-    // console.log(requestMethod);
-    // console.log(JSON.stringify(payload));
-    // console.log(
-    //   this.secretKey + '|' + requestMethod + '|' + JSON.stringify(payload),
-    // );
+    console.log(this.secretKey);
+    console.log(requestMethod);
+    console.log(JSON.stringify(payload));
+    console.log(
+      this.secretKey + '|' + requestMethod + '|' + JSON.stringify(payload),
+    );
     const md5Hash = crypto
       .createHash('md5')
       .update(
