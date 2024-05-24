@@ -260,7 +260,12 @@ export class EvoPlayService {
   // callback handler
   async handleCallback(data: any) {
     const callback = await this.saveCallbackLog(data);
-    const hash = await this.generateMd5(data.method, data.body);
+    const hash = await this.generateMd5(data.method, {
+      token: data.token,
+      name: data.name,
+      callback_id: data.callback_id,
+      data: data.data,
+    });
     if (data.signature !== hash) {
       const response = {
         success: false,
@@ -416,7 +421,7 @@ export class EvoPlayService {
 
         let response = {
           success: true,
-          message: 'Deposit, successful',
+          message: 'bet handled successfully',
           data: {
             balance: debit.data.balance,
             currency: data.currency,
@@ -480,7 +485,7 @@ export class EvoPlayService {
         });
         const resp = {
           success: true,
-          message: 'Deposit, successful',
+          message: 'win handled successfully',
           data: {
             balance: creditRes.data.balance,
             currency: data.currency,
@@ -561,7 +566,7 @@ export class EvoPlayService {
 
           const response = {
             success: true,
-            message: 'refund, successful',
+            message: 'refund handled successfully',
             data: {
               balance: rollbackWalletRes.data.balance,
               currency: data.currency,
