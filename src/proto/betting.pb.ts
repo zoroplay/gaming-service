@@ -26,6 +26,7 @@ export interface PaginationResponse {
 export interface SettleCasinoBetRequest {
   transactionId: string;
   winnings: number;
+  provider?: string | undefined;
 }
 
 export interface SettleVirtualBetRequest {
