@@ -4,106 +4,6 @@ import { Observable } from "rxjs";
 
 export const protobufPackage = "identity";
 
-export interface GetAgentUsersRequest {
-  clientId: number;
-  userId?: number | undefined;
-  username?: string | undefined;
-  roleId?: number | undefined;
-  state?: number | undefined;
-  page?: number | undefined;
-}
-
-export interface GetUserIdNameRequest {
-  username: string;
-  clientId?: number | undefined;
-}
-
-export interface GetUserIdNameResponse {
-  data: GetUserIdNameResponse_Users[];
-}
-
-export interface GetUserIdNameResponse_Users {
-  id: number;
-  username: string;
-}
-
-export interface GetWithdrawalSettingsRequest {
-  clientId: number;
-  userId?: number | undefined;
-}
-
-export interface WithdrawalSettingsResponse {
-  autoDisbursement: number;
-  autoDisbursementMin: number;
-  autoDisbursementMax: number;
-  autoDisbursementCount: number;
-  minimumWithdrawal: number;
-  maximumWithdrawal: number;
-}
-
-export interface PlaceBetRequest {
-  selections: BetSelection[];
-  clientId: number;
-  userId?: number | undefined;
-  stake: number;
-  source: string;
-  ipAddress: string;
-  betType: string;
-  username?: string | undefined;
-  minBonus: number;
-  maxBonus: number;
-  minOdds: number;
-  totalOdds: number;
-  type: string;
-  isBooking: number;
-  bonusId?: number | undefined;
-  useBonus?: boolean | undefined;
-}
-
-export interface BetSelection {
-  eventName: string;
-  eventType: string;
-  eventId: number;
-  producerId: number;
-  marketId: number;
-  marketName: string;
-  specifier: string;
-  outcomeId: string;
-  outcomeName: string;
-  odds: number;
-  sportId: number;
-  sport: string;
-  tournament: string;
-  category: string;
-  matchId: number;
-  awayTeam: string;
-  homeTeam: string;
-  type: string;
-  fixed: boolean;
-  selectionId: string;
-  eventDate: string;
-  eventPrefix: string;
-  isBonus?: boolean | undefined;
-}
-
-export interface GetSettingsRequest {
-  clientId: number;
-  category: string;
-}
-
-export interface SettingsRequest {
-  clientId: number;
-  inputs: string;
-  category?: string | undefined;
-  period?: string | undefined;
-}
-
-export interface UserRiskSettingsRequest {
-  userId: number;
-  inputs: string;
-  period: string;
-}
-
 export interface SaveSegmentRequest {
   clientId: number;
   userId: number;
@@ -225,7 +125,6 @@ export interface UserData {
   gender: string;
   dateOfBirth: string;
   status: number;
-  group: string;
 }
 
 export interface CreateUserRequest {
@@ -248,8 +147,6 @@ export interface CreateUserRequest {
   parent?: number | undefined;
   promoCode?: string | undefined;
   trackingToken?: string | undefined;
-  parentId?: number | undefined;
-  balance?: number | undefined;
 }
 
 export interface UpdateUserRequest {
@@ -273,7 +170,6 @@ export interface UpdateUserRequest {
   parent?: number | undefined;
   promoCode?: string | undefined;
   trackingToken?: string | undefined;
-  parentId?: string | undefined;
 }
 
 /** user */
@@ -671,15 +567,6 @@ export interface XpressLoginResponse_XpressData {
 export interface EmptyRequest {
 }
 
-export interface MetaData {
-  page: number;
-  perPage: number;
-  total: number;
-  lastPage: number;
-  nextPage: number;
-  prevPage: number;
-}
-
 export const IDENTITY_PACKAGE_NAME = "identity";
 
 export interface IdentityServiceClient {
@@ -688,8 +575,6 @@ export interface IdentityServiceClient {
   login(request: LoginRequest): Observable<LoginResponse>;
 
   xpressGameLogin(request: XpressLoginRequest): Observable<XpressLoginResponse>;
-
-  evoGameLogin(request: XpressLoginRequest): Observable<XpressLoginResponse>;
 
   xpressGameLogout(request: SessionRequest): Observable<XpressLoginResponse>;
 
@@ -772,26 +657,6 @@ export interface IdentityServiceClient {
   getStatesByCoutnry(request: GetStatesRequest): Observable<CommonResponse>;
 
   validateXpressSession(request: SessionRequest): Observable<CommonResponse>;
-
-  saveSettings(request: SettingsRequest): Observable<CommonResponse>;
-
-  saveRiskSettings(request: SettingsRequest): Observable<CommonResponse>;
-
-  saveUserRiskSettings(request: UserRiskSettingsRequest): Observable<CommonResponse>;
-
-  getSettings(request: GetSettingsRequest): Observable<CommonResponse>;
-
-  validateBet(request: PlaceBetRequest): Observable<CommonResponse>;
-
-  getWithdrawalSettings(request: GetWithdrawalSettingsRequest): Observable<WithdrawalSettingsResponse>;
-
-  getUserIdandName(request: GetUserIdNameRequest): Observable<GetUserIdNameResponse>;
-
-  listAgentUsers(request: GetAgentUsersRequest): Observable<CommonResponse>;
-
-  listAgents(request: GetAgentUsersRequest): Observable<CommonResponse>;
-
-  getUserRiskSettings(request: GetAgentUsersRequest): Observable<CommonResponse>;
 }
 
 export interface IdentityServiceController {
@@ -800,10 +665,6 @@ export interface IdentityServiceController {
   login(request: LoginRequest): Promise<LoginResponse> | Observable<LoginResponse> | LoginResponse;
 
   xpressGameLogin(
-    request: XpressLoginRequest,
-  ): Promise<XpressLoginResponse> | Observable<XpressLoginResponse> | XpressLoginResponse;
-
-  evoGameLogin(
     request: XpressLoginRequest,
   ): Promise<XpressLoginResponse> | Observable<XpressLoginResponse> | XpressLoginResponse;
 
@@ -930,34 +791,6 @@ export interface IdentityServiceController {
   getStatesByCoutnry(request: GetStatesRequest): Promise<CommonResponse> | Observable<CommonResponse> | CommonResponse;
 
   validateXpressSession(request: SessionRequest): Promise<CommonResponse> | Observable<CommonResponse> | CommonResponse;
-
-  saveSettings(request: SettingsRequest): Promise<CommonResponse> | Observable<CommonResponse> | CommonResponse;
-
-  saveRiskSettings(request: SettingsRequest): Promise<CommonResponse> | Observable<CommonResponse> | CommonResponse;
-
-  saveUserRiskSettings(
-    request: UserRiskSettingsRequest,
-  ): Promise<CommonResponse> | Observable<CommonResponse> | CommonResponse;
-
-  getSettings(request: GetSettingsRequest): Promise<CommonResponse> | Observable<CommonResponse> | CommonResponse;
-
-  validateBet(request: PlaceBetRequest): Promise<CommonResponse> | Observable<CommonResponse> | CommonResponse;
-
-  getWithdrawalSettings(
-    request: GetWithdrawalSettingsRequest,
-  ): Promise<WithdrawalSettingsResponse> | Observable<WithdrawalSettingsResponse> | WithdrawalSettingsResponse;
-
-  getUserIdandName(
-    request: GetUserIdNameRequest,
-  ): Promise<GetUserIdNameResponse> | Observable<GetUserIdNameResponse> | GetUserIdNameResponse;
-
-  listAgentUsers(request: GetAgentUsersRequest): Promise<CommonResponse> | Observable<CommonResponse> | CommonResponse;
-
-  listAgents(request: GetAgentUsersRequest): Promise<CommonResponse> | Observable<CommonResponse> | CommonResponse;
-
-  getUserRiskSettings(
-    request: GetAgentUsersRequest,
-  ): Promise<CommonResponse> | Observable<CommonResponse> | CommonResponse;
 }
 
 export function IdentityServiceControllerMethods() {
@@ -966,7 +799,6 @@ export function IdentityServiceControllerMethods() {
       "register",
       "login",
       "xpressGameLogin",
-      "evoGameLogin",
       "xpressGameLogout",
       "validate",
       "validateClient",
@@ -1008,16 +840,6 @@ export function IdentityServiceControllerMethods() {
       "getCountries",
       "getStatesByCoutnry",
       "validateXpressSession",
-      "saveSettings",
-      "saveRiskSettings",
-      "saveUserRiskSettings",
-      "getSettings",
-      "validateBet",
-      "getWithdrawalSettings",
-      "getUserIdandName",
-      "listAgentUsers",
-      "listAgents",
-      "getUserRiskSettings",
     ];
     for (const method of grpcMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);

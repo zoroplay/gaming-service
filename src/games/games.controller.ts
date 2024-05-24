@@ -1,4 +1,3 @@
-/* eslint-disable prettier/prettier */
 import { Controller } from '@nestjs/common';
 // import { GrpcMethod } from '@nestjs/microservices';
 import { GamesService } from './games.service';
@@ -18,7 +17,6 @@ import {
   Providers,
   CommonResponse,
   FetchGamesRequest,
-  CallbackGameDto,
 } from 'src/proto/gaming.pb';
 import { Observable } from 'rxjs';
 import { GrpcMethod } from '@nestjs/microservices';
@@ -28,7 +26,9 @@ export class GamesController {
   constructor(private readonly gamesService: GamesService) {}
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'createProvider')
-  createProvider(request: CreateProviderDto): Promise<CommonResponse> {
+  createProvider(
+    request: CreateProviderDto,
+  ): Promise<CommonResponse> {
     console.log('createProvider', request);
     return this.gamesService.createProvider(request);
   }
@@ -138,7 +138,7 @@ export class GamesController {
   }
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'handleCallback')
-  async handleCallback(request: CallbackGameDto): Promise<any> {
+  async handleCallback(request: any): Promise<any> {
     console.log('handleCallback start');
     console.log(request);
     console.log('handleCallback finish');
