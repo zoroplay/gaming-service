@@ -92,8 +92,9 @@ export class SmartSoftService {
     const callback = await this.saveCallbackLog(data);
 
     const body = data.body ? JSON.parse(data.body) : '';
+    const hashStr = data.body ? data.body : '';
 
-    const hash = await this.generateMd5(data.method, body);
+    const hash =  this.generateMd5(data.method, hashStr);
 
     if (data.header['x-signature'] !== hash) {
       const response = {
@@ -146,7 +147,7 @@ export class SmartSoftService {
 
     switch (data.action) {
       case 'ActivateSession':
-        return await this.activateSession(data, callback);
+        return await this.activateSession(data.clientId, body.Token, callback);
       case 'GetBalance':
         console.log('GetBalance');
         return await this.getBalance(player, callback);
@@ -462,8 +463,8 @@ export class SmartSoftService {
   // Webhook Section
 
   // Activate Player Session
-  async activateSession(data, callback) {
-    const res = await this.identityService.xpressLogin({clientId: data.clientId, token: data.body.Token});
+  async activateSession(clientId, token, callback) {
+    const res = await this.identityService.xpressLogin({clientId, token});
 
     if (!res.status) {
       const response = {
@@ -566,7 +567,7 @@ export class SmartSoftService {
 
   // save callback request
   async saveCallbackLog(data) {
-    console.log('saving callback logs')
+    // console.log('saving callback logs')
     const action = data.action;
     const body = data.body ? JSON.parse(data.body) : '';
 
@@ -576,7 +577,7 @@ export class SmartSoftService {
       callback.request_type = action;
       callback.payload = JSON.stringify(body);
 
-      console.log(callback)
+      // console.log(callback)
 
       return await this.callbackLogRepository.save(callback);
 
