@@ -257,7 +257,7 @@ export class SmartSoftService {
       case 'Withdraw':
         const transactionType = body.TransactionType;
         const amount = body.Amount;
-        const betId = body.TransactionInfo.BetTransactionId;
+        const betId = body.TransactionInfo.RoundId;
 
         const settlePayload: CreditCasinoBetRequest = {
           transactionId: betId,
@@ -267,6 +267,7 @@ export class SmartSoftService {
         const settle_bet = await this.settle(settlePayload);
         // console.log(settle_bet);
         if (!settle_bet.success)  {
+          console.log(settle_bet)
           const response = {success: false, message: 'Unable to complete request', status: HttpStatus.INTERNAL_SERVER_ERROR}
           // update callback log response
           await this.callbackLogRepository.update({
@@ -295,7 +296,7 @@ export class SmartSoftService {
 
           const response = {
             success: true,
-            message: 'Deposit, successful',
+            message: 'Withdraw, successful',
             data: {
               Balance: creditRes.data.balance,
               TransactionId: settle_bet.data.transactionId,
