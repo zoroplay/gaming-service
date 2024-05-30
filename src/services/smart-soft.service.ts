@@ -140,7 +140,7 @@ export class SmartSoftService {
       if (body['TransactionInfo'])
         game = await this.gameRepository.findOne({
           where: {
-            title: data.body['TransactionInfo']['GameName'],
+            title: body['TransactionInfo']['GameName'],
           },
         });
     }
