@@ -222,7 +222,9 @@ export class EvoPlayService {
 
   // callback handler
   async handleCallback(resp: CallbackGameDto) {
-    const res = await this.identityService.validateXpressSession({clientId: resp.clientId, sessionId: resp.body.token});
+    const body = JSON.parse(resp.body);
+
+    const res = await this.identityService.validateXpressSession({clientId: resp.clientId, sessionId: body.token});
 
     if (!res.success) return {success: false, message: 'Invalid player token'}
     const player = JSON.parse(res.data);
@@ -234,7 +236,7 @@ export class EvoPlayService {
       },
     });
 
-    switch (resp.body.name) {
+    switch (body.name) {
       case 'init':
         return await this.activateSession(resp);
         break;
@@ -248,24 +250,24 @@ export class EvoPlayService {
         const placeBetPayload: PlaceCasinoBetRequest = {
           userId: player.id,
           clientId: player.clientId,
-          roundId: resp.body.data.round_id,
-          transactionId: resp.body.action_id,
+          roundId: body.data.round_id,
+          transactionId: body.action_id,
           gameId: game.gameId,
-          stake: resp.body.amount,
+          stake: body.amount,
           winnings: 0,
         };
         return await this.placeBet(placeBetPayload);
         break;
       case 'win':
         const settlePayload: CreditCasinoBetRequest = {
-          transactionId: resp.body.action_id,
-          winnings: resp.body.amount,
+          transactionId: body.action_id,
+          winnings: body.amount,
         };
         return await this.settle(settlePayload);
         break;
       case 'refund':
         const reversePayload: RollbackCasinoBetRequest = {
-          transactionId: resp.body.action_id,
+          transactionId: body.action_id,
         };
         return await this.rollbackTransaction(reversePayload);
         break;

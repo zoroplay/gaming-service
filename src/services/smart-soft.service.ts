@@ -91,7 +91,9 @@ export class SmartSoftService {
     // save callback
     const callback = await this.saveCallbackLog(data);
 
-    const hash = await this.generateMd5(data.method, data.body);
+    const body = data.body ? JSON.parse(data.body) : '';
+
+    const hash = await this.generateMd5(data.method, body);
 
     if (data.header['x-signature'] !== hash) {
       const response = {
@@ -134,7 +136,7 @@ export class SmartSoftService {
 
       player = JSON.parse(res.data);
 
-      if (data.body['TransactionInfo'])
+      if (body['TransactionInfo'])
         game = await this.gameRepository.findOne({
           where: {
             title: data.body['TransactionInfo']['GameName'],
@@ -150,7 +152,7 @@ export class SmartSoftService {
         return await this.getBalance(player, callback);
       case 'Deposit':
         console.log('Deposit');
-        const gameName = data.body.TransactionInfo.GameName;
+        const gameName = body.TransactionInfo.GameName;
         // if (!game)
         //   return {
         //     success: false,
@@ -162,7 +164,7 @@ export class SmartSoftService {
           clientId: player.clientId,
         });
 
-        if(walletRes.data.availableBalance < data.body.Amount) {
+        if(walletRes.data.availableBalance < body.Amount) {
           const response = {success: false, message: 'Insufficent balance', status: HttpStatus.BAD_REQUEST}
           // update callback log response
           await this.callbackLogRepository.update({
@@ -177,14 +179,14 @@ export class SmartSoftService {
         const placeBetPayload: PlaceCasinoBetRequest = {
           userId: player.id,
           clientId: player.clientId,
-          roundId: data.body.TransactionInfo.RoundId,
-          transactionId: data.body.TransactionId,
-          gameId: data.body.TransactionInfo.GameNumber,
-          stake: data.body.Amount,
-          gameName: data.body.TransactionInfo.GameName,
-          gameNumber: data.body.TransactionInfo.GameNumber,
-          source: data.body.TransactionInfo.Source,
-          cashierTransactionId: data.body.TransactionInfo.CashierTransacitonId,
+          roundId: body.TransactionInfo.RoundId,
+          transactionId: body.TransactionId,
+          gameId: body.TransactionInfo.GameNumber,
+          stake: body.Amount,
+          gameName: body.TransactionInfo.GameName,
+          gameNumber: body.TransactionInfo.GameNumber,
+          source: body.TransactionInfo.Source,
+          cashierTransactionId: body.TransactionInfo.CashierTransacitonId,
           winnings: 0,
         };
 
@@ -209,8 +211,8 @@ export class SmartSoftService {
         const debit = await this.walletService.debit({
           userId: player.id,
           clientId: player.clientId,
-          amount: data.body.Amount,
-          source: data.body.TransactionInfo.Source,
+          amount: body.Amount,
+          source: body.TransactionInfo.Source,
           description: `Casino Bet: (${gameName})`,
           username: player.username,
           wallet: 'main',
@@ -252,9 +254,9 @@ export class SmartSoftService {
 
         return response;
       case 'Withdraw':
-        const transactionType = data.body.TransactionType;
-        const amount = data.body.Amount;
-        const betId = data.body.TransactionInfo.BetTransactionId;
+        const transactionType = body.TransactionType;
+        const amount = body.Amount;
+        const betId = body.TransactionInfo.BetTransactionId;
 
         const settlePayload: CreditCasinoBetRequest = {
           transactionId: betId,
@@ -281,13 +283,13 @@ export class SmartSoftService {
           creditRes = await this.walletService.credit({
             userId: player.id,
             clientId: player.clientId,
-            amount: data.body.Amount,
-            source: data.body.TransactionInfo.Source,
-            description: `Casino Bet: (${data.body.TransactionInfo.GameName})`,
+            amount: body.Amount,
+            source: body.TransactionInfo.Source,
+            description: `Casino Bet: (${body.TransactionInfo.GameName})`,
             username: player.username,
             wallet: 'main',
             subject: 'Bet Win (Casino)',
-            channel: data.body.TransactionInfo.Source,
+            channel: body.TransactionInfo.Source,
           });
 
           const response = {
@@ -331,7 +333,7 @@ export class SmartSoftService {
         }
       case 'RollbackTransaction':
         const reversePayload: RollbackCasinoBetRequest = {
-          transactionId: data.body.TransactionId,
+          transactionId: body.TransactionId,
         };
         // get callback log
         const callbackLog = await this.callbackLogRepository.findOne({where: {transactionId: reversePayload.transactionId }})
@@ -372,13 +374,13 @@ export class SmartSoftService {
           rollbackWalletRes = await this.walletService.credit({
             userId: player.id,
             clientId: player.clientId,
-            amount: data.body.Amount,
+            amount: body.Amount,
             source: transactionPayload.TransactionInfo.Source,
             description: `Bet Cancelled: (${transactionPayload.TransactionInfo.GameName})`,
             username: player.username,
             wallet: 'main',
             subject: 'Bet Rollback (Casino)',
-            channel: data.body.TransactionInfo.GameName,
+            channel: body.TransactionInfo.GameName,
           });
 
           const response = {
@@ -403,13 +405,13 @@ export class SmartSoftService {
           rollbackWalletRes = await this.walletService.debit({
             userId: player.id,
             clientId: player.clientId,
-            amount: data.body.Amount,
+            amount: body.Amount,
             source: transactionPayload.TransactionInfo.Source,
             description: `Bet Cancelled: (${transactionPayload.TransactionInfo.GameName})`,
             username: player.username,
             wallet: 'main',
             subject: 'Win Rollback (Casino)',
-            channel: data.body.TransactionInfo.GameName,
+            channel: body.TransactionInfo.GameName,
           });
           console.log(rollbackWalletRes)
           const response = {
@@ -436,20 +438,18 @@ export class SmartSoftService {
   }
 
   // support
-  generateMd5(requestMethod: string, payload) {
+  generateMd5(requestMethod: string, payload: string) {
     console.log('encryption start');
-
-    const body = Object.keys(payload).length === 0 ? '' : JSON.stringify(payload)
 
     // console.log(this.secretKey);
     // console.log(requestMethod);
     // console.log(JSON.stringify(payload));
-    console.log(`${this.secretKey}|${requestMethod}|${body}`);
+    console.log(`${this.secretKey}|${requestMethod}|${payload}`);
 
     const md5Hash = crypto
       .createHash('md5')
       .update(
-        `${this.secretKey}|${requestMethod}|${body}`,
+        `${this.secretKey}|${requestMethod}|${payload}`,
       )
       .digest('hex');
 
@@ -567,12 +567,16 @@ export class SmartSoftService {
   // save callback request
   async saveCallbackLog(data) {
     console.log('saving callback logs')
-    const {action, body} = data;
+    const action = data.action;
+    const body = data.body ? JSON.parse(data.body) : '';
+
     try{
       const callback = new CallbackLog();
       callback.transactionId = action === 'ActivateSession' ? body.Token : action === 'GetBalance' ? data.header['x-sessionid'] : action === 'RollbackTransaction' ? body.CurrentTransactionId : body.TransactionId;
       callback.request_type = action;
       callback.payload = JSON.stringify(body);
+
+      console.log(callback)
 
       return await this.callbackLogRepository.save(callback);
 
