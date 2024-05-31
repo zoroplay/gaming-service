@@ -240,7 +240,7 @@ export class SmartSoftService {
         
         const response = {
           success: true,
-          status: HttpStatus.CREATED,
+          status: HttpStatus.OK,
           message: 'Deposit, successful',
           data: {
             Balance: debit.data.balance,
