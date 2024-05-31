@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Injectable, NotFoundException, Provider } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Observable, Subject } from 'rxjs';
@@ -60,9 +61,13 @@ export class GamesService {
       newProvider.description = createProviderDto.description;
       newProvider.imagePath = createProviderDto.imagePath;
       const savedProvider = await this.providerRepository.save(newProvider);
-      return {success: true, message: 'Saved succesfully', data: JSON.stringify(savedProvider)}
+      return {
+        success: true,
+        message: 'Saved succesfully',
+        data: JSON.stringify(savedProvider),
+      };
     } catch (err) {
-      return {success: false, message: 'Unable to save new provider'}
+      return { success: false, message: 'Unable to save new provider' };
     }
   }
 
@@ -95,7 +100,11 @@ export class GamesService {
     // const final = {
     //   providers: protoResponse,
     // };
-    return {success: true, message: 'Providers retrieved successfully', data: JSON.stringify(providers)}
+    return {
+      success: true,
+      message: 'Providers retrieved successfully',
+      data: JSON.stringify(providers),
+    };
   }
 
   async findAll(filter: string): Promise<Games> {
@@ -135,20 +144,21 @@ export class GamesService {
   }
 
   async fetchGames(category): Promise<Games> {
-    
-    const query = this.gameRepository.createQueryBuilder('games')
-                    .where("games.status = :status", {status: 1});
+    const query = this.gameRepository
+      .createQueryBuilder('games')
+      .where('games.status = :status', { status: 1 });
 
     if (category && category !== 1) {
-      query.leftJoin(GameCategory, "gamecat", "gamecat.gameId = games.id")
-          .andWhere("gamecat.categoryId = :category", {category})
+      query
+        .leftJoin(GameCategory, 'gamecat', 'gamecat.gameId = games.id')
+        .andWhere('gamecat.categoryId = :category', { category });
     }
     const games = await query.getMany();
     // Convert TypeORM entities to proto-generated types
     const protoResponse: Game[] = games.map((entity: GameEntity) =>
       this.entityToProtoService.entityToProto(entity),
     );
-    
+
     const final = {
       games: protoResponse,
     };
@@ -185,7 +195,7 @@ export class GamesService {
 
   async fetchCategories(): Promise<Categories> {
     const categories = await this.categoryRepository.find();
-    return {data: categories}
+    return { data: categories };
   }
 
   async findOne(id: number): Promise<GameEntity | null> {
@@ -243,7 +253,6 @@ export class GamesService {
   }
 
   async start(startGameDto: StartGameDto): Promise<any> {
-
     const game: GameEntity = await this.gameRepository.findOne({
       where: {
         id: startGameDto.gameId,
@@ -252,9 +261,14 @@ export class GamesService {
         provider: true,
       },
     });
-    const res = await this.identityService.getDetails({clientId: startGameDto.clientId, userId: startGameDto.userId});
+    console.log('start', startGameDto, game);
+    const res = await this.identityService.getDetails({
+      clientId: startGameDto.clientId,
+      userId: startGameDto.userId,
+    });
+    console.log('res', res);
 
-    if (!res.success) return {success: false, message: 'Player not found'}
+    if (!res.success) return { success: false, message: 'Player not found' };
     const player = res.data;
 
     switch (game.provider.slug) {
@@ -276,7 +290,7 @@ export class GamesService {
         );
         break;
       case 'evo-play':
-        return await this.smartSoftService.constructGameUrl(
+        return await this.evoPlayService.constructGameUrl(
           startGameDto,
           player,
           game,
@@ -545,8 +559,21 @@ export class GamesService {
         return await this.handleC2Games(_data.body, _data.header);
         break;
       case 'evo-play':
-        return await this.handleC2Games(_data.body, _data.header);
-        break;
+        const x = await Promise.all(
+          _data.body.data.map(async (data) => {
+            return await this.evoPlayService.handleCallback({
+              clientId: _data.clientId,
+              action: _data.action,
+              method: _data.method,
+              body: _data.body,
+              name: _data.body.name,
+              token: _data.body.token,
+              callback_id: _data.body.callback_id,
+              ...data,
+            });
+          }),
+        );
+        return x[0];
       default:
         throw new NotFoundException('Unknown provider');
         break;
@@ -556,7 +583,7 @@ export class GamesService {
 
     return gameList;
   }
-  
+
   async handleC2Games(body: any, headers: any): Promise<any> {
     console.log(body);
     console.log(headers);
@@ -568,14 +595,14 @@ export class GamesService {
       return;
     }
     // Convert to lowercase and replace spaces with hyphens.
-    text = text?.toLowerCase().replace(/\s+/g, "-");
-  
+    text = text?.toLowerCase().replace(/\s+/g, '-');
+
     // Remove punctuation and other special characters.
-    text = text?.replace(/[^a-z0-9-]+/g, "");
-  
+    text = text?.replace(/[^a-z0-9-]+/g, '');
+
     // Remove trailing hyphens.
-    text = text?.replace(/^-+|-+$/g, "");
-  
+    text = text?.replace(/^-+|-+$/g, '');
+
     console.log(text);
     return text;
   }

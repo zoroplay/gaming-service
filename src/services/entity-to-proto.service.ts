@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Injectable } from '@nestjs/common';
 import { Game as GameEntity } from '../entities/game.entity';
 import { Game as GameProto } from '../proto/gaming.pb';
