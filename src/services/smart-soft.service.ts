@@ -99,7 +99,8 @@ export class SmartSoftService {
     if (data.header['x-signature'] !== hash) {
       const response = {
         success: false,
-        message: 'Invalid Hash Signature'
+        message: 'Invalid Hash Signature',
+        status: HttpStatus.BAD_REQUEST
       }
 
       // update callback log response
@@ -123,6 +124,7 @@ export class SmartSoftService {
         const response =  {
           success: false,
           message: 'Invalid Session ID',
+          status: HttpStatus.NOT_FOUND
         };
 
         // update callback log response
@@ -154,11 +156,6 @@ export class SmartSoftService {
       case 'Deposit':
         console.log('Deposit');
         const gameName = body.TransactionInfo.GameName;
-        // if (!game)
-        //   return {
-        //     success: false,
-        //     message: 'Game not in system',
-        //   };
         
         const walletRes = await this.walletService.getWallet({
           userId: player.id,
@@ -166,7 +163,11 @@ export class SmartSoftService {
         });
 
         if(walletRes.data.availableBalance < body.Amount) {
-          const response = {success: false, message: 'Insufficent balance', status: HttpStatus.BAD_REQUEST}
+          const response = {
+            success: false, 
+            message: 'Insufficent balance', 
+            status: HttpStatus.BAD_REQUEST
+          }
           // update callback log response
           await this.callbackLogRepository.update({
             id: callback.id,
@@ -239,6 +240,7 @@ export class SmartSoftService {
         
         const response = {
           success: true,
+          status: HttpStatus.CREATED,
           message: 'Deposit, successful',
           data: {
             Balance: debit.data.balance,
@@ -267,7 +269,7 @@ export class SmartSoftService {
         const settle_bet = await this.settle(settlePayload);
         // console.log(settle_bet);
         if (!settle_bet.success)  {
-          console.log(settle_bet)
+          // console.log(settle_bet)
           const response = {success: false, message: 'Unable to complete request', status: HttpStatus.INTERNAL_SERVER_ERROR}
           // update callback log response
           await this.callbackLogRepository.update({
@@ -296,6 +298,7 @@ export class SmartSoftService {
 
           const response = {
             success: true,
+            status: HttpStatus.OK,
             message: 'Withdraw, successful',
             data: {
               Balance: creditRes.data.balance,
@@ -318,7 +321,8 @@ export class SmartSoftService {
           });
           const response = {
             success: true,
-            message: 'Deposit, successful',
+            status: HttpStatus.OK,
+            message: 'Withdraw, successful',
             data: {
               Balance: creditRes.data.availableBalance,
               TransactionId: settle_bet.data.transactionId,
@@ -341,7 +345,7 @@ export class SmartSoftService {
         const callbackLog = await this.callbackLogRepository.findOne({where: {transactionId: reversePayload.transactionId }})
 
         if (!callbackLog) {
-          const response = {success: false, message: 'Transaction not found'}
+          const response = {success: false, message: 'Transaction not found', status: HttpStatus.NOT_FOUND}
           // update callback log response
           await this.callbackLogRepository.update({
             id: callback.id,
@@ -353,7 +357,7 @@ export class SmartSoftService {
         }
 
         const transactionPayload = JSON.parse(callbackLog.payload);
-        console.log(transactionPayload)
+        // console.log(transactionPayload)
         // const transactionResponse = JSON.parse(callbackLog.response);
 
         const transaction = await this.rollbackTransaction(reversePayload);
@@ -387,6 +391,7 @@ export class SmartSoftService {
 
           const response = {
             success: true,
+            status: HttpStatus.OK,
             message: 'Rollback, successful',
             data: {
               Balance: rollbackWalletRes.data.balance,
@@ -415,9 +420,10 @@ export class SmartSoftService {
             subject: 'Win Rollback (Casino)',
             channel: body.TransactionInfo.GameName,
           });
-          console.log(rollbackWalletRes)
+          // console.log(rollbackWalletRes)
           const response = {
             success: true,
+            status: HttpStatus.OK,
             message: 'Rollback, successful',
             data: {
               Balance: rollbackWalletRes.data.balance,
@@ -470,6 +476,7 @@ export class SmartSoftService {
     if (!res.status) {
       const response = {
         success: false,
+        status: HttpStatus.NOT_FOUND,
         message: 'Player not found'
       }
 
@@ -485,6 +492,7 @@ export class SmartSoftService {
    
     const response = {
       success: true,
+      status: HttpStatus.OK,
       message: 'Activation Successful',
       data: {
         UserName: res.data.playerNickname,
@@ -521,6 +529,7 @@ export class SmartSoftService {
       if (wallet.success) {
         response = {
           success: true,
+          status: HttpStatus.OK,
           message: 'Wallet',
           data: {
             Amount: wallet.data.availableBalance,
@@ -531,12 +540,14 @@ export class SmartSoftService {
       } else {
         response = {
           success: false,
+          status: HttpStatus.INTERNAL_SERVER_ERROR,
           message: 'Could not retrieve balance',
         };
       }
     } else {
       response = {
         success: false,
+        status: HttpStatus.NOT_FOUND,
         message: 'Player not found',
       };
     }

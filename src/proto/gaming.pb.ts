@@ -241,6 +241,7 @@ export interface EvolutionCallback {
 export interface CallbackResponse {
   success: boolean;
   message: string;
+  status?: number | undefined;
   data: { [key: string]: any } | undefined;
 }
 
