@@ -259,19 +259,20 @@ export class TadaGamingService {
 
   // callback handler
   async handleCallback(resp: CallbackGameDto) {
-    const res = await this.identityService.validateXpressSession({clientId: resp.clientId, sessionId: resp.body.token});
+    const body = JSON.parse(resp.body);
+    const res = await this.identityService.validateXpressSession({clientId: resp.clientId, sessionId: body.token});
 
     if (!res.success) return {success: false, message: 'Invalid player token'}
     const player = JSON.parse(res.data);
 
     const game = await this.gameRepository.findOne({
       where: {
-        title: resp.body['data']['details']['game']['game_id'],
+        title: body['data']['details']['game']['game_id'],
       },
     });
-    switch (resp.body.name) {
+    switch (body.name) {
       case 'auth':
-        return await this.activateSession(resp.body.token);
+        return await this.activateSession(body.token);
         break;
       case 'bet':
         if (!game)
@@ -283,24 +284,24 @@ export class TadaGamingService {
         const placeBetPayload: PlaceCasinoBetRequest = {
           userId: player.userId,
           clientId: player.clientId,
-          roundId: resp.body.data.round,
-          transactionId: resp.body.round,
+          roundId: body.data.round,
+          transactionId: body.round,
           gameId: game.gameId,
-          stake: resp.body.betAmount,
+          stake: body.betAmount,
           winnings: 0,
         };
         const response = await this.placeBet(placeBetPayload);
         if (response.success) {
           const settlePayload: CreditCasinoBetRequest = {
-            transactionId: resp.body.round,
-            winnings: resp.body.winloseAmount,
+            transactionId: body.round,
+            winnings: body.winloseAmount,
           };
           return await this.settle(settlePayload);
         }
         break;
       case 'cancelBet':
         const reversePayload: RollbackCasinoBetRequest = {
-          transactionId: resp.body.action_id,
+          transactionId: body.action_id,
         };
         return await this.rollbackTransaction(reversePayload);
         break;

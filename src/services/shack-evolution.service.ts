@@ -196,13 +196,14 @@ export class ShackEvolutionService {
 
   // callback handler
   async handleCallback(resp: CallbackGameDto) {
-    if (resp.body.signature !== this.generateMD5Hash()) {
+    const body: any = JSON.parse(resp.body);
+    if (body.signature !== this.generateMD5Hash()) {
       return {
         success: false,
         message: 'Invalid Signature',
       };
     }
-    const res = await this.identityService.validateXpressSession({clientId: resp.clientId, sessionId: resp.body.token});
+    const res = await this.identityService.validateXpressSession({clientId: resp.clientId, sessionId: body.token});
 
     if (!res.success) return {success: false, message: 'Invalid player token'}
     const player = JSON.parse(res.data);
@@ -211,8 +212,8 @@ export class ShackEvolutionService {
         title: resp.body['gameType'],
       },
     });
-    if (resp.body.type) {
-      switch (resp.body.type) {
+    if (body.type) {
+      switch (body.type) {
         case 'debit':
           if (!game)
             return {
@@ -223,24 +224,24 @@ export class ShackEvolutionService {
           const placeBetPayload: PlaceCasinoBetRequest = {
             userId: player.userId,
             clientId: player.clientId,
-            roundId: resp.body.data.roundId,
-            transactionId: resp.body.roundId,
+            roundId: body.data.roundId,
+            transactionId: body.roundId,
             gameId: game.gameId,
-            stake: resp.body.amount,
+            stake: body.amount,
             winnings: 0,
           };
           return await this.placeBet(placeBetPayload);
           break;
         case 'credit':
           const settlePayload: CreditCasinoBetRequest = {
-            transactionId: resp.body.roundId,
-            winnings: resp.body.amount,
+            transactionId: body.roundId,
+            winnings: body.amount,
           };
           return await this.settle(settlePayload);
           break;
       }
     } else {
-      return await this.activateSession(resp.body.token);
+      return await this.activateSession(body.token);
     }
   }
   generateMD5Hash() {

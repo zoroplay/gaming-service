@@ -28,7 +28,7 @@ export interface CallbackGameDto {
   action?: string | undefined;
   method?: string | undefined;
   header: { [key: string]: any } | undefined;
-  body: { [key: string]: any } | undefined;
+  body?: string | undefined;
 }
 
 export interface FindOneGameDto {
@@ -241,6 +241,7 @@ export interface EvolutionCallback {
 export interface CallbackResponse {
   success: boolean;
   message: string;
+  status?: number | undefined;
   data: { [key: string]: any } | undefined;
 }
 
