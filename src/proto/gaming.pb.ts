@@ -12,6 +12,7 @@ export interface PaginationDto {
 }
 
 export interface FetchGamesRequest {
+  clientId: number;
   categoryId?: number | undefined;
 }
 
@@ -81,11 +82,12 @@ export interface StartGameDto {
   clientId: number;
   userId: number;
   username: string;
-  email: string;
+  email?: string | undefined;
   homeUrl?: string | undefined;
   depositUrl?: string | undefined;
   demo?: boolean | undefined;
   isMobile?: boolean | undefined;
+  authCode?: string | undefined;
 }
 
 export interface StartGameResponse {
@@ -315,6 +317,15 @@ export interface Category {
 
 export interface Categories {
   data: Category[];
+}
+
+export interface MetaData {
+  page: number;
+  perPage: number;
+  total: number;
+  lastPage: number;
+  nextPage: number;
+  prevPage: number;
 }
 
 export const GAMING_PACKAGE_NAME = "gaming";

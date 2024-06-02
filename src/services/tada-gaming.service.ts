@@ -149,9 +149,9 @@ export class TadaGamingService {
 
   // start game here
 
-  async constructGameUrl(data, player, game: GameEntity) {
+  async constructGameUrl(data, game: GameEntity) {
     try {
-      const token = player.authCode;
+      const token = data.authCode;
       const gameId: number = parseInt(game.gameId.split('-')[1]);
       const params = `Token=${token}&GameId=${gameId}&Lang=en-US&AgentId=${this.agentId}`;
       const key = this.generateParamsWithKey(params);

@@ -4,7 +4,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Observable, Subject } from 'rxjs';
 import { Game as GameEntity } from '../entities/game.entity';
 import { Provider as ProviderEntity } from '../entities/provider.entity';
-import { v4 as uuidv4 } from 'uuid';
 import {
   CreateGameDto,
   UpdateGameDto,
@@ -18,6 +17,7 @@ import {
   Providers,
   CommonResponse,
   Categories,
+  FetchGamesRequest,
 } from 'src/proto/gaming.pb';
 import { FindManyOptions, ILike, Repository } from 'typeorm';
 import { EntityToProtoService } from 'src/services/entity-to-proto.service';
@@ -32,6 +32,7 @@ import { EvoPlayService } from 'src/services/evo-play.service';
 import { IdentityService } from 'src/identity/identity.service';
 import { Category } from 'src/entities/category.entity';
 import { GameCategory } from 'src/entities/game.category.entity';
+import { slugify } from 'src/common';
 
 @Injectable()
 export class GamesService {
@@ -57,7 +58,7 @@ export class GamesService {
     try {
       const newProvider: ProviderEntity = new ProviderEntity();
       newProvider.name = createProviderDto.name;
-      newProvider.slug = this.slugify(createProviderDto.name);
+      newProvider.slug = slugify(createProviderDto.name);
       newProvider.description = createProviderDto.description;
       newProvider.imagePath = createProviderDto.imagePath;
       const savedProvider = await this.providerRepository.save(newProvider);
@@ -143,16 +144,17 @@ export class GamesService {
     return final;
   }
 
-  async fetchGames(category): Promise<Games> {
+  async fetchGames({categoryId, clientId}: FetchGamesRequest): Promise<Games> {
     const query = this.gameRepository
       .createQueryBuilder('games')
       .where('games.status = :status', { status: 1 });
 
-    if (category && category !== 1) {
+    if (categoryId && categoryId !== 1) {
       query
         .leftJoin(GameCategory, 'gamecat', 'gamecat.gameId = games.id')
-        .andWhere('gamecat.categoryId = :category', { category });
+        .andWhere('gamecat.categoryId = :category', { category: categoryId });
     }
+
     const games = await query.getMany();
     // Convert TypeORM entities to proto-generated types
     const protoResponse: Game[] = games.map((entity: GameEntity) =>
@@ -261,21 +263,13 @@ export class GamesService {
         provider: true,
       },
     });
-    console.log('start', startGameDto, game);
-    const res = await this.identityService.getDetails({
-      clientId: startGameDto.clientId,
-      userId: startGameDto.userId,
-    });
-    console.log('res', res);
-
-    if (!res.success) return { success: false, message: 'Player not found' };
-    const player = res.data;
+    // console.log('start', startGameDto, game);
+ 
 
     switch (game.provider.slug) {
       case 'shack-evolution':
         return await this.smartSoftService.constructGameUrl(
           startGameDto,
-          player,
           game,
         );
         break;
@@ -285,28 +279,24 @@ export class GamesService {
       case 'tada-games':
         return await this.tadaGamingService.constructGameUrl(
           startGameDto,
-          player,
           game,
         );
         break;
       case 'evo-play':
         return await this.evoPlayService.constructGameUrl(
           startGameDto,
-          player,
           game,
         );
         break;
       case 'evolution':
         return await this.smartSoftService.constructGameUrl(
           startGameDto,
-          player,
           game,
         );
         break;
       case 'smart-soft':
         return await this.smartSoftService.constructGameUrl(
           startGameDto,
-          player,
           game,
         );
         break;
@@ -492,7 +482,7 @@ export class GamesService {
 
   async syncEvoPlayGames(): Promise<Game[] | any> {
     // Fetch the game list from your API (adjust the method name and params accordingly)
-    const gameList = await this.c2GamingService.getGames();
+    const gameList = await this.evoPlayService.getGames();
 
     return gameList;
     // Find or create the 'Shack Evolution' provider
@@ -590,20 +580,4 @@ export class GamesService {
     throw new Error('Method not implemented.');
   }
 
-  private slugify(text: string) {
-    if (!text) {
-      return;
-    }
-    // Convert to lowercase and replace spaces with hyphens.
-    text = text?.toLowerCase().replace(/\s+/g, '-');
-
-    // Remove punctuation and other special characters.
-    text = text?.replace(/[^a-z0-9-]+/g, '');
-
-    // Remove trailing hyphens.
-    text = text?.replace(/^-+|-+$/g, '');
-
-    console.log(text);
-    return text;
-  }
 }

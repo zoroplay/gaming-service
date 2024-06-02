@@ -24,6 +24,8 @@ import {
 } from 'src/proto/betting.pb';
 import { IdentityService } from 'src/identity/identity.service';
 import { firstValueFrom } from 'rxjs';
+import { slugify } from 'src/common';
+import { Timeout } from '@nestjs/schedule';
 
 @Injectable()
 export class EvoPlayService {
@@ -58,31 +60,6 @@ export class EvoPlayService {
     this.version = this.configService.get<number>('EVO_PLAY_VERSION');
     this.token = this.configService.get<string>('EVO_PLAY_TOKEN');
     this.setRequestOptions();
-  }
-
-  // start game here
-  async constructGameUrl(data, player, game: GameEntity) {
-    try {
-      let gameCategory = game.type;
-      if (data.isMobile) {
-        if (game.type === 'GamesLobby') {
-          gameCategory = 'GamesMobile';
-        } else {
-          gameCategory = `${game.type}Mobile`;
-        }
-      }
-      const gameName = game.title;
-      const token = player.authCode;
-      const portal = this.portal;
-      const returnUrl = data.homeUrl;
-      const sessionUrl = `${this.baseUrl}GameCategory=${gameCategory}&GameName=${gameName}&Token=${token}&PortalName=${portal}&ReturnUrl=${returnUrl}`;
-      console.log('sessionUrl', sessionUrl);
-      return {
-        url: sessionUrl,
-      };
-    } catch (e) {
-      console.error(e.message);
-    }
   }
 
   /**
@@ -122,20 +99,14 @@ export class EvoPlayService {
     }
   }
 
-  slugify(str) {
-    return str
-      .toLowerCase()
-      .trim()
-      .replace(/[^\w\s-]/g, '')
-      .replace(/[\s_-]+/g, '-')
-      .replace(/^-+|-+$/g, '');
-  }
-
+  // @Timeout(100)
   public async syncGames() {
     const games: any = await this.getGames();
+
     let provider = await this.providerRepository.findOne({
       where: { name: 'Evo Play' },
     });
+
     if (!provider) {
       const newProvider: ProviderEntity = new ProviderEntity();
       newProvider.name = 'Evo Play';
@@ -148,9 +119,11 @@ export class EvoPlayService {
 
     const savedGames = await Promise.all(
       Object.keys(games).map(async (key) => {
+
         if (Object.prototype.hasOwnProperty.call(games, key)) {
+
           const gameData = {
-            gameId: `${key}-${this.slugify(games[key].name)}`,
+            gameId: key,
             title: games[key].name,
             description: games[key].absolute_name,
             type: games[key].game_sub_type,
@@ -161,6 +134,7 @@ export class EvoPlayService {
             bannerPath:
               'https://images.pexels.com/photos/414612/pexels-photo-414612.jpeg',
           };
+
           const gameExist = await this.gameRepository.findOne({
             where: {
               gameId: gameData.gameId,
@@ -172,9 +146,11 @@ export class EvoPlayService {
           });
 
           if (gameExist) {
+            console.log('updated game')
             this.gameRepository.merge(gameExist, gameData);
             return this.gameRepository.save(gameExist);
           } else {
+            console.log('added game')
             return this.gameRepository.save(
               this.gameRepository.create(gameData),
             );
@@ -189,42 +165,45 @@ export class EvoPlayService {
   }
 
   // start game here
-  // async constructGameUrl(data, player: PlayerEntity, game: GameEntity) {
-  //   try {
-  //     this.token = player.authCode;
-  //     const newData = {
-  //       token: this.token,
-  //       game: game.gameId.split('-')[0],
-  //       settings: {
-  //         user_id: player.userId,
-  //         https: 1,
-  //         exit_url: data.exitUrl,
-  //         cash_url: data.depositUrl,
-  //       },
-  //       denomination: 1,
-  //       currency: 'NGN',
-  //       return_url_info: 1,
-  //       callback_version: 2,
-  //     };
-  //     const signature = this.getSignature(
-  //       this.project,
-  //       this.version,
-  //       newData,
-  //       this.token,
-  //     );
-  //     // $url = $this->project_id."*".$this->version."*".$this->token;
-  //     const url = `Game/getURL?project=${this.project}&version=${this.version}&signature=${signature}&token=${newData.token}&game=${newData.game}&settings[user_id]=${newData.settings.user_id}&settings[https]=${newData.settings.https}."&settings[exit_url]=${newData.settings.exit_url}&settings[cash_url]=${newData.settings.cash_url}&denomination=${newData.denomination}&currency=${newData.currency}&return_url_info=${newData.return_url_info}&callback_version=${newData.callback_version}`;
-  //     const response: AxiosResponse = await this.httpClient.axiosRef.get(
-  //       url,
-  //       this.requestConfig,
-  //     );
-  //     return {
-  //       url: response.data,
-  //     };
-  //   } catch (e) {
-  //     console.error(e.message);
-  //   }
-  // }
+  async constructGameUrl(data, game: GameEntity) {
+    try {
+      // this.token = data.authCode;
+      const newData = {
+        token: data.authCode,
+        game: parseInt(game.gameId),
+        settings: {
+          user_id: data.userId,
+          exit_url: data.homeUrl,
+          https: 1,
+        },
+        denomination: 1,
+        currency: 'NGN',
+        return_url_info: 1,
+        callback_version: 2,
+      };
+      const signature = this.getSignature(
+        this.project,
+        this.version,
+        newData,
+        this.token,
+      );
+      console.log(signature)
+      // $url = $this->project_id."*".$this->version."*".$this->token;
+      const url = `Game/getURL?project=${this.project}&version=${this.version}&signature=${signature}&token=${newData.token}&game=${newData.game}&settings[user_id]=${newData.settings.user_id}&settings[exit_url]=${newData.settings.exit_url}&settings[https]=${newData.settings.https}&denomination=${newData.denomination}&currency=${newData.currency}&return_url_info=${newData.return_url_info}&callback_version=${newData.callback_version}`;
+      const response: AxiosResponse = await this.httpClient.axiosRef.get(
+        url,
+        this.requestConfig,
+      );
+      if(response.data.error) {
+        return {success: false, message: response.data.error.message}
+      } else {
+        return {url: response.data.data.link}
+      }
+    } catch (e) {
+      console.error(e.message);
+      return {message: 'error'};
+    }
+  }
 
   getSignature(
     integrationId: number,
@@ -232,11 +211,13 @@ export class EvoPlayService {
     args: object,
     integrationKey: string,
   ) {
+    console.log(args)
+
     const compact = function (arg): string {
       if ('object' === typeof arg) {
         const result = [];
-        for (const val of arg) {
-          result.push(compact(val));
+        for (const key of Object.keys(arg)) {
+          result.push(compact(arg[key]));
         }
         return result.join(':');
       } else {
@@ -245,15 +226,20 @@ export class EvoPlayService {
     };
 
     const parts = [compact(integrationId), compact(apiVersion)];
-    for (const val in args) {
-      parts.push(compact(val));
+
+    for (const key of Object.keys(args)) {
+      parts.push(compact(args[key]));
     }
+
     parts.push(compact(integrationKey));
 
+    const str = parts.join('*')
+    console.log(str)
     const md5Hash = crypto
       .createHash('md5')
-      .update(parts.join('*'))
+      .update(str)
       .digest('hex');
+
     return md5Hash;
   }
 

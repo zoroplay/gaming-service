@@ -63,7 +63,7 @@ export class SmartSoftService {
   }
 
   // start game here
-  async constructGameUrl(data, player, game: GameEntity) {
+  async constructGameUrl(data, game: GameEntity) {
     try {
       let gameCategory = game.type;
       if (data.isMobile) {
@@ -74,8 +74,8 @@ export class SmartSoftService {
         }
       }
       const gameName = game.title;
-      const token = player.authCode;
-      const portal = this.portal;
+      const token = data.authCode === 'demo' ? 'DEMO' : data.authCode;
+      const portal = data.authCode === 'demo' ? 'demo' : this.portal;;
       const returnUrl = data.homeUrl;
       const sessionUrl = `${this.baseUrl}GameCategory=${gameCategory}&GameName=${gameName}&Token=${token}&PortalName=${portal}&ReturnUrl=${returnUrl}`;
       return {

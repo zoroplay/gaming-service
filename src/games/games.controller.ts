@@ -78,7 +78,7 @@ export class GamesController {
   @GrpcMethod(GAMING_SERVICE_NAME, 'FetchGames')
   fetchGames(payload: FetchGamesRequest): Promise<any> {
     console.log('fetch games');
-    return this.gamesService.fetchGames(payload.categoryId);
+    return this.gamesService.fetchGames(payload);
   }
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'FetchCategories')
