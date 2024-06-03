@@ -225,7 +225,7 @@ export class SmartSoftService {
         if (!debit.success) {
           const response = {
             success: false,
-            status: HttpStatus.BAD_REQUEST,
+            status: HttpStatus.INTERNAL_SERVER_ERROR,
             message: 'Incomplete request',
           };
           // update callback log response
@@ -345,7 +345,7 @@ export class SmartSoftService {
         const callbackLog = await this.callbackLogRepository.findOne({where: {transactionId: reversePayload.transactionId }})
 
         if (!callbackLog) {
-          const response = {success: false, message: 'Transaction not found', status: HttpStatus.NOT_FOUND}
+          const response = {success: false, message: 'Transaction not found', status: HttpStatus.INTERNAL_SERVER_ERROR}
           // update callback log response
           await this.callbackLogRepository.update({
             id: callback.id,
@@ -476,7 +476,7 @@ export class SmartSoftService {
     if (!res.status) {
       const response = {
         success: false,
-        status: HttpStatus.NOT_FOUND,
+        status: HttpStatus.INTERNAL_SERVER_ERROR,
         message: 'Player not found'
       }
 
