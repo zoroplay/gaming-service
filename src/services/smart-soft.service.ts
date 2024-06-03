@@ -166,7 +166,7 @@ export class SmartSoftService {
           const response = {
             success: false, 
             message: 'Insufficent balance', 
-            status: HttpStatus.BAD_REQUEST
+            status: HttpStatus.INTERNAL_SERVER_ERROR
           }
           // update callback log response
           await this.callbackLogRepository.update({
@@ -197,7 +197,7 @@ export class SmartSoftService {
         if (!place_bet.success) {
           const response = {
             success: false,
-            status: HttpStatus.BAD_REQUEST,
+            status: HttpStatus.INTERNAL_SERVER_ERROR,
             message: place_bet.message,
           };
           // update callback log response
