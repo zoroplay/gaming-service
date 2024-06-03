@@ -77,7 +77,7 @@ export class SmartSoftService {
       const token = data.authCode === 'demo' ? 'DEMO' : data.authCode;
       const portal = data.authCode === 'demo' ? 'demo' : this.portal;;
       const returnUrl = data.homeUrl;
-      const sessionUrl = `${this.baseUrl}GameCategory=${game.id}&GameName=${gameName}&Token=${token}&PortalName=${portal}&ReturnUrl=${returnUrl}`;
+      const sessionUrl = `${this.baseUrl}GameCategory=${game.gameId}&GameName=${gameName}&Token=${token}&PortalName=${portal}&ReturnUrl=${returnUrl}`;
       return {
         url: sessionUrl,
       };
