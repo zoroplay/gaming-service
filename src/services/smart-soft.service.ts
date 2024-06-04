@@ -245,7 +245,7 @@ export class SmartSoftService {
           status: HttpStatus.OK,
           message: 'Deposit, successful',
           data: {
-            Balance: debit.data.balance,
+            Balance: parseFloat(debit.data.balance.toFixed(2)),
             TransactionId: place_bet.data.transactionId,
           },
         };
@@ -303,7 +303,7 @@ export class SmartSoftService {
             status: HttpStatus.OK,
             message: 'Withdraw, successful',
             data: {
-              Balance: creditRes.data.balance,
+              Balance: parseFloat(creditRes.data.balance.toFixed(2)),
               TransactionId: settle_bet.data.transactionId,
             },
           };
@@ -396,7 +396,7 @@ export class SmartSoftService {
             status: HttpStatus.OK,
             message: 'Rollback, successful',
             data: {
-              Balance: rollbackWalletRes.data.balance,
+              Balance: parseFloat(rollbackWalletRes.data.balance.toFixed(2)),
               TransactionId: transaction.data.transactionId,
             },
           };
@@ -428,7 +428,7 @@ export class SmartSoftService {
             status: HttpStatus.OK,
             message: 'Rollback, successful',
             data: {
-              Balance: rollbackWalletRes.data.balance,
+              Balance: parseFloat(rollbackWalletRes.data.balance.toFixed(2)),
               TransactionId: transaction.data.transactionId,
             },
           };

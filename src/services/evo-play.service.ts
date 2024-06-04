@@ -463,7 +463,7 @@ export class EvoPlayService {
           data: {
             status: "ok",
             data: {
-              balance: debit.data.balance,
+              balance: debit.data.balance.toFixed(2),
               currency: player.currency,
             }
           },
@@ -549,7 +549,7 @@ export class EvoPlayService {
           data: {
             status: "ok",
             data: {
-              balance: creditRes.data.balance,
+              balance: creditRes.data.balance.toFixed(2),
               currency: player.currency,
             },
           }
@@ -662,7 +662,7 @@ export class EvoPlayService {
           data: {
             status: "ok",
             data: {
-              balance: rollbackWalletRes.data.balance,
+              balance: rollbackWalletRes.data.balance.toFixed(2),
               currency: player.currency,
             },
           }
@@ -727,7 +727,7 @@ export class EvoPlayService {
       data: {
         status: "ok",
         data: {
-          balance: player.balance,
+          balance: player.balance.toFixed(2),
           currency: player.currency
         }
       },
