@@ -186,7 +186,7 @@ export class VirtualService {
                 const debitRes = await this.walletService.debit({
                     clientId,
                     userId: user.id,
-                    amount: transactionAmount,
+                    amount: transactionAmount.toFixed(2),
                     source: 'goldenrace',
                     description: `${betRes.data.betId} - ${gameCycle}`,
                     username: user.username,
@@ -273,7 +273,7 @@ export class VirtualService {
                 const creditRes = await this.walletService.credit({
                     clientId,
                     userId: bet.userId,
-                    amount: transactionAmount,
+                    amount: transactionAmount.toFixed(2),
                     source: 'system',
                     description: `${gameCycle} - ${transactionCategory}`,
                     username: bet.username,
@@ -374,7 +374,7 @@ export class VirtualService {
             const creditRes = await this.walletService.credit({
                 clientId,
                 userId: bet.userId,
-                amount: transactionAmount,
+                amount: transactionAmount.toFixed(2),
                 source: 'system',
                 description: `${transactionCategory} - ${gameCycle}`,
                 username: bet.username,

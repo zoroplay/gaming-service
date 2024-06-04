@@ -421,7 +421,7 @@ export class EvoPlayService {
         const debit = await this.walletService.debit({
           userId: player.playerId,
           clientId: data.clientId,
-          amount: parseFloat(betParam.amount),
+          amount: betParam.amount,
           source: game.provider.slug,
           description: `Casino Bet: (${game.title})`,
           username: player.playerNickname,
@@ -534,7 +534,7 @@ export class EvoPlayService {
         creditRes = await this.walletService.credit({
           userId: player.playerId,
           clientId: data.clientId,
-          amount,
+          amount: amount.toFixed(2),
           source: game.provider.slug,
           description: `Casino Bet: (${game.title})`,
           username: player.playerNickname,
@@ -646,7 +646,7 @@ export class EvoPlayService {
         const rollbackWalletRes = await this.walletService.credit({
           userId: player.playerId,
           clientId: data.clientId,
-          amount: parseFloat(betParam.amount),
+          amount: betParam.amount.toFixed(2),
           source: game.provider.slug,
           description: `Bet Cancelled: (${game.title})`,
           username: player.playerNickname,

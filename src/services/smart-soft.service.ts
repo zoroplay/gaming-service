@@ -179,6 +179,8 @@ export class SmartSoftService {
           return response;
         }
 
+        console.log(player)
+
         const placeBetPayload: PlaceCasinoBetRequest = {
           userId: player.id,
           clientId: player.clientId,
@@ -215,7 +217,7 @@ export class SmartSoftService {
         const debit = await this.walletService.debit({
           userId: player.id,
           clientId: player.clientId,
-          amount: body.Amount,
+          amount: body.Amount.toFixed(2),
           source: game.provider.slug,
           description: `Casino Bet: (${gameName})`,
           username: player.username,
@@ -289,7 +291,7 @@ export class SmartSoftService {
           creditRes = await this.walletService.credit({
             userId: player.id,
             clientId: player.clientId,
-            amount: body.Amount,
+            amount: body.Amount.toFixed(2),
             source: body.TransactionInfo.Source,
             description: `Casino Bet: (${body.TransactionInfo.GameName})`,
             username: player.username,
@@ -382,7 +384,7 @@ export class SmartSoftService {
           rollbackWalletRes = await this.walletService.credit({
             userId: player.id,
             clientId: player.clientId,
-            amount: body.Amount,
+            amount: body.Amount.toFixed(2),
             source: transactionPayload.TransactionInfo.Source,
             description: `Bet Cancelled: (${transactionPayload.TransactionInfo.GameName})`,
             username: player.username,
@@ -414,7 +416,7 @@ export class SmartSoftService {
           rollbackWalletRes = await this.walletService.debit({
             userId: player.id,
             clientId: player.clientId,
-            amount: body.Amount,
+            amount: body.Amount.toFixed(2),
             source: transactionPayload.TransactionInfo.Source,
             description: `Bet Cancelled: (${transactionPayload.TransactionInfo.GameName})`,
             username: player.username,

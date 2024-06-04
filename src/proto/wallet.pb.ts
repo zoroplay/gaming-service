@@ -218,7 +218,7 @@ export interface GetBalanceRequest {
 export interface CreditUserRequest {
   userId: number;
   clientId: number;
-  amount: number;
+  amount: string;
   source: string;
   description: string;
   username: string;
@@ -231,7 +231,7 @@ export interface CreditUserRequest {
 export interface DebitUserRequest {
   userId: number;
   clientId: number;
-  amount: number;
+  amount: string;
   source: string;
   description: string;
   username: string;
