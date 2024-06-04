@@ -318,7 +318,7 @@ export class SmartSoftService {
           return response;
         } else {
           creditRes = await this.walletService.getWallet({
-            userId: player.userId,
+            userId: player.id,
             clientId: player.clientId,
           });
           const response = {
