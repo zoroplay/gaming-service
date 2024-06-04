@@ -181,13 +181,14 @@ export class EvoPlayService {
         return_url_info: 1,
         callback_version: 2,
       };
+
       const signature = this.getSignature(
         this.project,
         this.version,
         newData,
         this.token,
       );
-      console.log(signature)
+      // console.log(signature)
       // $url = $this->project_id."*".$this->version."*".$this->token;
       const url = `Game/getURL?project=${this.project}&version=${this.version}&signature=${signature}&token=${newData.token}&game=${newData.game}&settings[user_id]=${newData.settings.user_id}&settings[exit_url]=${newData.settings.exit_url}&settings[https]=${newData.settings.https}&denomination=${newData.denomination}&currency=${newData.currency}&return_url_info=${newData.return_url_info}&callback_version=${newData.callback_version}`;
       const response: AxiosResponse = await this.httpClient.axiosRef.get(
@@ -211,8 +212,6 @@ export class EvoPlayService {
     args: object,
     integrationKey: string,
   ) {
-    console.log(args)
-
     const compact = function (arg): string {
       if ('object' === typeof arg) {
         const result = [];
@@ -228,7 +227,8 @@ export class EvoPlayService {
     const parts = [compact(integrationId), compact(apiVersion)];
 
     for (const key of Object.keys(args)) {
-      parts.push(compact(args[key]));
+      if(key !== 'signature')
+        parts.push(compact(args[key]));
     }
 
     parts.push(compact(integrationKey));
@@ -240,22 +240,39 @@ export class EvoPlayService {
       .update(str)
       .digest('hex');
 
+      console.log('encryption hash');
+      console.log(md5Hash);
+      console.log('encryption ends');
+
     return md5Hash;
   }
 
   // callback handler
   async handleCallback(data: any) {
-    const callback = await this.saveCallbackLog(data);
-    const hash = await this.generateMd5(data.method, {
-      token: data.token,
-      name: data.name,
-      callback_id: data.callback_id,
-      data: data.data,
-    });
-    if (data.signature !== hash) {
+    const body = JSON.parse(data.body);
+
+    // console.log(body);
+
+    const callback = await this.saveCallbackLog(body);
+    
+    const hash = this.getSignature(this.project,
+      this.version,
+      body,
+      this.token
+    );
+
+    if (body.signature !== hash) {
       const response = {
         success: false,
+        data: {
+          status: "error",
+          error: {
+            message: 'Invalid Hash Signature',
+            scope: "internal",
+          }
+        },
         message: 'Invalid Hash Signature',
+        status: HttpStatus.BAD_REQUEST
       };
 
       // update callback log response
@@ -273,17 +290,26 @@ export class EvoPlayService {
 
     let game = null;
     let player = null;
+    let betParam, gameDetails;
 
-    if (data.token) {
-      const res = await this.identityService.validateXpressSession({
+    if (body.token && body.name !== 'init') {
+      const res = await this.identityService.validateToken({
         clientId: data.clientId,
-        sessionId: data.token,
+        token: body.token,
       });
 
       if (!res.success) {
         const response = {
           success: false,
           message: 'Invalid Session ID',
+          data: {
+            status: "error",
+            error: {
+              message: 'Session expired. Please sign in to contiun',
+              scope: "user",
+              no_refund: "1"
+            }
+          },
         };
 
         // update callback log response
@@ -301,30 +327,37 @@ export class EvoPlayService {
 
       player = JSON.parse(res.data);
 
-      if (data.details['game'])
-        game = await this.gameRepository.findOne({
-          where: {
-            id: data.details['game']['game_id'],
-          },
-        });
     }
     console.log('first stage passed');
-    switch (data.name) {
+
+    switch (body.name) {
       case 'init':
         console.log('init');
-        const x = await this.activateSession(data, callback);
+        const x = await this.activateSession(data.clientId, body.token, callback);
         return x;
-        break;
       case 'bet':
-        const walletRes = await this.walletService.getWallet({
-          userId: player.id,
-          clientId: player.clientId,
+        betParam = body.data;
+        gameDetails = JSON.parse(betParam.details);
+
+        game = await this.gameRepository.findOne({
+          where: {
+            gameId: gameDetails.game.game_id,
+          },
+          relations: {provider: true}
         });
 
-        if (walletRes.data.availableBalance < data.amount) {
+        if (player.balance < parseFloat(betParam.amount)) {
           const response = {
             success: false,
             message: 'Insufficent balance',
+            data: {
+              status: "error",
+              error: {
+                message: 'Insufficent balance',
+                scope: "user",
+                no_refund: "1",
+              }
+            },
             status: HttpStatus.BAD_REQUEST,
           };
           // update callback log response
@@ -339,20 +372,23 @@ export class EvoPlayService {
 
           return response;
         }
+        
         // return await this.activateSession();
         const placeBetPayload: PlaceCasinoBetRequest = {
-          userId: player.id,
-          clientId: player.clientId,
-          roundId: data.round_id,
-          transactionId: data.callback_id,
+          userId: player.playerId,
+          clientId: data.clientId,
+          roundId: betParam.round_id,
+          transactionId: betParam.action_id,
           gameId: game.gameId,
-          stake: data.amount,
+          stake: parseFloat(betParam.amount),
           gameName: game.title,
-          gameNumber: game.id,
-          source: game.type,
+          gameNumber: game.gameId,
+          source: game.provider.slug,
           cashierTransactionId: data.callback_id,
           winnings: 0,
+          username: player.playerNickname
         };
+        
         const place_bet = await this.placeBet(placeBetPayload);
 
         if (!place_bet.success) {
@@ -360,6 +396,14 @@ export class EvoPlayService {
             success: false,
             status: HttpStatus.BAD_REQUEST,
             message: place_bet.message,
+            data: {
+              status: "error",
+              error: {
+                message: place_bet.message,
+                scope: "internal",
+                no_refund: "0",
+              }
+            },
           };
           // update callback log response
           await this.callbackLogRepository.update(
@@ -375,12 +419,12 @@ export class EvoPlayService {
         }
 
         const debit = await this.walletService.debit({
-          userId: player.id,
-          clientId: player.clientId,
-          amount: data.amount,
-          source: game.type,
+          userId: player.playerId,
+          clientId: data.clientId,
+          amount: parseFloat(betParam.amount),
+          source: game.provider.slug,
           description: `Casino Bet: (${game.title})`,
-          username: player.username,
+          username: player.playerNickname,
           wallet: 'main',
           subject: 'Bet Deposit (Casino)',
           channel: game.type,
@@ -391,6 +435,14 @@ export class EvoPlayService {
             success: false,
             status: HttpStatus.BAD_REQUEST,
             message: 'Incomplete request',
+            data: {
+              status: "error",
+              error: {
+                message: 'Unable to complete request',
+                scope: "internal",
+                no_refund: "1",
+              }
+            },
           };
           // update callback log response
           await this.callbackLogRepository.update(
@@ -409,8 +461,11 @@ export class EvoPlayService {
           success: true,
           message: 'bet handled successfully',
           data: {
-            balance: debit.data.balance,
-            currency: data.currency,
+            status: "ok",
+            data: {
+              balance: debit.data.balance,
+              currency: player.currency,
+            }
           },
         };
         // update callback log response
@@ -426,9 +481,19 @@ export class EvoPlayService {
 
         return response;
       case 'win':
-        // const transactionType = data.body.TransactionType;
-        const amount = data.amount;
-        const betId = data.callback_id;
+        betParam = body.data;
+        gameDetails = JSON.parse(betParam.details);
+        
+        const amount = parseFloat(betParam.amount);
+        const betId = body.action_id;
+
+        game = await this.gameRepository.findOne({
+          where: {
+            gameId: gameDetails.game.game_id,
+          },
+          relations: {provider: true}
+        });
+
 
         const settlePayload: SettleCasinoBetRequest = {
           transactionId: betId,
@@ -442,6 +507,14 @@ export class EvoPlayService {
             success: false,
             message: 'Unable to complete request',
             status: HttpStatus.INTERNAL_SERVER_ERROR,
+            data: {
+              status: "error",
+              error: {
+                message: 'Unable to complete request',
+                scope: "internal",
+                no_refund: "1",
+              }
+            },
           };
           // update callback log response
           await this.callbackLogRepository.update(
@@ -459,23 +532,27 @@ export class EvoPlayService {
         let creditRes = null;
 
         creditRes = await this.walletService.credit({
-          userId: player.id,
-          clientId: player.clientId,
-          amount: data.amount,
-          source: game.type,
+          userId: player.playerId,
+          clientId: data.clientId,
+          amount,
+          source: game.provider.slug,
           description: `Casino Bet: (${game.title})`,
-          username: player.username,
+          username: player.playerNickname,
           wallet: 'main',
           subject: 'Bet Win (Casino)',
           channel: game.type,
         });
+
         const resp = {
           success: true,
           message: 'win handled successfully',
           data: {
-            balance: creditRes.data.balance,
-            currency: data.currency,
-          },
+            status: "ok",
+            data: {
+              balance: creditRes.data.balance,
+              currency: player.currency,
+            },
+          }
         };
 
         // update callback log response
@@ -492,16 +569,38 @@ export class EvoPlayService {
         return resp;
 
       case 'refund':
+        betParam = body.data;
+        gameDetails = JSON.parse(betParam.details);
+
         const reversePayload: RollbackCasinoBetRequest = {
-          transactionId: data.callback_id,
+          transactionId: betParam.refund_action_id,
         };
         // get callback log
         const callbackLog = await this.callbackLogRepository.findOne({
-          where: { transactionId: reversePayload.transactionId },
+          where: { transactionId: betParam.refund_callback_id },
+        });
+
+        game = await this.gameRepository.findOne({
+          where: {
+            gameId: gameDetails.game.game_id,
+          },
+          relations: {provider: true}
         });
 
         if (!callbackLog) {
-          const res = { success: false, message: 'Transaction not found' };
+          const res = { 
+            success: false, 
+            message: 'Transaction not found',
+            status: HttpStatus.INTERNAL_SERVER_ERROR,
+            data: {
+              status: "error",
+              error: {
+                message: 'Unable to complete request',
+                scope: "internal",
+                no_refund: "1",
+              }
+            },
+          };
           // update callback log response
           await this.callbackLogRepository.update(
             {
@@ -516,11 +615,20 @@ export class EvoPlayService {
         }
 
         const transaction = await this.rollbackTransaction(reversePayload);
+
         if (!transaction.success) {
           const response = {
             success: false,
             message: 'Unable to complete request',
             status: HttpStatus.INTERNAL_SERVER_ERROR,
+            data: {
+              status: "error",
+              error: {
+                message: 'Unable to complete request',
+                scope: "internal",
+                no_refund: "1",
+              }
+            },
           };
           // update callback log response
           await this.callbackLogRepository.update(
@@ -535,90 +643,67 @@ export class EvoPlayService {
           return response;
         }
 
-        let rollbackWalletRes = null;
+        const rollbackWalletRes = await this.walletService.credit({
+          userId: player.playerId,
+          clientId: data.clientId,
+          amount: parseFloat(betParam.amount),
+          source: game.provider.slug,
+          description: `Bet Cancelled: (${game.title})`,
+          username: player.playerNickname,
+          wallet: 'main',
+          subject: 'Bet refund (Casino)',
+          channel: game.title,
+        });
 
-        if (callbackLog.request_type === 'win') {
-          rollbackWalletRes = await this.walletService.credit({
-            userId: player.id,
-            clientId: player.clientId,
-            amount: data.amount,
-            source: game.type,
-            description: `Bet Cancelled: (${game.title})`,
-            username: player.username,
-            wallet: 'main',
-            subject: 'Bet refund (Casino)',
-            channel: game.title,
-          });
-
-          const response = {
-            success: true,
-            message: 'refund handled successfully',
+        const res = {
+          success: true,
+          message: 'refund handled successfully',
+          status: HttpStatus.OK,
+          data: {
+            status: "ok",
             data: {
               balance: rollbackWalletRes.data.balance,
-              currency: data.currency,
+              currency: player.currency,
             },
-          };
-          // update callback log response
-          await this.callbackLogRepository.update(
-            {
-              id: callback.id,
-            },
-            {
-              response: JSON.stringify(response),
-              status: true,
-            },
-          );
+          }
+        };
+        // update callback log response
+        await this.callbackLogRepository.update(
+          {
+            id: callback.id,
+          },
+          {
+            response: JSON.stringify(response),
+            status: true,
+          },
+        );
 
-          return response;
-        } else {
-          rollbackWalletRes = await this.walletService.debit({
-            userId: player.id,
-            clientId: player.clientId,
-            amount: data.amount,
-            source: game.type,
-            description: `Bet Cancelled: (${game.title})`,
-            username: player.username,
-            wallet: 'main',
-            subject: 'Win refund (Casino)',
-            channel: game.title,
-          });
-          const response = {
-            success: true,
-            message: 'refund, successful',
-            data: {
-              balance: rollbackWalletRes.data.balance,
-              currency: data.currency,
-            },
-          };
-          // update callback log response
-          await this.callbackLogRepository.update(
-            {
-              id: callback.id,
-            },
-            {
-              response: JSON.stringify(response),
-              status: true,
-            },
-          );
-
-          return response;
-        }
-        break;
+        return res;
+        
     }
   }
   // Webhook Section
   // Activate Player Session
-  async activateSession(data, callback) {
-    console.log('activateSession', data, callback);
-    const res = await this.identityService.evoGameLogin({
-      clientId: data.clientId,
-      token: data.token,
+  async activateSession(clientId, token, callback) {
+    // console.log('activateSession', data, callback);
+    const res: any = await this.identityService.validateToken({
+      clientId,
+      token,
     });
 
     if (!res.status) {
       const response = {
         success: false,
-        message: 'Player not found',
+        data: {
+          status: "error",
+          error: {
+            message: 'Invalid auth code, please login to try agaub',
+            scope: "user",
+            no_refund: "1"
+          }
+        },
+        message: 'Invalid auth code, please login to try agaub',
+        status: HttpStatus.BAD_REQUEST
       };
 
       // update callback log response
@@ -634,15 +719,17 @@ export class EvoPlayService {
       return response;
     }
 
+    const player = JSON.parse(res.data);
+
     const response = {
       success: true,
       message: 'Activation Successful',
       data: {
-        UserName: res.data.playerNickname,
-        SessionId: res.data.sessionId,
-        ClientExternalKey: res.data.playerId,
-        PortalName: 'sportsbookengine',
-        CurrencyCode: res.data.currency,
+        status: "ok",
+        data: {
+          balance: player.balance,
+          currency: player.currency
+        }
       },
     };
     // update callback log response
@@ -679,19 +766,11 @@ export class EvoPlayService {
   // save callback request
   async saveCallbackLog(data) {
     console.log('saving callback logs');
-    const { action, body } = data;
     try {
       const callback = new CallbackLog();
-      callback.transactionId =
-        action === 'init' || data.name === 'init'
-          ? data.token
-          : action === 'refund' || data.name === 'refund'
-            ? data.callback_id
-            : data.callback_id;
-      // ? body.CurrentTransactionId
-      // : body.TransactionId;
-      callback.request_type = action || data.name;
-      callback.payload = JSON.stringify(body);
+      callback.transactionId = data.callback_id
+      callback.request_type = data.name;
+      callback.payload = JSON.stringify(data);
 
       return await this.callbackLogRepository.save(callback);
     } catch (e) {
@@ -699,25 +778,4 @@ export class EvoPlayService {
     }
   }
   
-  generateMd5(requestMethod: string, payload) {
-    console.log('payload start');
-
-    // console.log(this.secretKey);
-    // console.log(requestMethod);
-    // console.log(JSON.stringify(payload));
-    // console.log(
-    //   this.secretKey + '|' + requestMethod + '|' + JSON.stringify(payload),
-    // );
-    const md5Hash = crypto
-      .createHash('md5')
-      .update(
-        requestMethod + '|' + JSON.stringify(payload) + '|' + this.secretKey,
-      )
-      .digest('hex');
-
-    console.log('payload hash');
-    console.log(md5Hash);
-    console.log('payload ends');
-    return md5Hash;
-  }
 }

@@ -144,6 +144,7 @@ export class SmartSoftService {
           where: {
             title: body['TransactionInfo']['GameName'],
           },
+          relations: {provider: true}
         });
     }
 
@@ -187,9 +188,10 @@ export class SmartSoftService {
           stake: body.Amount,
           gameName: body.TransactionInfo.GameName,
           gameNumber: body.TransactionInfo.GameNumber,
-          source: body.TransactionInfo.Source,
+          source: game.provider.slug,
           cashierTransactionId: body.TransactionInfo.CashierTransacitonId,
           winnings: 0,
+          username: player.username
         };
 
         const place_bet = await this.placeBet(placeBetPayload);
@@ -214,7 +216,7 @@ export class SmartSoftService {
           userId: player.id,
           clientId: player.clientId,
           amount: body.Amount,
-          source: body.TransactionInfo.Source,
+          source: game.provider.slug,
           description: `Casino Bet: (${gameName})`,
           username: player.username,
           wallet: 'main',

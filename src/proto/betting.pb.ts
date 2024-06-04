@@ -105,6 +105,7 @@ export interface PlaceCasinoBetRequest {
   gameNumber?: string | undefined;
   source?: string | undefined;
   cashierTransactionId?: string | undefined;
+  username?: string | undefined;
 }
 
 export interface CreditCasinoBetRequest {
@@ -404,6 +405,17 @@ export interface GamingActivityBets {
   tournamentName: string;
 }
 
+export interface ProcessCashoutRequest {
+  betId: number;
+  amount: number;
+}
+
+export interface ProcessCashoutResponse {
+  success: boolean;
+  message: string;
+  balance?: number | undefined;
+}
+
 export const BETTING_PACKAGE_NAME = "betting";
 
 export interface BettingServiceClient {
@@ -444,6 +456,8 @@ export interface BettingServiceClient {
   getVirtualBet(request: GetVirtualBetRequest): Observable<GetVirtualBetResponse>;
 
   getVirtualBets(request: GetVirtualBetsRequest): Observable<PaginationResponse>;
+
+  cashoutRequest(request: ProcessCashoutRequest): Observable<ProcessCashoutResponse>;
 }
 
 export interface BettingServiceController {
@@ -502,6 +516,10 @@ export interface BettingServiceController {
   getVirtualBets(
     request: GetVirtualBetsRequest,
   ): Promise<PaginationResponse> | Observable<PaginationResponse> | PaginationResponse;
+
+  cashoutRequest(
+    request: ProcessCashoutRequest,
+  ): Promise<ProcessCashoutResponse> | Observable<ProcessCashoutResponse> | ProcessCashoutResponse;
 }
 
 export function BettingServiceControllerMethods() {
@@ -526,6 +544,7 @@ export function BettingServiceControllerMethods() {
       "gamingActivity",
       "getVirtualBet",
       "getVirtualBets",
+      "cashoutRequest",
     ];
     for (const method of grpcMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);

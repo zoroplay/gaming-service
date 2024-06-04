@@ -28,8 +28,8 @@ export class IdentityService {
     return firstValueFrom(this.svc.getUserDetails(data));
   }
 
-  evoGameLogin(data: XpressLoginRequest) {
-    return firstValueFrom(this.svc.evoGameLogin(data));
+  validateToken(data: XpressLoginRequest) {
+    return firstValueFrom(this.svc.validateAuthCode(data));
   }
   xpressLogin(data: XpressLoginRequest) {
     return firstValueFrom(this.svc.xpressGameLogin(data));

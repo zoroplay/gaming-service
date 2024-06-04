@@ -535,38 +535,18 @@ export class GamesService {
     switch (_data.provider) {
       case 'shack-evolution':
         return await this.handleC2Games(_data.body, _data.header);
-        break;
       case 'c27':
         return await this.handleC2Games(_data.body, _data.header);
-        break;
       case 'tada-games':
         return await this.handleC2Games(_data.body, _data.header);
-        break;
       case 'smart-soft':
         return await this.smartSoftService.handleCallback(_data);
-        break;
       case 'evolution':
         return await this.handleC2Games(_data.body, _data.header);
-        break;
       case 'evo-play':
-        // const x = await Promise.all(
-        //   _data.body.data.map(async (data) => {
-        //     return await this.evoPlayService.handleCallback({
-        //       clientId: _data.clientId,
-        //       action: _data.action,
-        //       method: _data.method,
-        //       body: _data.body,
-        //       name: _data.body.name,
-        //       token: _data.body.token,
-        //       callback_id: _data.body.callback_id,
-        //       ...data,
-        //     });
-        //   }),
-        // );
-        // return x[0];
+        return await this.evoPlayService.handleCallback(_data);
       default:
         throw new NotFoundException('Unknown provider');
-        break;
     }
     // Fetch the game list from your API (adjust the method name and params accordingly)
     const gameList = await this.c2GamingService.getGames();
