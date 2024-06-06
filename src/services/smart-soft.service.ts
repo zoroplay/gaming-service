@@ -399,6 +399,7 @@ export class SmartSoftService {
         const callbackLog = await this.callbackLogRepository.findOne({where: {transactionId: reversePayload.transactionId }})
 
         if (!callbackLog) {
+
           const response = {success: false, message: 'Transaction not found', status: HttpStatus.INTERNAL_SERVER_ERROR}
           // update callback log response
           await this.callbackLogRepository.update({
@@ -644,7 +645,7 @@ export class SmartSoftService {
       if (callback) return callback;
       
       callback = new CallbackLog();
-      callback.transactionId = 
+      callback.transactionId = transactionId;
       callback.request_type = action;
       callback.payload = JSON.stringify(body);
 
