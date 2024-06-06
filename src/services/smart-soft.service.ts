@@ -3,6 +3,7 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import * as crypto from 'crypto';
 import * as Excel from 'exceljs';
+import { v4 as uuidv4 } from 'uuid';
 
 import {
   HttpStatus,
@@ -379,7 +380,7 @@ export class SmartSoftService {
             message: 'Withdraw, successful',
             data: {
               Balance: creditRes.data.availableBalance,
-              TransactionId: settle_bet.data.transactionId,
+              TransactionId: uuidv4(),
             },
           };
           // update callback log response
