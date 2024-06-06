@@ -179,7 +179,7 @@ export class SmartSoftService {
           return response;
         }
 
-        console.log(player)
+        // console.log(player)
 
         const placeBetPayload: PlaceCasinoBetRequest = {
           userId: player.id,
@@ -263,31 +263,53 @@ export class SmartSoftService {
       case 'Withdraw':
         const transactionType = body.TransactionType;
         const amount = body.Amount;
-        const betId = body.TransactionInfo.RoundId;
+        const betId = body.TransactionInfo.BetTransactionId;
+        const roundId = body.TransactionInfo.RoundId;
 
-        const settlePayload: CreditCasinoBetRequest = {
-          transactionId: betId,
-          winnings: amount,
-        };
-
-        const settle_bet = await this.settle(settlePayload);
-        // console.log(settle_bet);
-        if (!settle_bet.success)  {
-          // console.log(settle_bet)
-          const response = {success: false, message: 'Unable to complete request', status: HttpStatus.INTERNAL_SERVER_ERROR}
-          // update callback log response
-          await this.callbackLogRepository.update({
-            id: callback.id,
-          },{
-            response: JSON.stringify(response)
+        // check if transaction ID exist and return user balance
+        if (callback.transactionId === body.TransactionId && callback.status === true) {
+          
+          const creditRes = await this.walletService.getWallet({
+            userId: player.id,
+            clientId: player.clientId,
           });
 
-          return response;
+          return {
+            success: true,
+            status: HttpStatus.OK,
+            message: 'Withdraw, successful',
+            data: {
+              Balance: creditRes.data.availableBalance,
+              TransactionId: body.BetTransactionId,
+            },
+          };
+
         }
 
         let creditRes = null;
 
         if (transactionType === 'WinAmount' && amount > 0) {
+          const settlePayload: CreditCasinoBetRequest = {
+            transactionId: betId,
+            winnings: amount,
+          };
+  
+          // settle won bet
+          const settle_bet = await this.settle(settlePayload);
+        
+          if (!settle_bet.success)  {
+
+            const response = {success: false, message: settle_bet.message, status: HttpStatus.INTERNAL_SERVER_ERROR}
+            // update callback log response
+            await this.callbackLogRepository.update({
+              id: callback.id,
+            },{
+              response: JSON.stringify(response)
+            });
+  
+            return response;
+          }
+
           creditRes = await this.walletService.credit({
             userId: player.id,
             clientId: player.clientId,
@@ -318,11 +340,39 @@ export class SmartSoftService {
           });
 
           return response;
-        } else {
+        } else { // handle CloseRound transactionType
+
+          const payload: CreditCasinoBetRequest = {
+            transactionId: roundId,
+            winnings: amount,
+          };
+  
+          // settle won bet
+          const settle_bet = await this.betService.closeRound(payload);
+        
+          if (!settle_bet.success)  {
+
+            const response = {
+              success: false, 
+              message: settle_bet.message, 
+              status: HttpStatus.INTERNAL_SERVER_ERROR
+            }
+            // update callback log response
+            await this.callbackLogRepository.update({
+              id: callback.id,
+            },{
+              response: JSON.stringify(response)
+            });
+  
+            return response;
+          }
+          
+          // get player wallet
           creditRes = await this.walletService.getWallet({
             userId: player.id,
             clientId: player.clientId,
           });
+
           const response = {
             success: true,
             status: HttpStatus.OK,
@@ -381,6 +431,7 @@ export class SmartSoftService {
         let rollbackWalletRes = null;
 
         if (callbackLog.request_type === 'Deposit') {
+          
           rollbackWalletRes = await this.walletService.credit({
             userId: player.id,
             clientId: player.clientId,
@@ -586,10 +637,14 @@ export class SmartSoftService {
     // console.log('saving callback logs')
     const action = data.action;
     const body = data.body ? JSON.parse(data.body) : '';
-
+    const transactionId = action === 'ActivateSession' ? body.Token : action === 'GetBalance' ? data.header['x-sessionid'] : action === 'RollbackTransaction' ? body.CurrentTransactionId : body.TransactionId;
     try{
-      const callback = new CallbackLog();
-      callback.transactionId = action === 'ActivateSession' ? body.Token : action === 'GetBalance' ? data.header['x-sessionid'] : action === 'RollbackTransaction' ? body.CurrentTransactionId : body.TransactionId;
+      let callback = await this.callbackLogRepository.findOne({where: {transactionId}});
+      
+      if (callback) return callback;
+      
+      callback = new CallbackLog();
+      callback.transactionId = 
       callback.request_type = action;
       callback.payload = JSON.stringify(body);
 

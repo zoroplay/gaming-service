@@ -33,6 +33,10 @@ export class BetService {
     return this.bettingService.settleCasinoBet(data);
   }
 
+  public closeRound(data: CreditCasinoBetRequest) {
+    return firstValueFrom(this.bettingService.closeCasinoRound(data));
+  }
+
   public cancelCasinoBet(data: RollbackCasinoBetRequest) {
     return this.bettingService.cancelCasinoBet(data);
   }
