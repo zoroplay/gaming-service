@@ -329,7 +329,7 @@ export class SmartSoftService {
             message: 'Withdraw, successful',
             data: {
               Balance: parseFloat(creditRes.data.balance.toFixed(2)),
-              TransactionId: settle_bet.data.transactionId,
+              TransactionId: uuidv4(),
             },
           };
           // update callback log response
