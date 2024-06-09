@@ -138,7 +138,7 @@ export class SmartSoftService {
         return response;
       }
 
-      player = JSON.parse(res.data);
+      player = res.data;
 
       if (body['TransactionInfo'])
         game = await this.gameRepository.findOne({

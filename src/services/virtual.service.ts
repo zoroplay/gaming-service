@@ -80,7 +80,7 @@ export class VirtualService {
             const isValid = await this.identityService.validateXpressSession({sessionId, clientId});
             // console.log(isValid)
             if (isValid.success) {
-                const user = JSON.parse(isValid.data);
+                const user: any = isValid.data;
 
                 // find the operator settings
                 const privateKeyQuery = await this.gameKeyRepository.findOne({
@@ -136,7 +136,7 @@ export class VirtualService {
             const isValid = await this.identityService.validateXpressSession({sessionId, clientId});
             // console.log(isValid)
             if (isValid.success) {
-                const user = JSON.parse(isValid.data); 
+                const user: any = isValid.data; 
                 // console.log(user);
                 if (user.status !== 1)
                     return errorHandler.incorrectIdentifier();
@@ -437,7 +437,7 @@ export class VirtualService {
             const isValid = await this.identityService.validateXpressSession({sessionId, clientId});
             // console.log(isValid)
             if (isValid.success) {
-                const {id} = JSON.parse(isValid.data)
+                const {id}: any = isValid.data
 
                 // call identity service logout user
                 const res = await this.identityService.xpressLogout({sessionId: id.toString(), clientId});

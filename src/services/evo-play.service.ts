@@ -325,7 +325,7 @@ export class EvoPlayService {
         return response;
       }
 
-      player = JSON.parse(res.data);
+      player = res.data;
 
     }
     console.log('first stage passed');
@@ -719,7 +719,7 @@ export class EvoPlayService {
       return response;
     }
 
-    const player = JSON.parse(res.data);
+    const player = res.data;
 
     const response = {
       success: true,

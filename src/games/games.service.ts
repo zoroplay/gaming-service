@@ -65,7 +65,7 @@ export class GamesService {
       return {
         success: true,
         message: 'Saved succesfully',
-        data: JSON.stringify(savedProvider),
+        data: savedProvider,
       };
     } catch (err) {
       return { success: false, message: 'Unable to save new provider' };
@@ -104,7 +104,7 @@ export class GamesService {
     return {
       success: true,
       message: 'Providers retrieved successfully',
-      data: JSON.stringify(providers),
+      data: providers,
     };
   }
 
@@ -135,7 +135,7 @@ export class GamesService {
     const protoResponse: Game[] = resp.map((entity: GameEntity) =>
       this.entityToProtoService.entityToProto(entity),
     );
-    console.log(`proto response: ${JSON.stringify(protoResponse)}`);
+    // console.log(`proto response: ${JSON.stringify(protoResponse)}`);
     const final = {
       games: protoResponse,
     };

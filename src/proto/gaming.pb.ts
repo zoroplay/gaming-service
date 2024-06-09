@@ -299,7 +299,7 @@ export interface CommonResponse {
   status?: number | undefined;
   success?: boolean | undefined;
   message: string;
-  data?: string | undefined;
+  data?: { [key: string]: any } | undefined;
 }
 
 export interface SaveCategoryRequest {

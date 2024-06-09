@@ -206,12 +206,14 @@ export class ShackEvolutionService {
     const res = await this.identityService.validateXpressSession({clientId: resp.clientId, sessionId: body.token});
 
     if (!res.success) return {success: false, message: 'Invalid player token'}
-    const player = JSON.parse(res.data);
+    const player: any = res.data;
+
     const game = await this.gameRepository.findOne({
       where: {
         title: resp.body['gameType'],
       },
     });
+    
     if (body.type) {
       switch (body.type) {
         case 'debit':
