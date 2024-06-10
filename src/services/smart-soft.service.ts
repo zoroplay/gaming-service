@@ -419,6 +419,7 @@ export class SmartSoftService {
         const transaction = await this.rollbackTransaction(reversePayload);
 
         if (!transaction.success)  {
+          console.log(transaction.message)
           const response = {success: false, message: 'Unable to complete request', status: HttpStatus.INTERNAL_SERVER_ERROR}
           // update callback log response
           await this.callbackLogRepository.update({
