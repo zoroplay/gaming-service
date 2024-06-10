@@ -379,7 +379,7 @@ export class SmartSoftService {
             status: HttpStatus.OK,
             message: 'Withdraw, successful',
             data: {
-              Balance: creditRes.data.availableBalance,
+              Balance: parseFloat(creditRes.data.availableBalance.toFixed(2)),
               TransactionId: uuidv4(),
             },
           };
