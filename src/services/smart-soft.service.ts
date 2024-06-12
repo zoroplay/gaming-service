@@ -74,11 +74,13 @@ export class SmartSoftService {
           gameCategory = `${game.type}Mobile`;
         }
       }
-      const gameName = game.title;
+      const gameName = game.gameId;
       const token = data.authCode === 'demo' ? 'DEMO' : data.authCode;
       const portal = data.authCode === 'demo' ? 'demo' : this.portal;;
       const returnUrl = data.homeUrl;
-      const sessionUrl = `${this.baseUrl}GameCategory=${game.gameId}&GameName=${gameName}&Token=${token}&PortalName=${portal}&ReturnUrl=${returnUrl}`;
+      const GameCategory = data.isMobile ? game.game_category_m : game.game_category_w;
+
+      const sessionUrl = `${this.baseUrl}GameCategory=${GameCategory}&GameName=${gameName}&Token=${token}&PortalName=${portal}&ReturnUrl=${returnUrl}`;
       return {
         url: sessionUrl,
       };

@@ -37,6 +37,12 @@ export class Game {
   @Column({ type: 'text', nullable: true })
   type: string;
 
+  @Column({ type: 'text', nullable: true })
+  game_category_w: string;
+
+  @Column({ type: 'text', nullable: true })
+  game_category_m: string;
+
   @ManyToOne(() => Provider, (provider) => provider.games)
   provider: Provider;
 
