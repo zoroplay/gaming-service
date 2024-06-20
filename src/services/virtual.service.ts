@@ -31,6 +31,7 @@ export class VirtualService {
             // console.log('identity response ', res);
 
             if(!res.status) {
+                console.log('Error fetching user data')
                 return errorHandler.invalidSecureToken();
             } else {
                 const user = res.data;
@@ -59,6 +60,8 @@ export class VirtualService {
                 const hashStr = `${data.playerId}${data.currency}${data.balance}${data.sessionId}${data.group}${data.timestamp}${data.requestId}${privateKeyQuery.value}`;
             
                 data.fingerprint = MD5(hashStr).toString();
+
+                console.log(data);
 
                 return {
                     status: true,
