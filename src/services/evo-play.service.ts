@@ -690,7 +690,7 @@ export class EvoPlayService {
       token,
     });
 
-    console.log('player res', res.data);
+    // console.log('player res', res.data);
 
     if (!res) {
       const response = {
@@ -758,6 +758,7 @@ export class EvoPlayService {
           currency: player.currency
         }
       },
+      status: HttpStatus.OK
     };
     // update callback log response
     await this.callbackLogRepository.update(
