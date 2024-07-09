@@ -293,7 +293,7 @@ export class EvoPlayService {
 
     if (body.token && body.name !== 'init') {
       const res = await this.identityService.validateToken({
-        clientId: data.clientId,
+        clientId: 1, //data.clientId,
         token: body.token,
       });
 
@@ -332,7 +332,11 @@ export class EvoPlayService {
     switch (body.name) {
       case 'init':
         console.log('init');
-        const x = await this.activateSession(data.clientId, body.token, callback);
+        const x = await this.activateSession(
+          1, //data.clientId, 
+          body.token, 
+          callback
+        );
         return x;
       case 'bet':
         betParam = body.data;
@@ -375,7 +379,7 @@ export class EvoPlayService {
         // return await this.activateSession();
         const placeBetPayload: PlaceCasinoBetRequest = {
           userId: player.playerId,
-          clientId: data.clientId,
+          clientId: 1, //data.clientId,
           roundId: betParam.round_id,
           transactionId: betParam.action_id,
           gameId: game.gameId,
@@ -419,7 +423,7 @@ export class EvoPlayService {
 
         const debit = await this.walletService.debit({
           userId: player.playerId,
-          clientId: data.clientId,
+          clientId: 1, //data.clientId,
           amount: betParam.amount,
           source: game.provider.slug,
           description: `Casino Bet: (${game.title})`,
@@ -532,7 +536,7 @@ export class EvoPlayService {
 
         creditRes = await this.walletService.credit({
           userId: player.playerId,
-          clientId: data.clientId,
+          clientId: 1, //data.clientId,
           amount: amount.toFixed(2),
           source: game.provider.slug,
           description: `Casino Bet: (${game.title})`,
@@ -644,7 +648,7 @@ export class EvoPlayService {
 
         const rollbackWalletRes = await this.walletService.credit({
           userId: player.playerId,
-          clientId: data.clientId,
+          clientId: 1, //data.clientId,
           amount: betParam.amount.toFixed(2),
           source: game.provider.slug,
           description: `Bet Cancelled: (${game.title})`,
@@ -692,18 +696,44 @@ export class EvoPlayService {
 
     console.log('player res', res.data);
 
-    if (!res.status) {
+    if (!res) {
       const response = {
         success: false,
         data: {
           status: "error",
           error: {
-            message: 'Invalid auth code, please login to try agaub',
+            message: 'Invalid auth code, please login to try again',
             scope: "user",
             no_refund: "1"
           }
         },
-        message: 'Invalid auth code, please login to try agaub',
+        message: 'Invalid auth code, please login to try again',
+        status: HttpStatus.BAD_REQUEST
+      };
+
+      // update callback log response
+      await this.callbackLogRepository.update(
+        {
+          id: callback.id,
+        },
+        {
+          response: JSON.stringify(response),
+        },
+      );
+
+      return response;
+    } else if (!res.status) {
+      const response = {
+        success: false,
+        data: {
+          status: "error",
+          error: {
+            message: 'Invalid auth code, please login to try again',
+            scope: "user",
+            no_refund: "1"
+          }
+        },
+        message: 'Invalid auth code, please login to try again',
         status: HttpStatus.BAD_REQUEST
       };
 
