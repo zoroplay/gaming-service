@@ -694,9 +694,9 @@ export class EvoPlayService {
       token,
     });
 
-    console.log('player res', res.data);
+    console.log('player res', res);
 
-    if (!res) {
+    if (!res.data) {
       const response = {
         success: false,
         data: {
