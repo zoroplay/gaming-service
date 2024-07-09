@@ -35,7 +35,6 @@ export class EvoPlayService {
   private token: string;
   private requestConfig: AxiosRequestConfig;
   private secretKey: string;
-  private portal: string;
 
   constructor(
     @InjectRepository(GameEntity)
@@ -56,7 +55,6 @@ export class EvoPlayService {
     this.baseUrl = this.configService.get<string>('EVO_PLAY_BASE_URL');
     this.project = this.configService.get<number>('EVO_PLAY_PROJECT');
     this.secretKey = this.configService.get<string>('EVO_PLAY_SECRET_KEY');
-    this.portal = this.configService.get<string>('SMART_SOFT_PORTAL');
     this.version = this.configService.get<number>('EVO_PLAY_VERSION');
     this.token = this.configService.get<string>('EVO_PLAY_TOKEN');
     this.setRequestOptions();
@@ -251,7 +249,7 @@ export class EvoPlayService {
   async handleCallback(data: any) {
     const body = JSON.parse(data.body);
 
-    // console.log(body);
+    console.log(body);
 
     const callback = await this.saveCallbackLog(body);
     
