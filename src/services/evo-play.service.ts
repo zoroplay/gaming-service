@@ -249,11 +249,12 @@ export class EvoPlayService {
   async handleCallback(data: any) {
     const body = JSON.parse(data.body);
 
-    console.log(body);
+    // console.log(body);
 
     const callback = await this.saveCallbackLog(body);
     
-    const hash = this.getSignature(this.project,
+    const hash = this.getSignature(
+      this.project,
       this.version,
       body,
       this.token
@@ -688,6 +689,8 @@ export class EvoPlayService {
       clientId,
       token,
     });
+
+    console.log('player res', res.data);
 
     if (!res.status) {
       const response = {
