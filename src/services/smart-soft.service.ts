@@ -421,7 +421,6 @@ export class SmartSoftService {
         const transaction = await this.rollbackTransaction(reversePayload);
 
         if (!transaction.success)  {
-          console.log(transaction.message)
           const response = {success: false, message: 'Unable to complete request', status: HttpStatus.INTERNAL_SERVER_ERROR}
           // update callback log response
           await this.callbackLogRepository.update({
@@ -508,11 +507,8 @@ export class SmartSoftService {
   // support
   generateMd5(requestMethod: string, payload: string) {
     console.log('encryption start');
-
-    // console.log(this.secretKey);
-    // console.log(requestMethod);
-    // console.log(JSON.stringify(payload));
-    console.log(`${this.secretKey}|${requestMethod}|${payload}`);
+;
+    // console.log(`${this.secretKey}|${requestMethod}|${payload}`);
 
     const md5Hash = crypto
       .createHash('md5')
@@ -521,9 +517,9 @@ export class SmartSoftService {
       )
       .digest('hex');
 
-    console.log('encryption hash');
-    console.log(md5Hash);
-    console.log('encryption ends');
+    // console.log('encryption hash');
+    // console.log(md5Hash);
+    // console.log('encryption ends');
     return md5Hash;
   }
 
@@ -576,7 +572,6 @@ export class SmartSoftService {
 
   // Get Player Balance
   async getBalance(player, callback) {
-    // console.log('getBalance', data);
     let response, status;
 
     if (player) {
@@ -585,7 +580,7 @@ export class SmartSoftService {
         userId: player.id,
         clientId: player.clientId,
       });
-      // console.log('wallet', wallet);
+
       if (wallet.success) {
         response = {
           success: true,
@@ -624,7 +619,6 @@ export class SmartSoftService {
 
   // Place Bet
   async placeBet(data: PlaceCasinoBetRequest) {
-    // console.log('place casino bet', data);
     return firstValueFrom(this.betService.placeCasinoBet(data));
   }
 
@@ -639,7 +633,6 @@ export class SmartSoftService {
 
   // save callback request
   async saveCallbackLog(data) {
-    // console.log('saving callback logs')
     const action = data.action;
     const body = data.body ? JSON.parse(data.body) : '';
     const transactionId = action === 'ActivateSession' ? body.Token : action === 'GetBalance' ? data.header['x-sessionid'] : action === 'RollbackTransaction' ? body.CurrentTransactionId : body.TransactionId;
@@ -653,7 +646,6 @@ export class SmartSoftService {
       callback.request_type = action;
       callback.payload = JSON.stringify(body);
 
-      // console.log(callback)
 
       return await this.callbackLogRepository.save(callback);
 
