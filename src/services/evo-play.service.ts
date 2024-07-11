@@ -502,10 +502,11 @@ export class EvoPlayService {
         };
 
         const settle_bet = await this.settle(settlePayload);
+        // console.log()
         if (!settle_bet.success) {
           const response = {
             success: false,
-            message: 'Unable to complete request',
+            message: 'Unable to complete request' + settle_bet.message,
             status: HttpStatus.INTERNAL_SERVER_ERROR,
             data: {
               status: "error",
@@ -750,6 +751,34 @@ export class EvoPlayService {
 
     const player = res.data;
 
+    if (!player) {
+      const response = {
+        success: false,
+        data: {
+          status: "error",
+          error: {
+            message: 'Invalid auth code, please login to try again',
+            scope: "user",
+            no_refund: "1"
+          }
+        },
+        message: 'Invalid auth code, please login to try again',
+        status: HttpStatus.BAD_REQUEST
+      };
+
+      // update callback log response
+      await this.callbackLogRepository.update(
+        {
+          id: callback.id,
+        },
+        {
+          response: JSON.stringify(response),
+        },
+      );
+
+      return response;
+    }
+
     const response = {
       success: true,
       message: 'Activation Successful',
@@ -762,6 +791,7 @@ export class EvoPlayService {
       },
       status: HttpStatus.OK
     };
+
     // update callback log response
     await this.callbackLogRepository.update(
       {
@@ -772,6 +802,7 @@ export class EvoPlayService {
         status: true,
       },
     );
+
 
     return response;
   }
