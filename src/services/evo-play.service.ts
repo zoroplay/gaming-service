@@ -659,7 +659,7 @@ export class EvoPlayService {
 
         try {
 
-          const res = {
+          const response = {
             success: true,
             message: 'refund handled successfully',
             status: HttpStatus.OK,
@@ -682,7 +682,7 @@ export class EvoPlayService {
             },
           );
 
-          return res;
+          return response;
         } catch (e) {
           console.log(e.message);
           return {
