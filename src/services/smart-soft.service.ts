@@ -507,7 +507,7 @@ export class SmartSoftService {
   // support
   generateMd5(requestMethod: string, payload: string) {
     console.log('encryption start');
-;
+
     // console.log(`${this.secretKey}|${requestMethod}|${payload}`);
 
     const md5Hash = crypto

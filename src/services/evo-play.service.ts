@@ -331,7 +331,7 @@ export class EvoPlayService {
 
     switch (body.name) {
       case 'init':
-        console.log('init');
+        // console.log('init');
         const x = await this.activateSession(data.clientId, body.token, callback);
         return x;
       case 'bet':
@@ -459,6 +459,7 @@ export class EvoPlayService {
         let response = {
           success: true,
           message: 'bet handled successfully',
+          status: HttpStatus.OK,
           data: {
             status: "ok",
             data: {
@@ -545,6 +546,7 @@ export class EvoPlayService {
         const resp = {
           success: true,
           message: 'win handled successfully',
+          status: HttpStatus.OK,
           data: {
             status: "ok",
             data: {
@@ -645,7 +647,7 @@ export class EvoPlayService {
         const rollbackWalletRes = await this.walletService.credit({
           userId: player.playerId,
           clientId: data.clientId,
-          amount: betParam.amount.toFixed(2),
+          amount: betParam.amount,
           source: game.provider.slug,
           description: `Bet Cancelled: (${game.title})`,
           username: player.playerNickname,
@@ -776,7 +778,6 @@ export class EvoPlayService {
 
   // Place Bet
   async placeBet(data: PlaceCasinoBetRequest) {
-    // console.log('place casino bet', data);
     return firstValueFrom(this.betService.placeCasinoBet(data));
   }
 
