@@ -485,7 +485,7 @@ export class EvoPlayService {
         gameDetails = JSON.parse(betParam.details);
         
         const amount = parseFloat(betParam.amount);
-        const betId = body.action_id;
+        const betId = betParam.action_id;
 
         game = await this.gameRepository.findOne({
           where: {
