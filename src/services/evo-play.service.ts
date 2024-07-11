@@ -657,30 +657,48 @@ export class EvoPlayService {
           channel: game.title,
         });
 
-        const res = {
-          success: true,
-          message: 'refund handled successfully',
-          status: HttpStatus.OK,
-          data: {
-            status: "ok",
-            data: {
-              balance: rollbackWalletRes.data.balance.toFixed(2),
-              currency: player.currency,
-            },
-          }
-        };
-        // update callback log response
-        await this.callbackLogRepository.update(
-          {
-            id: callback.id,
-          },
-          {
-            response: JSON.stringify(response),
-            status: true,
-          },
-        );
+        try {
 
-        return res;
+          const res = {
+            success: true,
+            message: 'refund handled successfully',
+            status: HttpStatus.OK,
+            data: {
+              status: "ok",
+              data: {
+                balance: rollbackWalletRes.data.balance.toFixed(2),
+                currency: player.currency,
+              },
+            }
+          };
+          // update callback log response
+          await this.callbackLogRepository.update(
+            {
+              id: callback.id,
+            },
+            {
+              response: JSON.stringify(response),
+              status: true,
+            },
+          );
+
+          return res;
+        } catch (e) {
+          console.log(e.message);
+          return {
+            success: false,
+            message: 'Unable to complete request',
+            status: HttpStatus.INTERNAL_SERVER_ERROR,
+            data: {
+              status: "error",
+              error: {
+                message: 'Unable to complete request',
+                scope: "internal",
+                no_refund: "1",
+              }
+            }
+          }
+        }
         
     }
   }
