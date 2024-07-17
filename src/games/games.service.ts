@@ -549,9 +549,9 @@ export class GamesService {
         throw new NotFoundException('Unknown provider');
     }
     // Fetch the game list from your API (adjust the method name and params accordingly)
-    const gameList = await this.c2GamingService.getGames();
+    // const gameList = await this.c2GamingService.getGames();
 
-    return gameList;
+    // return gameList;
   }
 
   async handleC2Games(body: any, headers: any): Promise<any> {

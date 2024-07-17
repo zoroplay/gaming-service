@@ -232,15 +232,15 @@ export class EvoPlayService {
     parts.push(compact(integrationKey));
 
     const str = parts.join('*')
-    console.log(str)
+    // console.log(str)
     const md5Hash = crypto
       .createHash('md5')
       .update(str)
       .digest('hex');
 
-      console.log('encryption hash');
-      console.log(md5Hash);
-      console.log('encryption ends');
+      // console.log('encryption hash');
+      // console.log(md5Hash);
+      // console.log('encryption ends');
 
     return md5Hash;
   }
@@ -377,7 +377,7 @@ export class EvoPlayService {
           userId: player.playerId,
           clientId: data.clientId,
           roundId: betParam.round_id,
-          transactionId: betParam.action_id,
+          transactionId: betParam.round_id,
           gameId: game.gameId,
           stake: parseFloat(betParam.amount),
           gameName: game.title,
@@ -485,7 +485,7 @@ export class EvoPlayService {
         gameDetails = JSON.parse(betParam.details);
         
         const amount = parseFloat(betParam.amount);
-        const betId = betParam.action_id;
+        const betId = betParam.round_id;
 
         game = await this.gameRepository.findOne({
           where: {
@@ -502,7 +502,7 @@ export class EvoPlayService {
         };
 
         const settle_bet = await this.settle(settlePayload);
-        // console.log()
+        console.log(settle_bet)
         if (!settle_bet.success) {
           const response = {
             success: false,
