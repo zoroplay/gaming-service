@@ -506,7 +506,7 @@ export class EvoPlayService {
         if (!settle_bet.success) {
           const response = {
             success: false,
-            message: 'Unable to complete request' + settle_bet.message,
+            message: 'Unable to complete request ' + settle_bet.message,
             status: HttpStatus.INTERNAL_SERVER_ERROR,
             data: {
               status: "error",
