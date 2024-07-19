@@ -3,7 +3,6 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import * as crypto from 'crypto';
 import * as Excel from 'exceljs';
-import { v4 as uuidv4 } from 'uuid';
 
 import {
   HttpStatus,
@@ -29,7 +28,7 @@ import {
 import { CallbackGameDto } from 'src/proto/gaming.pb';
 import { IdentityService } from 'src/identity/identity.service';
 import { firstValueFrom } from 'rxjs';
-import { Timeout } from '@nestjs/schedule';
+import { preciseRound } from 'src/common';
 
 const getCellValue = (row:  Excel.Row, cellIndex: number) => {
   const cell = row.getCell(cellIndex);
@@ -250,7 +249,7 @@ export class SmartSoftService {
           status: HttpStatus.OK,
           message: 'Deposit, successful',
           data: {
-            Balance: parseFloat(debit.data.balance.toFixed(2)),
+            Balance: preciseRound(debit.data.balance, 2),
             TransactionId: place_bet.data.transactionId,
           },
         };
@@ -283,7 +282,7 @@ export class SmartSoftService {
             message: 'Withdraw, successful',
             data: {
               Balance: creditRes.data.availableBalance,
-              TransactionId: body.BetTransactionId,
+              TransactionId: callback.id,
             },
           };
 
@@ -296,10 +295,12 @@ export class SmartSoftService {
             transactionId: betId,
             winnings: amount,
           };
+
+          console.log('prociessing settlement')
   
           // settle won bet
           const settle_bet = await this.settle(settlePayload);
-        
+          console.log(settle_bet, 'settlebet response')
           if (!settle_bet.success)  {
 
             const response = {success: false, message: settle_bet.message, status: HttpStatus.INTERNAL_SERVER_ERROR}
@@ -330,8 +331,8 @@ export class SmartSoftService {
             status: HttpStatus.OK,
             message: 'Withdraw, successful',
             data: {
-              Balance: parseFloat(creditRes.data.balance.toFixed(2)),
-              TransactionId: uuidv4(),
+              Balance: preciseRound(creditRes.data.balance, 2),
+              TransactionId: callback.id,
             },
           };
           // update callback log response
@@ -381,8 +382,8 @@ export class SmartSoftService {
             status: HttpStatus.OK,
             message: 'Withdraw, successful',
             data: {
-              Balance: parseFloat(creditRes.data.availableBalance.toFixed(2)),
-              TransactionId: uuidv4(),
+              Balance: preciseRound(creditRes.data.availableBalance, 2),
+              TransactionId: callback.id,
             },
           };
           // update callback log response
@@ -453,8 +454,8 @@ export class SmartSoftService {
             status: HttpStatus.OK,
             message: 'Rollback, successful',
             data: {
-              Balance: parseFloat(rollbackWalletRes.data.balance.toFixed(2)),
-              TransactionId: transaction.data.transactionId,
+              Balance: preciseRound(rollbackWalletRes.data.balance, 2),
+              TransactionId: callback.id,
             },
           };
           // update callback log response
@@ -485,8 +486,8 @@ export class SmartSoftService {
             status: HttpStatus.OK,
             message: 'Rollback, successful',
             data: {
-              Balance: parseFloat(rollbackWalletRes.data.balance.toFixed(2)),
-              TransactionId: transaction.data.transactionId,
+              Balance: preciseRound(rollbackWalletRes.data.balance, 2),
+              TransactionId: callback.id,
             },
           };
              // update callback log response
@@ -518,7 +519,7 @@ export class SmartSoftService {
       .digest('hex');
 
     // console.log('encryption hash');
-    // console.log(md5Hash);
+    console.log(md5Hash);
     // console.log('encryption ends');
     return md5Hash;
   }
@@ -587,7 +588,7 @@ export class SmartSoftService {
           status: HttpStatus.OK,
           message: 'Wallet',
           data: {
-            Amount: wallet.data.availableBalance,
+            Amount: preciseRound(wallet.data.availableBalance, 2),
             CurrencyCode: 'NGN',
           },
         };

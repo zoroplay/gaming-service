@@ -24,7 +24,7 @@ import {
 } from 'src/proto/betting.pb';
 import { IdentityService } from 'src/identity/identity.service';
 import { firstValueFrom } from 'rxjs';
-import { slugify } from 'src/common';
+import { preciseRound, slugify } from 'src/common';
 import { Timeout } from '@nestjs/schedule';
 
 @Injectable()
@@ -495,80 +495,134 @@ export class EvoPlayService {
         });
 
 
-        const settlePayload: SettleCasinoBetRequest = {
-          transactionId: betId,
-          winnings: amount,
-          provider: 'evo-play',
-        };
-
-        const settle_bet = await this.settle(settlePayload);
-        console.log(settle_bet)
-        if (!settle_bet.success) {
-          const response = {
-            success: false,
-            message: 'Unable to complete request ' + settle_bet.message,
-            status: HttpStatus.INTERNAL_SERVER_ERROR,
-            data: {
-              status: "error",
-              error: {
-                message: 'Unable to complete request',
-                scope: "internal",
-                no_refund: "1",
-              }
-            },
+        if (amount > 0) {
+          const settlePayload: SettleCasinoBetRequest = {
+            transactionId: betId,
+            winnings: amount,
+            provider: 'evo-play',
           };
+
+          const settle_bet = await this.settle(settlePayload);
+          // console.log(settle_bet)
+          if (!settle_bet.success) {
+            const response = {
+              success: false,
+              message: 'Unable to complete request ' + settle_bet.message,
+              status: HttpStatus.INTERNAL_SERVER_ERROR,
+              data: {
+                status: "error",
+                error: {
+                  message: 'Unable to complete request',
+                  scope: "internal",
+                  no_refund: "1",
+                }
+              },
+            };
+            // update callback log response
+            await this.callbackLogRepository.update(
+              {
+                id: callback.id,
+              },
+              {
+                response: JSON.stringify(response),
+              },
+            );
+
+            return response;
+          }
+
+          let creditRes = null;
+
+          creditRes = await this.walletService.credit({
+            userId: player.playerId,
+            clientId: data.clientId,
+            amount: amount.toFixed(2),
+            source: game.provider.slug,
+            description: `Casino Bet: (${game.title})`,
+            username: player.playerNickname,
+            wallet: 'main',
+            subject: 'Bet Win (Casino)',
+            channel: game.type,
+          });
+
+          const resp = {
+            success: true,
+            message: 'win handled successfully',
+            status: HttpStatus.OK,
+            data: {
+              status: "ok",
+              data: {
+                balance: creditRes.data.balance.toFixed(2),
+                currency: player.currency,
+              },
+            }
+          };
+
           // update callback log response
           await this.callbackLogRepository.update(
             {
               id: callback.id,
             },
             {
-              response: JSON.stringify(response),
+              response: JSON.stringify(resp),
+              status: true,
             },
           );
 
+          return resp;
+        } else {
+          const payload: CreditCasinoBetRequest = {
+            transactionId: betId,
+            winnings: amount,
+          };
+
+          // settle won bet
+          const settle_bet = await this.betService.closeRound(payload);
+        
+          if (!settle_bet.success)  {
+
+            const response = {
+              success: false, 
+              message: settle_bet.message, 
+              status: HttpStatus.INTERNAL_SERVER_ERROR
+            }
+            // update callback log response
+            await this.callbackLogRepository.update({
+              id: callback.id,
+            },{
+              response: JSON.stringify(response)
+            });
+
+            return response;
+          }
+          
+          // get player wallet
+          const creditRes = await this.walletService.getWallet({
+            userId: player.id,
+            clientId: player.clientId,
+          });
+
+          const response = {
+            success: true,
+            message: 'win handled successfully',
+            status: HttpStatus.OK,
+            data: {
+              status: "ok",
+              data: {
+                balance: creditRes.data.balance.toFixed(2),
+                currency: player.currency,
+              },
+            }
+          };
+          // update callback log response
+          await this.callbackLogRepository.update({
+            id: callback.id,
+          },{
+            response: JSON.stringify(response)
+          });
+
           return response;
         }
-
-        let creditRes = null;
-
-        creditRes = await this.walletService.credit({
-          userId: player.playerId,
-          clientId: data.clientId,
-          amount: amount.toFixed(2),
-          source: game.provider.slug,
-          description: `Casino Bet: (${game.title})`,
-          username: player.playerNickname,
-          wallet: 'main',
-          subject: 'Bet Win (Casino)',
-          channel: game.type,
-        });
-
-        const resp = {
-          success: true,
-          message: 'win handled successfully',
-          status: HttpStatus.OK,
-          data: {
-            status: "ok",
-            data: {
-              balance: creditRes.data.balance.toFixed(2),
-              currency: player.currency,
-            },
-          }
-        };
-
-        // update callback log response
-        await this.callbackLogRepository.update(
-          {
-            id: callback.id,
-          },
-          {
-            response: JSON.stringify(resp),
-            status: true,
-          },
-        );
-
-        return resp;
 
       case 'refund':
         betParam = body.data;
