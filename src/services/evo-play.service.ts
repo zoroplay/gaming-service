@@ -598,9 +598,11 @@ export class EvoPlayService {
           
           // get player wallet
           const creditRes = await this.walletService.getWallet({
-            userId: player.id,
+            userId: player.playerId,
             clientId: player.clientId,
           });
+
+          console.log(creditRes)
 
           const response = {
             success: true,
@@ -609,7 +611,7 @@ export class EvoPlayService {
             data: {
               status: "ok",
               data: {
-                balance: creditRes.data.balance.toFixed(2),
+                balance: creditRes.data.availableBalance.toFixed(2),
                 currency: player.currency,
               },
             }
