@@ -239,7 +239,7 @@ export class EvoPlayService {
       .digest('hex');
 
       // console.log('encryption hash');
-      // console.log(md5Hash);
+      console.log(md5Hash);
       // console.log('encryption ends');
 
     return md5Hash;
@@ -602,8 +602,6 @@ export class EvoPlayService {
             clientId: player.clientId,
           });
 
-          console.log(creditRes)
-
           const response = {
             success: true,
             message: 'win handled successfully',
@@ -631,7 +629,7 @@ export class EvoPlayService {
         gameDetails = JSON.parse(betParam.details);
 
         const reversePayload: RollbackCasinoBetRequest = {
-          transactionId: betParam.refund_action_id,
+          transactionId: betParam.refund_round_id,
         };
         // get callback log
         const callbackLog = await this.callbackLogRepository.findOne({
@@ -653,7 +651,7 @@ export class EvoPlayService {
             data: {
               status: "error",
               error: {
-                message: 'Unable to complete request',
+                message: 'Unable to complete request: Callback log not found',
                 scope: "internal",
                 no_refund: "1",
               }
@@ -682,7 +680,7 @@ export class EvoPlayService {
             data: {
               status: "error",
               error: {
-                message: 'Unable to complete request',
+                message: 'Unable to complete request: ' + transaction.message,
                 scope: "internal",
                 no_refund: "1",
               }
@@ -740,10 +738,10 @@ export class EvoPlayService {
 
           return response;
         } catch (e) {
-          console.log(e.message);
+          // console.log(e.message);
           return {
             success: false,
-            message: 'Unable to complete request',
+            message: 'Unable to complete request: ' + e.message,
             status: HttpStatus.INTERNAL_SERVER_ERROR,
             data: {
               status: "error",
