@@ -291,7 +291,7 @@ export class EvoPlayService {
     let betParam, gameDetails;
 
     if (body.name === 'BalanceIncrease') {
-      return await this.BalanceIncrease(body.data, callback.id);
+      return await this.BalanceIncrease(data.clientId, body.data, callback.id);
 
     } else if (body.token && body.name !== 'init') {
       const res = await this.identityService.validateToken({
@@ -895,14 +895,14 @@ export class EvoPlayService {
     return await firstValueFrom(this.betService.cancelCasinoBet(data));
   }
 
-  async BalanceIncrease (data, callbackId) {
+  async BalanceIncrease (clientId, data, callbackId) {
     try {
       const {id, user_id, type, event_id, currency, amount, user_message, wallet_type} = data;
       let wallet = 'main';
       if (wallet_type === 'bonus')
         wallet = 'casino';
 
-      const user = await this.identityService.getDetails({clientId: data.clientId, userId: user_id});
+      const user = await this.identityService.getDetails({clientId, userId: user_id});
 
       if (!user) {
         const response = {
@@ -934,7 +934,7 @@ export class EvoPlayService {
 
       const walletRes = await this.walletService.credit({
         userId: user_id,
-        clientId: data.clientId,
+        clientId,
         amount,
         source: 'evo-play',
         description: user_message,
