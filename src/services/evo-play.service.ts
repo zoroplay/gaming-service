@@ -248,7 +248,7 @@ export class EvoPlayService {
   async handleCallback(data: any) {
     const body = JSON.parse(data.body);
 
-    console.log(body);
+    // console.log(body);
 
     const callback = await this.saveCallbackLog(body);
     
@@ -935,7 +935,7 @@ export class EvoPlayService {
       const walletRes = await this.walletService.credit({
         userId: user_id,
         clientId: data.clientId,
-        amount: amount.toFixed(2),
+        amount,
         source: 'evo-play',
         description: user_message,
         username: user.data.username,
