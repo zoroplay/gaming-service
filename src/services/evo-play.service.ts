@@ -897,7 +897,7 @@ export class EvoPlayService {
 
   async BalanceIncrease (clientId, data, callbackId) {
     try {
-      const {id, user_id, type, event_id, currency, amount, user_message, wallet_type} = data;
+      const {id, user_id, type, currency, amount, user_message, wallet_type} = data;
       let wallet = 'main';
       if (wallet_type === 'bonus')
         wallet = 'casino';
@@ -941,7 +941,7 @@ export class EvoPlayService {
         username: user.data.username,
         wallet,
         subject: 'Casino Bonus (EvoPlay)',
-        channel: event_id,
+        channel: `evo-play-${type}`,
       });
 
       const response = {
@@ -970,6 +970,7 @@ export class EvoPlayService {
       return response;
 
     } catch (e) {
+      // console.log(e.message)
       return {
         success: false,
         message: 'Unable to complete request: ' + e.message,
