@@ -24,7 +24,6 @@ import {
 } from 'src/proto/betting.pb';
 import { IdentityService } from 'src/identity/identity.service';
 import { firstValueFrom } from 'rxjs';
-import { preciseRound, slugify } from 'src/common';
 import { Timeout } from '@nestjs/schedule';
 
 @Injectable()

@@ -28,7 +28,6 @@ import {
 import { CallbackGameDto } from 'src/proto/gaming.pb';
 import { IdentityService } from 'src/identity/identity.service';
 import { firstValueFrom } from 'rxjs';
-import { preciseRound } from 'src/common';
 
 const getCellValue = (row:  Excel.Row, cellIndex: number) => {
   const cell = row.getCell(cellIndex);
@@ -249,7 +248,7 @@ export class SmartSoftService {
           status: HttpStatus.OK,
           message: 'Deposit, successful',
           data: {
-            Balance: preciseRound(debit.data.balance, 2),
+            Balance: parseFloat(debit.data.balance.toFixed(2)),
             TransactionId: place_bet.data.transactionId,
           },
         };
@@ -331,7 +330,7 @@ export class SmartSoftService {
             status: HttpStatus.OK,
             message: 'Withdraw, successful',
             data: {
-              Balance: preciseRound(creditRes.data.balance, 2),
+              Balance: parseFloat(creditRes.data.balance.toFixed(2)),
               TransactionId: callback.id,
             },
           };
@@ -382,7 +381,7 @@ export class SmartSoftService {
             status: HttpStatus.OK,
             message: 'Withdraw, successful',
             data: {
-              Balance: preciseRound(creditRes.data.availableBalance, 2),
+              Balance: parseFloat(creditRes.data.availableBalance.toFixed(2)),
               TransactionId: callback.id,
             },
           };
@@ -454,7 +453,7 @@ export class SmartSoftService {
             status: HttpStatus.OK,
             message: 'Rollback, successful',
             data: {
-              Balance: preciseRound(rollbackWalletRes.data.balance, 2),
+              Balance: parseFloat(rollbackWalletRes.data.balance.toFixed(2)),
               TransactionId: callback.id,
             },
           };
@@ -486,7 +485,7 @@ export class SmartSoftService {
             status: HttpStatus.OK,
             message: 'Rollback, successful',
             data: {
-              Balance: preciseRound(rollbackWalletRes.data.balance, 2),
+              Balance: parseFloat(rollbackWalletRes.data.balance.toFixed(2)),
               TransactionId: callback.id,
             },
           };
@@ -588,7 +587,7 @@ export class SmartSoftService {
           status: HttpStatus.OK,
           message: 'Wallet',
           data: {
-            Amount: preciseRound(wallet.data.availableBalance, 2),
+            Amount: parseFloat(wallet.data.availableBalance.toFixed(2)),
             CurrencyCode: 'NGN',
           },
         };
