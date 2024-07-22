@@ -290,7 +290,10 @@ export class EvoPlayService {
     let player = null;
     let betParam, gameDetails;
 
-    if (body.token && body.name !== 'init') {
+    if (body.name === 'BalanceIncrease') {
+      return await this.BalanceIncrease(body.data, callback.id);
+
+    } else if (body.token && body.name !== 'init') {
       const res = await this.identityService.validateToken({
         clientId: data.clientId,
         token: body.token,
@@ -622,7 +625,6 @@ export class EvoPlayService {
 
           return response;
         }
-
       case 'refund':
         betParam = body.data;
         gameDetails = JSON.parse(betParam.details);
@@ -751,7 +753,7 @@ export class EvoPlayService {
               }
             }
           }
-        }
+        }        
         
     }
   }
@@ -884,7 +886,6 @@ export class EvoPlayService {
   }
 
   // Settle Bet
-  // Settle Bet
   async settle(data: CreditCasinoBetRequest) {
     return await firstValueFrom(this.betService.settleCasinoBet(data));
   }
@@ -892,6 +893,97 @@ export class EvoPlayService {
 
   async rollbackTransaction(data: RollbackCasinoBetRequest) {
     return await firstValueFrom(this.betService.cancelCasinoBet(data));
+  }
+
+  async BalanceIncrease (data, callbackId) {
+    try {
+      const {id, user_id, type, event_id, currency, amount, user_message, wallet_type} = data;
+      let wallet = 'main';
+      if (wallet_type === 'bonus')
+        wallet = 'casino';
+
+      const user = await this.identityService.getDetails({clientId: data.clientId, userId: user_id});
+
+      if (!user) {
+        const response = {
+          success: false,
+          message: 'User not found',
+          data: {
+            status: "error",
+            error: {
+              message: `User with ID ${user_id} not found`,
+              scope: "internal",
+              no_refund: "1"
+            }
+          },
+        };
+
+        // update callback log response
+        await this.callbackLogRepository.update(
+          {
+            id: callbackId,
+          },
+          {
+            response: JSON.stringify(response),
+            status: true,
+          },
+        );
+
+        return response;
+      }
+
+      const walletRes = await this.walletService.credit({
+        userId: user_id,
+        clientId: data.clientId,
+        amount: amount.toFixed(2),
+        source: 'evo-play',
+        description: user_message,
+        username: user.data.username,
+        wallet,
+        subject: 'Casino Bonus (EvoPlay)',
+        channel: event_id,
+      });
+
+      const response = {
+        success: true,
+        message: 'Balance increase processed',
+        status: HttpStatus.OK,
+        data: {
+          status: "ok",
+          data: {
+            balance: walletRes.data.balance.toFixed(2),
+            currency,
+          },
+        }
+      };
+      // update callback log response
+      await this.callbackLogRepository.update(
+        {
+          id: callbackId,
+        },
+        {
+          response: JSON.stringify(response),
+          status: true,
+        },
+      );
+
+      return response;
+
+    } catch (e) {
+      return {
+        success: false,
+        message: 'Unable to complete request: ' + e.message,
+        status: HttpStatus.INTERNAL_SERVER_ERROR,
+        data: {
+          status: "error",
+          error: {
+            message: 'Unable to complete request',
+            scope: "internal",
+            no_refund: "1",
+          }
+        }
+      }
+    }
   }
 
   // save callback request

@@ -295,11 +295,11 @@ export class SmartSoftService {
             winnings: amount,
           };
 
-          console.log('prociessing settlement')
+          // console.log('prociessing settlement')
   
           // settle won bet
           const settle_bet = await this.settle(settlePayload);
-          console.log(settle_bet, 'settlebet response')
+          // console.log(settle_bet, 'settlebet response')
           if (!settle_bet.success)  {
 
             const response = {success: false, message: settle_bet.message, status: HttpStatus.INTERNAL_SERVER_ERROR}
@@ -398,10 +398,12 @@ export class SmartSoftService {
         const reversePayload: RollbackCasinoBetRequest = {
           transactionId: body.TransactionId,
         };
+        console.log('Processing Rollback')
         // get callback log
         const callbackLog = await this.callbackLogRepository.findOne({where: {transactionId: reversePayload.transactionId }})
 
         if (!callbackLog) {
+          console.log('Callback log found')
 
           const response = {success: false, message: 'Transaction not found', status: HttpStatus.INTERNAL_SERVER_ERROR}
           // update callback log response
@@ -417,11 +419,15 @@ export class SmartSoftService {
         const transactionPayload = JSON.parse(callbackLog.payload);
         // console.log(transactionPayload)
         // const transactionResponse = JSON.parse(callbackLog.response);
-
+        console.log('update ticket')
         const transaction = await this.rollbackTransaction(reversePayload);
 
         if (!transaction.success)  {
-          const response = {success: false, message: 'Unable to complete request', status: HttpStatus.INTERNAL_SERVER_ERROR}
+          console.log('ticket update not successful')
+          const response = {
+            success: false,
+            message: 'Unable to complete request', 
+            status: HttpStatus.INTERNAL_SERVER_ERROR}
           // update callback log response
           await this.callbackLogRepository.update({
             id: callback.id,
@@ -431,11 +437,11 @@ export class SmartSoftService {
 
           return response;
         }
+        console.log('updated ticket, now implementing wallet transaction ', callbackLog.request_type)
 
         let rollbackWalletRes = null;
 
         if (callbackLog.request_type === 'Deposit') {
-          
           rollbackWalletRes = await this.walletService.credit({
             userId: player.id,
             clientId: player.clientId,
@@ -447,6 +453,8 @@ export class SmartSoftService {
             subject: 'Bet Rollback (Casino)',
             channel: body.TransactionInfo.GameName,
           });
+
+          console.log('credit wallet respons', rollbackWalletRes)
 
           const response = {
             success: true,
@@ -479,7 +487,8 @@ export class SmartSoftService {
             subject: 'Win Rollback (Casino)',
             channel: body.TransactionInfo.GameName,
           });
-          // console.log(rollbackWalletRes)
+          console.log('debit wallet respons', rollbackWalletRes)
+          
           const response = {
             success: true,
             status: HttpStatus.OK,
