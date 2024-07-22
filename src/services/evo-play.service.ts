@@ -248,7 +248,7 @@ export class EvoPlayService {
   async handleCallback(data: any) {
     const body = JSON.parse(data.body);
 
-    // console.log(body);
+    console.log(body);
 
     const callback = await this.saveCallbackLog(body);
     
@@ -991,7 +991,7 @@ export class EvoPlayService {
     console.log('saving callback logs');
     try {
       const callback = new CallbackLog();
-      callback.transactionId = data.callback_id
+      callback.transactionId = (data.name === 'BalanceIncrease') ? data.data.id : data.callback_id
       callback.request_type = data.name;
       callback.payload = JSON.stringify(data);
 
