@@ -423,33 +423,7 @@ export class SmartSoftService {
         const transaction = await this.rollbackTransaction(reversePayload);
 
         if (transaction.status === HttpStatus.CREATED) {
-
-          const wallet = await this.walletService.getWallet({
-            userId: player.id,
-            clientId: player.clientId,
-          });
-
-          let response;
-    
-          if (wallet.success) {
-             response = {
-              success: true,
-              status: HttpStatus.OK,
-              message: 'Wallet',
-              data: {
-                Amount: parseFloat(wallet.data.availableBalance.toFixed(2)),
-                CurrencyCode: 'NGN',
-              },
-            };
-            return response;
-          } else {
-            response = {
-              success: false,
-              status: HttpStatus.INTERNAL_SERVER_ERROR,
-              message: 'Could not retrieve balance',
-            };
-          }
-          return response;
+          return await this.getBalance(player, callback);
         }
 
         if (!transaction.success)  {
@@ -467,7 +441,7 @@ export class SmartSoftService {
 
           return response;
         }
-        
+
         console.log('updated ticket, now implementing wallet transaction ', callbackLog.request_type)
 
         let rollbackWalletRes = null;
