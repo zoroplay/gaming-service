@@ -588,12 +588,15 @@ export class SmartSoftService {
   async getBalance(player, callback) {
     let response, status;
 
+    console.log('player', player)
     if (player) {
       //TODO: USE PLAYER UserID AND ClientID to get balance from wallet service;
       const wallet = await this.walletService.getWallet({
         userId: player.id,
         clientId: player.clientId,
       });
+
+      console.log('wallet', wallet);
 
       if (wallet.success) {
         response = {
