@@ -423,7 +423,24 @@ export class SmartSoftService {
         const transaction = await this.rollbackTransaction(reversePayload);
 
         if (transaction.status === HttpStatus.CREATED) {
-          return await this.getBalance(player, callback);
+          const response = await this.getBalance(player, callback);
+          if (response.success) {
+            return {
+              success: true,
+              status: HttpStatus.OK,
+              message: 'Rollback, successful',
+              data: {
+                Balance: response.data.Amount,
+                TransactionId: callback.id,
+              },
+            }
+          } else {
+            return {
+              success: false,
+              message: 'Unable to complete request', 
+              status: HttpStatus.INTERNAL_SERVER_ERROR
+            }
+          }
         }
 
         if (!transaction.success)  {
@@ -588,7 +605,6 @@ export class SmartSoftService {
   async getBalance(player, callback) {
     let response, status;
 
-    console.log('player', player)
     if (player) {
       //TODO: USE PLAYER UserID AND ClientID to get balance from wallet service;
       const wallet = await this.walletService.getWallet({
@@ -596,15 +612,13 @@ export class SmartSoftService {
         clientId: player.clientId,
       });
 
-      console.log('wallet', wallet);
-
       if (wallet.success) {
         response = {
           success: true,
           status: HttpStatus.OK,
           message: 'Wallet',
           data: {
-            Amount: parseFloat(wallet.data.availableBalance.toFixed(2)),
+            Amount: wallet.data.availableBalance.toFixed(2),
             CurrencyCode: 'NGN',
           },
         };
