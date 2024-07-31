@@ -33,6 +33,7 @@ import { IdentityService } from 'src/identity/identity.service';
 import { Category } from 'src/entities/category.entity';
 import { GameCategory } from 'src/entities/game.category.entity';
 import { slugify } from 'src/common';
+import { GameKey } from 'src/entities/game-key.entity';
 
 @Injectable()
 export class GamesService {
@@ -43,6 +44,8 @@ export class GamesService {
     private categoryRepository: Repository<Category>,
     @InjectRepository(ProviderEntity)
     private providerRepository: Repository<ProviderEntity>,
+    @InjectRepository(GameKey)
+    private gameKeyRepository: Repository<GameKey>,
     private readonly entityToProtoService: EntityToProtoService,
     private readonly shacksEvolutionService: ShackEvolutionService,
     private readonly c2GamingService: C2GamingService,
@@ -263,41 +266,45 @@ export class GamesService {
         provider: true,
       },
     });
-    // console.log('start', startGameDto, game);
+
  
 
     switch (game.provider.slug) {
       case 'shack-evolution':
-        return await this.smartSoftService.constructGameUrl(
-          startGameDto,
-          game,
-        );
-        break;
+        // return await this.smartSoftService.constructGameUrl(
+        //   startGameDto,
+        //   game,
+        // );
       case 'c27':
         return await this.c2GamingService.startGameSession(startGameDto, game);
-        break;
       case 'tada-games':
         return await this.tadaGamingService.constructGameUrl(
           startGameDto,
           game,
         );
-        break;
       case 'evo-play':
         return await this.evoPlayService.constructGameUrl(
           startGameDto,
           game,
         );
-        break;
       case 'evolution':
-        return await this.smartSoftService.constructGameUrl(
-          startGameDto,
-          game,
-        );
+        // return await this.smartSoftService.constructGameUrl(
+        //   startGameDto,
+        //   game,
+        // );
         break;
       case 'smart-soft':
+        const privateKeyQuery = await this.gameKeyRepository.findOne({
+          where: {
+              client_id: startGameDto.clientId,
+              option: 'SMART_SOFT_PORTAL',
+              provider: 'smart-soft'
+          }
+        });
         return await this.smartSoftService.constructGameUrl(
           startGameDto,
           game,
+          privateKeyQuery.value
         );
         break;
       default:

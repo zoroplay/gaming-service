@@ -10,7 +10,6 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config'; // Import your SettingService
-import { AxiosRequestConfig } from 'axios';
 import {
   CallbackLog,
   Game as GameEntity,
@@ -40,8 +39,6 @@ const getCellValue = (row:  Excel.Row, cellIndex: number) => {
 export class SmartSoftService {
   private baseUrl: string;
   private secretKey: string;
-  private portal: string;
-  private requestConfig: AxiosRequestConfig;
 
   constructor(
     @InjectRepository(GameEntity)
@@ -58,12 +55,14 @@ export class SmartSoftService {
   ) {
     this.baseUrl = this.configService.get<string>('SMART_SOFT_BASE_URL');
     this.secretKey = this.configService.get<string>('SMART_SOFT_SECRET_KEY');
-    this.portal = this.configService.get<string>('SMART_SOFT_PORTAL');
+
+    // this.portal = this.configService.get<string>('SMART_SOFT_PORTAL');
   }
 
   // start game here
-  async constructGameUrl(data, game: GameEntity) {
+  async constructGameUrl(data, game: GameEntity, portalName) {
     try {
+
       let gameCategory = game.type;
       if (data.isMobile) {
         if (game.type === 'GamesLobby') {
@@ -74,7 +73,7 @@ export class SmartSoftService {
       }
       const gameName = game.gameId;
       const token = data.authCode === 'demo' ? 'DEMO' : data.authCode;
-      const portal = data.authCode === 'demo' ? 'demo' : this.portal;;
+      const portal = data.authCode === 'demo' ? 'demo' : portalName;
       const returnUrl = data.homeUrl;
       const GameCategory = data.isMobile ? game.game_category_m : game.game_category_w;
 
