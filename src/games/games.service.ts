@@ -547,7 +547,14 @@ export class GamesService {
       case 'tada-games':
         return await this.handleC2Games(_data.body, _data.header);
       case 'smart-soft':
-        return await this.smartSoftService.handleCallback(_data);
+        const privateKeyQuery = await this.gameKeyRepository.findOne({
+          where: {
+              client_id: _data.clientId,
+              option: 'SMART_SOFT_PORTAL',
+              provider: 'smart-soft'
+          }
+        });
+        return await this.smartSoftService.handleCallback(_data, privateKeyQuery.value);
       case 'evolution':
         return await this.handleC2Games(_data.body, _data.header);
       case 'evo-play':
