@@ -87,7 +87,7 @@ export class SmartSoftService {
   }
 
   // callback handler
-  async handleCallback(data: CallbackGameDto) {
+  async handleCallback(data: CallbackGameDto, portal) {
     // save callback
     const callback = await this.saveCallbackLog(data);
 
@@ -150,7 +150,7 @@ export class SmartSoftService {
 
     switch (data.action) {
       case 'ActivateSession':
-        return await this.activateSession(data.clientId, body.Token, callback);
+        return await this.activateSession(data.clientId, body.Token, callback, portal);
       case 'GetBalance':
         console.log('GetBalance');
         return await this.getBalance(player, callback);
@@ -556,7 +556,7 @@ export class SmartSoftService {
   // Webhook Section
 
   // Activate Player Session
-  async activateSession(clientId, token, callback) {
+  async activateSession(clientId, token, callback, portal) {
     const res = await this.identityService.xpressLogin({clientId, token});
 
     if (!res.status) {
@@ -584,7 +584,7 @@ export class SmartSoftService {
         UserName: res.data.playerNickname,
         SessionId: res.data.sessionId,
         ClientExternalKey: res.data.playerId,
-        PortalName: 'sportsbookengine',
+        PortalName: portal,
         CurrencyCode: res.data.currency,
       },
     };
