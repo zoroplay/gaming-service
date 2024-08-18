@@ -193,8 +193,8 @@ export class VirtualService {
                     wallet: 'main',
                     subject: 'Bet Deposit (Virtual)',
                     channel: 'goldenrace',
-                    
                 });
+                console.log(debitRes)
 
                 const oldBalance = debitRes.data.balance + transactionAmount;
 
@@ -223,6 +223,8 @@ export class VirtualService {
                 const hashStr = `${data.playerId}${data.currency}${data.balance}${data.oldBalance}${data.transactionId}${data.sessionId}${data.group}${data.timestamp}${data.requestId}${privateKeyQuery.value}`;
             
                 data.fingerprint = MD5(hashStr).toString();
+
+                console.log(data);
 
                 return {
                     status: true,
