@@ -130,9 +130,10 @@ export class SmartSoftService {
     let game = null;
     let player = null;
     let balanceType = 'main';
+    let sessionId = data.header['x-sessionid'];
 
-    if (data.header['x-sessionid']) {
-      const res = await this.identityService.validateXpressSession({clientId: data.clientId, sessionId: data.header['x-sessionid']});
+    if (sessionId) {
+      const res = await this.identityService.validateXpressSession({clientId: data.clientId, sessionId});
 
       // console.log(res)
       if (!res.success) {
@@ -143,16 +144,12 @@ export class SmartSoftService {
         };
 
         // update callback log response
-        await this.callbackLogRepository.update({
-          id: callback.id,
-        },{
-          response: JSON.stringify(response)
-        });
+        await this.updateCallbackGameSession(callback, response, {session_id: sessionId}, {callback_id: callback.id})
 
         return response;
       }
       // get game session
-      const gameSession = await this.gameSessionRepo.findOne({where: {session_id: data.header['x-sessionid']}})
+      const gameSession = await this.gameSessionRepo.findOne({where: {session_id: sessionId}})
       
       if (gameSession.balance_type === 'bonus')
         balanceType = 'casino';
@@ -173,7 +170,7 @@ export class SmartSoftService {
         return await this.activateSession(data.clientId, body.Token, callback, portal);
       case 'GetBalance':
         console.log('GetBalance');
-        return await this.getBalance(player, callback, balanceType);
+        return await this.getBalance(player, callback, balanceType, sessionId);
       case 'Deposit':
         console.log('Deposit');
         const gameName = body.TransactionInfo.GameName;
@@ -189,12 +186,8 @@ export class SmartSoftService {
             message: 'Insufficent balance', 
             status: HttpStatus.INTERNAL_SERVER_ERROR
           }
-          // update callback log response
-          await this.callbackLogRepository.update({
-            id: callback.id,
-          },{
-            response: JSON.stringify(response)
-          });
+          // update callback log response and game session with callback id
+          await this.updateCallbackGameSession(callback, response, {session_id: sessionId}, {callback_id: callback.id})
 
           return response;
         }
@@ -224,12 +217,8 @@ export class SmartSoftService {
             status: HttpStatus.INTERNAL_SERVER_ERROR,
             message: place_bet.message,
           };
-          // update callback log response
-          await this.callbackLogRepository.update({
-            id: callback.id,
-          },{
-            response: JSON.stringify(response)
-          });
+          // update callback log response and game session with callback id
+          await this.updateCallbackGameSession(callback, response, {session_id: sessionId}, {callback_id: callback.id})
 
           return response;
         }
@@ -252,12 +241,8 @@ export class SmartSoftService {
             status: HttpStatus.INTERNAL_SERVER_ERROR,
             message: 'Incomplete request',
           };
-          // update callback log response
-          await this.callbackLogRepository.update({
-            id: callback.id,
-          },{
-            response: JSON.stringify(response)
-          });
+          // update callback log response and game session with callback id
+          await this.updateCallbackGameSession(callback, response, {session_id: sessionId}, {callback_id: callback.id})
 
           return response;
         }
@@ -272,12 +257,7 @@ export class SmartSoftService {
           },
         };
         // update callback log response
-        await this.callbackLogRepository.update({
-          id: callback.id,
-        },{
-          response: JSON.stringify(response),
-          status: true
-        });
+        await this.updateCallbackGameSession(callback, response, {session_id: sessionId}, {callback_id: callback.id}, true)
 
         return response;
       case 'Withdraw':
@@ -323,11 +303,7 @@ export class SmartSoftService {
 
             const response = {success: false, message: settle_bet.message, status: HttpStatus.INTERNAL_SERVER_ERROR}
             // update callback log response
-            await this.callbackLogRepository.update({
-              id: callback.id,
-            },{
-              response: JSON.stringify(response)
-            });
+            await this.updateCallbackGameSession(callback, response, {session_id: sessionId}, {callback_id: callback.id})
   
             return response;
           }
@@ -354,12 +330,7 @@ export class SmartSoftService {
             },
           };
           // update callback log response
-          await this.callbackLogRepository.update({
-            id: callback.id,
-          },{
-            response: JSON.stringify(response),
-            status: true
-          });
+          await this.updateCallbackGameSession(callback, response, {session_id: sessionId}, {callback_id: callback.id}, true)
 
           return response;
         } else { // handle CloseRound transactionType
@@ -379,12 +350,7 @@ export class SmartSoftService {
               message: settle_bet.message, 
               status: HttpStatus.INTERNAL_SERVER_ERROR
             }
-            // update callback log response
-            await this.callbackLogRepository.update({
-              id: callback.id,
-            },{
-              response: JSON.stringify(response)
-            });
+            await this.updateCallbackGameSession(callback, response, {session_id: sessionId}, {callback_id: callback.id})
   
             return response;
           }
@@ -400,16 +366,12 @@ export class SmartSoftService {
             status: HttpStatus.OK,
             message: 'Withdraw, successful',
             data: {
-              Balance: parseFloat(creditRes.data.availableBalance.toFixed(2)),
+              Balance: balanceType === 'casino' ? parseFloat(creditRes.data.casinoBonusBalance.toFixed(2)) : parseFloat(creditRes.data.availableBalance.toFixed(2)),
               TransactionId: callback.id,
             },
           };
           // update callback log response
-          await this.callbackLogRepository.update({
-            id: callback.id,
-          },{
-            response: JSON.stringify(response)
-          });
+          await this.updateCallbackGameSession(callback, response, {session_id: sessionId}, {callback_id: callback.id}, true)
 
           return response;
         }
@@ -425,12 +387,7 @@ export class SmartSoftService {
           console.log('Callback log found')
 
           const response = {success: false, message: 'Transaction not found', status: HttpStatus.INTERNAL_SERVER_ERROR}
-          // update callback log response
-          await this.callbackLogRepository.update({
-            id: callback.id,
-          },{
-            response: JSON.stringify(response)
-          });
+          await this.updateCallbackGameSession(callback, response, {session_id: sessionId}, {callback_id: callback.id})
 
           return response;
         }
@@ -442,7 +399,8 @@ export class SmartSoftService {
         const transaction = await this.rollbackTransaction(reversePayload);
 
         if (transaction.status === HttpStatus.CREATED) {
-          const response = await this.getBalance(player, callback, balanceType);
+          const response = await this.getBalance(player, callback, balanceType, sessionId);
+          
           if (response.success) {
             return {
               success: true,
@@ -469,11 +427,8 @@ export class SmartSoftService {
             message: 'Unable to complete request', 
             status: HttpStatus.INTERNAL_SERVER_ERROR}
           // update callback log response
-          await this.callbackLogRepository.update({
-            id: callback.id,
-          },{
-            response: JSON.stringify(response)
-          });
+          await this.updateCallbackGameSession(callback, response, {session_id: sessionId}, {callback_id: callback.id})
+
 
           return response;
         }
@@ -507,12 +462,7 @@ export class SmartSoftService {
             },
           };
           // update callback log response
-          await this.callbackLogRepository.update({
-            id: callback.id,
-          },{
-            response: JSON.stringify(response),
-            status: true
-          });
+          await this.updateCallbackGameSession(callback, response, {session_id: sessionId}, {callback_id: callback.id}, true)
 
           return response;
          
@@ -539,13 +489,8 @@ export class SmartSoftService {
               TransactionId: callback.id,
             },
           };
-             // update callback log response
-          await this.callbackLogRepository.update({
-            id: callback.id,
-          },{
-            response: JSON.stringify(response),
-            status: true
-          });
+         // update callback log response
+          await this.updateCallbackGameSession(callback, response, {session_id: sessionId}, {callback_id: callback.id}, true)
 
           return response;
         }
@@ -586,22 +531,11 @@ export class SmartSoftService {
         message: 'Player not found'
       }
 
-      // update callback log response
-      await this.callbackLogRepository.update({
-        id: callback.id,
-      },{
-        response: JSON.stringify(response)
-      });
+      // update callback log response and game session
+      await this.updateCallbackGameSession(callback, response, {token}, {callback_id: callback.id})
 
       return response;
     }
-
-    // update game session
-    await this.gameSessionRepo.update({
-      token,
-    }, {
-      session_id: res.data.sessionId
-    })
    
     const response = {
       success: true,
@@ -617,18 +551,17 @@ export class SmartSoftService {
     };
 
     // update callback log response
-    await this.callbackLogRepository.update({
-      id: callback.id,
-    },{
-      response: JSON.stringify(response),
-      status: true
-    });
+    await this.updateCallbackGameSession(callback, response, {token}, {
+      callback_id: callback.id,
+      session_id: res.data.sessionId
+    })
+
 
     return response;
   }
 
   // Get Player Balance
-  async getBalance(player, callback, walletType) {
+  async getBalance(player, callback, walletType, sessionId) {
     let response, status;
 
     if (player) {
@@ -645,7 +578,7 @@ export class SmartSoftService {
           status: HttpStatus.OK,
           message: 'Wallet',
           data: {
-            Amount: walletType === 'bonus' ? wallet.data.casinoBonusBalance.toFixed(2) : wallet.data.availableBalance.toFixed(2),
+            Amount: walletType === 'casino' ? wallet.data.casinoBonusBalance.toFixed(2) : wallet.data.availableBalance.toFixed(2),
             CurrencyCode: 'NGN',
           },
         };
@@ -665,12 +598,7 @@ export class SmartSoftService {
       };
     }
     // update callback log response
-    await this.callbackLogRepository.update({
-      id: callback.id,
-    },{
-      response: JSON.stringify(response),
-      status
-    });
+    await this.updateCallbackGameSession(callback, response, {session_id: sessionId}, {callback_id: callback.id})
 
     return response;
   }
@@ -754,5 +682,18 @@ export class SmartSoftService {
       console.log("Error saving games", e.message)
 
     }
+  }
+
+  async updateCallbackGameSession(callback, response, where, data, status = false) {
+    // update callback log response and game session with callback id
+    await Promise.all([
+      this.callbackLogRepository.update({
+      id: callback.id,
+      },{
+        response: JSON.stringify(response),
+        status
+      }),
+      await this.gameSessionRepo.update(where, data)
+    ]);
   }
 }

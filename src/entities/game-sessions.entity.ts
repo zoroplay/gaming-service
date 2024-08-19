@@ -14,7 +14,10 @@ export class GameSession {
   @Column()
   game_id: string;
 
-  @Column({nullable: true, default: ''})
+  @Column({nullable: true})
+  callback_id: string;
+
+  @Column({nullable: true})
   session_id: string;
 
   @Column()
