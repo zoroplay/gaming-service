@@ -6,6 +6,17 @@ import { Struct } from "./google/protobuf/struct.pb";
 
 export const protobufPackage = "gaming";
 
+export interface RegisterBonusRequest {
+  clientId: number;
+  gameId: string;
+  userId: string;
+  betMoney: number;
+  freeSpinsCount: number;
+  expireDate: string;
+  bonusId: number;
+  promoCode: string;
+}
+
 export interface PaginationDto {
   page: number;
   skip: number;
@@ -14,6 +25,7 @@ export interface PaginationDto {
 export interface FetchGamesRequest {
   clientId: number;
   categoryId?: number | undefined;
+  providerId?: number | undefined;
 }
 
 export interface Empty {
@@ -75,6 +87,7 @@ export interface CreateGameDto {
   status: boolean;
   type: string;
   providerId: number;
+  bonusType: string;
 }
 
 export interface StartGameDto {
@@ -88,6 +101,7 @@ export interface StartGameDto {
   demo?: boolean | undefined;
   isMobile?: boolean | undefined;
   authCode?: string | undefined;
+  balanceType?: string | undefined;
 }
 
 export interface StartGameResponse {
@@ -351,6 +365,8 @@ export interface GamingServiceClient {
 
   fetchCategories(request: Empty): Observable<Categories>;
 
+  registerBonus(request: Empty): Observable<CommonResponse>;
+
   createProvider(request: CreateProviderDto): Observable<CommonResponse>;
 
   updateProvider(request: CreateProviderDto): Observable<CommonResponse>;
@@ -399,6 +415,8 @@ export interface GamingServiceController {
 
   fetchCategories(request: Empty): Promise<Categories> | Observable<Categories> | Categories;
 
+  registerBonus(request: Empty): Promise<CommonResponse> | Observable<CommonResponse> | CommonResponse;
+
   createProvider(request: CreateProviderDto): Promise<CommonResponse> | Observable<CommonResponse> | CommonResponse;
 
   updateProvider(request: CreateProviderDto): Promise<CommonResponse> | Observable<CommonResponse> | CommonResponse;
@@ -440,6 +458,7 @@ export function GamingServiceControllerMethods() {
       "removeGame",
       "saveCategory",
       "fetchCategories",
+      "registerBonus",
       "createProvider",
       "updateProvider",
       "findOneProvider",

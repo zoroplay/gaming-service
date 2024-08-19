@@ -13,6 +13,7 @@ import { ConfigService } from '@nestjs/config'; // Import your SettingService
 import {
   CallbackLog,
   Game as GameEntity,
+  GameSession,
   Provider as ProviderEntity,
 } from '../entities';
 import { Repository } from 'typeorm';
@@ -47,6 +48,8 @@ export class SmartSoftService {
     private callbackLogRepository: Repository<CallbackLog>,
     @InjectRepository(ProviderEntity)
     private providerRepo: Repository<ProviderEntity>,
+    @InjectRepository(GameSession)
+    private gameSessionRepo: Repository<GameSession>,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
     private readonly configService: ConfigService,
     private readonly walletService: WalletService,
@@ -64,6 +67,8 @@ export class SmartSoftService {
     try {
 
       let gameCategory = game.type;
+      let balanceType = data.balanceType;
+
       if (data.isMobile) {
         if (game.type === 'GamesLobby') {
           gameCategory = 'GamesMobile';
@@ -71,13 +76,22 @@ export class SmartSoftService {
           gameCategory = `${game.type}Mobile`;
         }
       }
+
       const gameName = game.gameId;
-      const token = data.authCode === 'demo' ? 'DEMO' : data.authCode;
-      const portal = data.authCode === 'demo' ? 'demo' : portalName;
+      const token = balanceType === 'demo' ? 'DEMO' : data.authCode;
+      const portal = balanceType === 'demo' ? 'demo' : portalName;
       const returnUrl = data.homeUrl;
       const GameCategory = data.isMobile ? game.game_category_m : game.game_category_w;
 
       const sessionUrl = `${this.baseUrl}GameCategory=${GameCategory}&GameName=${gameName}&Token=${token}&PortalName=${portal}&ReturnUrl=${returnUrl}`;
+      
+      const gameSession = new GameSession();
+      gameSession.balance_type = balanceType;
+      gameSession.game_id = game.gameId;
+      gameSession.token = token;
+      gameSession.provider = game.provider.slug;
+      await this.gameSessionRepo.save(gameSession);
+
       return {
         url: sessionUrl,
       };
@@ -87,7 +101,7 @@ export class SmartSoftService {
   }
 
   // callback handler
-  async handleCallback(data: CallbackGameDto, portal) {
+  async handleCallback(data: CallbackGameDto, portal: string) {
     // save callback
     const callback = await this.saveCallbackLog(data);
 
@@ -115,6 +129,7 @@ export class SmartSoftService {
 
     let game = null;
     let player = null;
+    let balanceType = 'main';
 
     if (data.header['x-sessionid']) {
       const res = await this.identityService.validateXpressSession({clientId: data.clientId, sessionId: data.header['x-sessionid']});
@@ -136,6 +151,11 @@ export class SmartSoftService {
 
         return response;
       }
+      // get game session
+      const gameSession = await this.gameSessionRepo.findOne({where: {session_id: data.header['x-sessionid']}})
+      
+      if (gameSession.balance_type === 'bonus')
+        balanceType = 'casino';
 
       player = res.data;
 
@@ -153,7 +173,7 @@ export class SmartSoftService {
         return await this.activateSession(data.clientId, body.Token, callback, portal);
       case 'GetBalance':
         console.log('GetBalance');
-        return await this.getBalance(player, callback);
+        return await this.getBalance(player, callback, balanceType);
       case 'Deposit':
         console.log('Deposit');
         const gameName = body.TransactionInfo.GameName;
@@ -221,7 +241,7 @@ export class SmartSoftService {
           source: game.provider.slug,
           description: `Casino Bet: (${gameName})`,
           username: player.username,
-          wallet: 'main',
+          wallet: balanceType,
           subject: 'Bet Deposit (Casino)',
           channel: gameName,
         });
@@ -319,7 +339,7 @@ export class SmartSoftService {
             source: body.TransactionInfo.Source,
             description: `Casino Bet: (${body.TransactionInfo.GameName})`,
             username: player.username,
-            wallet: 'main',
+            wallet: balanceType,
             subject: 'Bet Win (Casino)',
             channel: body.TransactionInfo.Source,
           });
@@ -422,7 +442,7 @@ export class SmartSoftService {
         const transaction = await this.rollbackTransaction(reversePayload);
 
         if (transaction.status === HttpStatus.CREATED) {
-          const response = await this.getBalance(player, callback);
+          const response = await this.getBalance(player, callback, balanceType);
           if (response.success) {
             return {
               success: true,
@@ -470,7 +490,7 @@ export class SmartSoftService {
             source: transactionPayload.TransactionInfo.Source,
             description: `Bet Cancelled: (${transactionPayload.TransactionInfo.GameName})`,
             username: player.username,
-            wallet: 'main',
+            wallet: balanceType,
             subject: 'Bet Rollback (Casino)',
             channel: body.TransactionInfo.GameName,
           });
@@ -504,7 +524,7 @@ export class SmartSoftService {
             source: transactionPayload.TransactionInfo.Source,
             description: `Bet Cancelled: (${transactionPayload.TransactionInfo.GameName})`,
             username: player.username,
-            wallet: 'main',
+            wallet: balanceType,
             subject: 'Win Rollback (Casino)',
             channel: body.TransactionInfo.GameName,
           });
@@ -575,6 +595,13 @@ export class SmartSoftService {
 
       return response;
     }
+
+    // update game session
+    await this.gameSessionRepo.update({
+      token,
+    }, {
+      session_id: res.data.sessionId
+    })
    
     const response = {
       success: true,
@@ -601,7 +628,7 @@ export class SmartSoftService {
   }
 
   // Get Player Balance
-  async getBalance(player, callback) {
+  async getBalance(player, callback, walletType) {
     let response, status;
 
     if (player) {
@@ -609,6 +636,7 @@ export class SmartSoftService {
       const wallet = await this.walletService.getWallet({
         userId: player.id,
         clientId: player.clientId,
+        wallet: walletType
       });
 
       if (wallet.success) {
@@ -617,7 +645,7 @@ export class SmartSoftService {
           status: HttpStatus.OK,
           message: 'Wallet',
           data: {
-            Amount: wallet.data.availableBalance.toFixed(2),
+            Amount: walletType === 'bonus' ? wallet.data.casinoBonusBalance.toFixed(2) : wallet.data.availableBalance.toFixed(2),
             CurrencyCode: 'NGN',
           },
         };

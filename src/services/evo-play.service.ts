@@ -9,6 +9,7 @@ import { AxiosRequestConfig, AxiosResponse } from 'axios';
 import {
   CallbackLog,
   Game as GameEntity,
+  GameSession,
   // Player as PlayerEntity,
   Provider as ProviderEntity,
 } from '../entities';
@@ -24,7 +25,6 @@ import {
 } from 'src/proto/betting.pb';
 import { IdentityService } from 'src/identity/identity.service';
 import { firstValueFrom } from 'rxjs';
-import { Timeout } from '@nestjs/schedule';
 
 @Injectable()
 export class EvoPlayService {
@@ -38,8 +38,8 @@ export class EvoPlayService {
   constructor(
     @InjectRepository(GameEntity)
     private gameRepository: Repository<GameEntity>,
-    // @InjectRepository(PlayerEntity)
-    // private playerRepository: Repository<PlayerEntity>,
+    @InjectRepository(GameSession)
+    private gameSessionRepo: Repository<GameSession>,
     @InjectRepository(CallbackLog)
     private callbackLogRepository: Repository<CallbackLog>,
     @InjectRepository(ProviderEntity)
@@ -164,8 +164,10 @@ export class EvoPlayService {
   // start game here
   async constructGameUrl(data, game: GameEntity) {
     try {
+      let balanceType = data.balanceType;
+
       // this.token = data.authCode;
-      const newData = {
+      const newData: any = {
         token: data.authCode,
         game: parseInt(game.gameId),
         settings: {
@@ -179,6 +181,36 @@ export class EvoPlayService {
         callback_version: 2,
       };
 
+      if (data.isBonus && data.bonusType == 'free_rounds') {
+        newData.settings = {
+          ...newData.settings, 
+          extra_bonuses: {
+            bonus_spins: {
+              spins_count: data.spins_count,
+              bet_in_money: data.bonusAmount
+            }
+          },
+          extra_bonuses_settings: {
+            registration_id: data.bonusID
+          }
+        }
+      }
+
+      if (data.isBonus && data.bonusType == 'feature_trigger') {
+        newData.settings = {
+          ...newData.settings, 
+          extra_bonuses: {
+            freespins_on_start: {
+              freespins_count: data.spins_count,
+              bet_in_money: data.bonusAmount
+            }
+          },
+          extra_bonuses_settings: {
+            registration_id: data.bonusID
+          }
+        }
+      }
+
       const signature = this.getSignature(
         this.project,
         this.version,
@@ -187,11 +219,28 @@ export class EvoPlayService {
       );
       // console.log(signature)
       // $url = $this->project_id."*".$this->version."*".$this->token;
-      const url = `Game/getURL?project=${this.project}&version=${this.version}&signature=${signature}&token=${newData.token}&game=${newData.game}&settings[user_id]=${newData.settings.user_id}&settings[exit_url]=${newData.settings.exit_url}&settings[https]=${newData.settings.https}&denomination=${newData.denomination}&currency=${newData.currency}&return_url_info=${newData.return_url_info}&callback_version=${newData.callback_version}`;
+      let url = `Game/getURL?project=${this.project}&version=${this.version}&signature=${signature}&token=${newData.token}&game=${newData.game}&settings[user_id]=${newData.settings.user_id}&settings[exit_url]=${newData.settings.exit_url}&settings[https]=${newData.settings.https}`;
+      
+      if (data.isBonus)
+        url += `&settings[extra_bonuses][bonus_spins][spins_count]=${data.spins_count}&settings[extra_bonuses][bonus_spins][bet_in_money]=${data.bonusAmount}&settings[extra_bonuses_settings][registration_id]=${data.bonusID}`;
+
+      if (data.isBonus && data.bonusType === 'featured_trigger')
+        url += `&settings[extra_bonuses][freespins_on_start][freespins_count]=${data.spins_count}&settings[extra_bonuses][freespins_on_start][bet_in_money]=${data.bonusAmount}&settings[extra_bonuses_settings][registration_id]=${data.bonusID}`;
+
+      url += `&denomination=${newData.denomination}&currency=${newData.currency}&return_url_info=${newData.return_url_info}&callback_version=${newData.callback_version}`
+
       const response: AxiosResponse = await this.httpClient.axiosRef.get(
         url,
         this.requestConfig,
       );
+
+      const gameSession = new GameSession();
+      gameSession.balance_type = balanceType;
+      gameSession.game_id = game.gameId;
+      gameSession.token = data.authCode;
+      gameSession.provider = game.provider.slug;
+      await this.gameSessionRepo.save(gameSession);
+
       if(response.data.error) {
         return {success: false, message: response.data.error.message}
       } else {
@@ -289,9 +338,16 @@ export class EvoPlayService {
     let game = null;
     let player = null;
     let betParam, gameDetails;
+    let balanceType = 'main';
+
+    // get game session
+    const gameSession = await this.gameSessionRepo.findOne({where: {session_id: body.token}})
+      
+    if (gameSession.balance_type === 'bonus')
+      balanceType = 'casino';
 
     if (body.name === 'BalanceIncrease') {
-      return await this.BalanceIncrease(data.clientId, body.data, callback.id);
+      return await this.BalanceIncrease(data.clientId, body.data, callback.id, balanceType);
 
     } else if (body.token && body.name !== 'init') {
       const res = await this.identityService.validateToken({
@@ -426,7 +482,7 @@ export class EvoPlayService {
           source: game.provider.slug,
           description: `Casino Bet: (${game.title})`,
           username: player.playerNickname,
-          wallet: 'main',
+          wallet: balanceType,
           subject: 'Bet Deposit (Casino)',
           channel: game.type,
         });
@@ -542,7 +598,7 @@ export class EvoPlayService {
             source: game.provider.slug,
             description: `Casino Bet: (${game.title})`,
             username: player.playerNickname,
-            wallet: 'main',
+            wallet: balanceType,
             subject: 'Bet Win (Casino)',
             channel: game.type,
           });
@@ -707,7 +763,7 @@ export class EvoPlayService {
           source: game.provider.slug,
           description: `Bet Cancelled: (${game.title})`,
           username: player.playerNickname,
-          wallet: 'main',
+          wallet: balanceType,
           subject: 'Bet refund (Casino)',
           channel: game.title,
         });
@@ -895,12 +951,12 @@ export class EvoPlayService {
     return await firstValueFrom(this.betService.cancelCasinoBet(data));
   }
 
-  async BalanceIncrease (clientId, data, callbackId) {
+  async BalanceIncrease (clientId, data, callbackId, wallet) {
     try {
-      const {id, user_id, type, currency, amount, user_message, wallet_type} = data;
-      let wallet = 'main';
-      if (wallet_type === 'bonus')
-        wallet = 'casino';
+      const {id, user_id, type, currency, amount, user_message} = data;
+      // let wallet = 'main';
+      // if (wallet_type === 'bonus')
+      //   wallet = 'casino';
 
       const user = await this.identityService.getDetails({clientId, userId: user_id});
 

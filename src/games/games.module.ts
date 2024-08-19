@@ -10,7 +10,7 @@ import {
   SmartSoftService,
   TadaGamingService,
 } from 'src/services';
-import { Bet, CallbackLog, Provider, Game } from 'src/entities';
+import { GameSession, CallbackLog, Provider, Game } from 'src/entities';
 import { WalletModule } from 'src/wallet/wallet.module';
 import { BetModule } from 'src/bet/bet.module';
 import { EvoPlayService } from 'src/services/evo-play.service';
@@ -29,7 +29,7 @@ import { GameCategory } from 'src/entities/game.category.entity';
       max: 1000,
       isGlobal: true,
     }),
-    TypeOrmModule.forFeature([Bet, CallbackLog, Category, Game, GameCategory, GameKey, Provider]),
+    TypeOrmModule.forFeature([GameSession, CallbackLog, Category, Game, GameCategory, GameKey, Provider]),
     HttpModule,
     IdentityModule,
     WalletModule,

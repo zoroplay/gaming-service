@@ -27,7 +27,6 @@ import {
   TadaGamingService,
   SmartSoftService,
 } from 'src/services';
-import * as dayjs from 'dayjs';
 import { EvoPlayService } from 'src/services/evo-play.service';
 import { IdentityService } from 'src/identity/identity.service';
 import { Category } from 'src/entities/category.entity';
@@ -147,7 +146,7 @@ export class GamesService {
     return final;
   }
 
-  async fetchGames({categoryId, clientId}: FetchGamesRequest): Promise<Games> {
+  async fetchGames({categoryId, clientId, providerId}: FetchGamesRequest): Promise<Games> {
     const query = this.gameRepository
       .createQueryBuilder('games')
       .where('games.status = :status', { status: 1 });
@@ -157,6 +156,9 @@ export class GamesService {
         .leftJoin(GameCategory, 'gamecat', 'gamecat.gameId = games.id')
         .andWhere('gamecat.categoryId = :category', { category: categoryId });
     }
+
+    if (providerId) 
+      query.andWhere('games.providerId = :providerId', { providerId });
 
     const games = await query.getMany();
     // Convert TypeORM entities to proto-generated types
@@ -258,6 +260,7 @@ export class GamesService {
   }
 
   async start(startGameDto: StartGameDto): Promise<any> {
+
     const game: GameEntity = await this.gameRepository.findOne({
       where: {
         id: startGameDto.gameId,
@@ -266,8 +269,6 @@ export class GamesService {
         provider: true,
       },
     });
-
- 
 
     switch (game.provider.slug) {
       case 'shack-evolution':
@@ -301,6 +302,7 @@ export class GamesService {
               provider: 'smart-soft'
           }
         });
+        
         return await this.smartSoftService.constructGameUrl(
           startGameDto,
           game,
