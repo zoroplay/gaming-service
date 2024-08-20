@@ -20,6 +20,9 @@ export class GameSession {
   @Column({nullable: true})
   session_id: string;
 
+  @Column({ type: 'int', nullable: true})
+  bonus_id: number;
+
   @Column()
   token: string;
 

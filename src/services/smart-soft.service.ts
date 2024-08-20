@@ -90,6 +90,9 @@ export class SmartSoftService {
       gameSession.game_id = game.gameId;
       gameSession.token = token;
       gameSession.provider = game.provider.slug;
+      if (data.bonusId)
+        gameSession.bonus_id = data.bonusId;
+
       await this.gameSessionRepo.save(gameSession);
 
       return {
@@ -131,6 +134,7 @@ export class SmartSoftService {
     let player = null;
     let balanceType = 'main';
     let sessionId = data.header['x-sessionid'];
+    let gameSession;
 
     if (sessionId) {
       const res = await this.identityService.validateXpressSession({clientId: data.clientId, sessionId});
@@ -149,7 +153,7 @@ export class SmartSoftService {
         return response;
       }
       // get game session
-      const gameSession = await this.gameSessionRepo.findOne({where: {session_id: sessionId}})
+      gameSession = await this.gameSessionRepo.findOne({where: {session_id: sessionId}})
       
       if (gameSession.balance_type === 'bonus')
         balanceType = 'casino';
@@ -206,7 +210,8 @@ export class SmartSoftService {
           source: game.provider.slug,
           cashierTransactionId: body.TransactionInfo.CashierTransacitonId,
           winnings: 0,
-          username: player.username
+          username: player.username,
+          bonusId: gameSession.bonus_id || null
         };
 
         const place_bet = await this.placeBet(placeBetPayload);

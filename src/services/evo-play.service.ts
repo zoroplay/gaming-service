@@ -390,7 +390,7 @@ export class EvoPlayService {
     switch (body.name) {
       case 'init':
         // console.log('init');
-        const x = await this.activateSession(data.clientId, body.token, callback);
+        const x = await this.activateSession(data.clientId, body.token, callback, balanceType);
         return x;
       case 'bet':
         betParam = body.data;
@@ -815,7 +815,7 @@ export class EvoPlayService {
   }
   // Webhook Section
   // Activate Player Session
-  async activateSession(clientId, token, callback) {
+  async activateSession(clientId, token, callback, walletType) {
     // console.log('activateSession', data, callback);
     const res: any = await this.identityService.validateToken({
       clientId,
@@ -914,7 +914,7 @@ export class EvoPlayService {
       data: {
         status: "ok",
         data: {
-          balance: player.balance.toFixed(2),
+          balance: walletType === 'casino' ? player.casinoBalance.toFixed(2) : player.balance.toFixed(2),
           currency: player.currency
         }
       },
