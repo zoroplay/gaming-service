@@ -710,7 +710,7 @@ export class SmartSoftService {
     try {
       const callbacks = await this.callbackLogRepository.createQueryBuilder('c')
       .where('DATE(createdAt) >= :date', {date: '2024-07-08'})
-      .andWhere('request_type = "Withdraw"')
+      .andWhere('request_type = :type', {type: 'Withdraw'})
       .getMany();
 
       console.log(callbacks.length, ' found')
