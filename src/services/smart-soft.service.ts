@@ -707,28 +707,32 @@ export class SmartSoftService {
   async updateWinnings() {
     console.log('fetching callbacks')
     // fetch callback logs
-    const callbacks = await this.callbackLogRepository.createQueryBuilder('c')
-    .where('DATE(createdAt) >= :date', {date: '2024-07-08'})
-    .andWhere('request_type = "Withdraw"')
-    .getMany();
+    try {
+      const callbacks = await this.callbackLogRepository.createQueryBuilder('c')
+      .where('DATE(createdAt) >= :date', {date: '2024-07-08'})
+      .andWhere('request_type = "Withdraw"')
+      .getMany();
 
-    console.log(callbacks.length, ' found')
+      console.log(callbacks.length, ' found')
 
-    // console.log(callbacks)
-    for (const callback of callbacks) {
-      const payload = JSON.parse(callback.payload);
-      if(payload.Amount > 0) {
-        console.log('processing ticket', payload.TransactionInfo.BetTransactionId, payload.Amount)
-        const settlePayload: CreditCasinoBetRequest = {
-          transactionId: payload.TransactionInfo.BetTransactionId,
-          winnings: payload.Amount,
-        };
+      // console.log(callbacks)
+      for (const callback of callbacks) {
+        const payload = JSON.parse(callback.payload);
+        if(payload.Amount > 0) {
+          console.log('processing ticket', payload.TransactionInfo.BetTransactionId, payload.Amount)
+          const settlePayload: CreditCasinoBetRequest = {
+            transactionId: payload.TransactionInfo.BetTransactionId,
+            winnings: payload.Amount,
+          };
 
-        // console.log('prociessing settlement')
+          // console.log('prociessing settlement')
 
-        // settle won bet
-        const settle_bet = await this.settle(settlePayload);
+          // settle won bet
+          const settle_bet = await this.settle(settlePayload);
+        }
       }
+    } catch (e) {
+      console.log('error running cron', e.message);
     }
   }
 }
