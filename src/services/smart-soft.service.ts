@@ -712,7 +712,7 @@ export class SmartSoftService {
     .andWhere('request_type = "Withdraw"')
     .getMany();
 
-    // console.log(callbacks.length, ' found')
+    console.log(callbacks.length, ' found')
 
     // console.log(callbacks)
     for (const callback of callbacks) {
