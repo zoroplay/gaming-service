@@ -21,6 +21,7 @@ import { GameKey } from 'src/entities/game-key.entity';
 import { CacheModule } from '@nestjs/cache-manager';
 import { Category } from 'src/entities/category.entity';
 import { GameCategory } from 'src/entities/game.category.entity';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { GameCategory } from 'src/entities/game.category.entity';
     IdentityModule,
     WalletModule,
     BetModule,
+    ScheduleModule.forRoot(),
   ],
   controllers: [GamesController, VirtualController],
   providers: [

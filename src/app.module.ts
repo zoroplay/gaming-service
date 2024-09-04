@@ -5,7 +5,6 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { dataSourceOptions } from '../db/data-source';
 import { CacheModule } from '@nestjs/cache-manager';
 import { BetModule } from './bet/bet.module';
-import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
@@ -15,7 +14,6 @@ import { ScheduleModule } from '@nestjs/schedule';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    ScheduleModule.forRoot(),
     TypeOrmModule.forRoot(dataSourceOptions),
     GamesModule,
     BetModule,

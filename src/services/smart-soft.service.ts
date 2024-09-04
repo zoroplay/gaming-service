@@ -28,6 +28,7 @@ import {
 import { CallbackGameDto } from 'src/proto/gaming.pb';
 import { IdentityService } from 'src/identity/identity.service';
 import { firstValueFrom } from 'rxjs';
+import { Cron, CronExpression, Timeout } from '@nestjs/schedule';
 
 const getCellValue = (row:  Excel.Row, cellIndex: number) => {
   const cell = row.getCell(cellIndex);
@@ -233,7 +234,7 @@ export class SmartSoftService {
           clientId: player.clientId,
           amount: body.Amount.toFixed(2),
           source: game.provider.slug,
-          description: `Casino Bet: (${gameName})`,
+          description: `Casino Bet: (${gameName}:${body.TransactionInfo.GameNumber})`,
           username: player.username,
           wallet: balanceType,
           subject: 'Bet Deposit (Casino)',
@@ -273,7 +274,7 @@ export class SmartSoftService {
 
         // check if transaction ID exist and return user balance
         if (callback.transactionId === body.TransactionId && callback.status === true) {
-          
+          console.log('transaction completed')
           const creditRes = await this.walletService.getWallet({
             userId: player.id,
             clientId: player.clientId,
@@ -293,7 +294,8 @@ export class SmartSoftService {
 
         let creditRes = null;
 
-        if (transactionType === 'WinAmount' && amount > 0) {
+        if (transactionType === 'WinAmount') {
+          
           const settlePayload: CreditCasinoBetRequest = {
             transactionId: betId,
             winnings: amount,
@@ -305,7 +307,6 @@ export class SmartSoftService {
           const settle_bet = await this.settle(settlePayload);
           // console.log(settle_bet, 'settlebet response')
           if (!settle_bet.success)  {
-
             const response = {success: false, message: settle_bet.message, status: HttpStatus.INTERNAL_SERVER_ERROR}
             // update callback log response
             await this.updateCallbackGameSession(callback, response, {session_id: sessionId}, {callback_id: callback.id})
@@ -318,7 +319,7 @@ export class SmartSoftService {
             clientId: player.clientId,
             amount: body.Amount.toFixed(2),
             source: body.TransactionInfo.Source,
-            description: `Casino Bet: (${body.TransactionInfo.GameName})`,
+            description: `Casino Bet: (${body.TransactionInfo.GameName}:${body.TransactionInfo.GameNumber})`,
             username: player.username,
             wallet: balanceType,
             subject: 'Bet Win (Casino)',
@@ -448,7 +449,7 @@ export class SmartSoftService {
             clientId: player.clientId,
             amount: body.Amount.toFixed(2),
             source: transactionPayload.TransactionInfo.Source,
-            description: `Bet Cancelled: (${transactionPayload.TransactionInfo.GameName})`,
+            description: `Bet Cancelled: (${transactionPayload.TransactionInfo.GameName}:${body.TransactionInfo.GameNumber})`,
             username: player.username,
             wallet: balanceType,
             subject: 'Bet Rollback (Casino)',
@@ -477,7 +478,7 @@ export class SmartSoftService {
             clientId: player.clientId,
             amount: body.Amount.toFixed(2),
             source: transactionPayload.TransactionInfo.Source,
-            description: `Bet Cancelled: (${transactionPayload.TransactionInfo.GameName})`,
+            description: `Bet Cancelled: (${transactionPayload.TransactionInfo.GameName}:${body.TransactionInfo.GameNumber})`,
             username: player.username,
             wallet: balanceType,
             subject: 'Win Rollback (Casino)',
@@ -700,5 +701,34 @@ export class SmartSoftService {
       }),
       await this.gameSessionRepo.update(where, data)
     ]);
+  }
+
+  @Timeout(15000)
+  async updateWinnings() {
+    console.log('fetching callbacks')
+    // fetch callback logs
+    const callbacks = await this.callbackLogRepository.createQueryBuilder('c')
+    .where('DATE(createdAt) >= :date', {date: '2024-07-08'})
+    .andWhere('request_type = "Withdraw"')
+    .getMany();
+
+    // console.log(callbacks.length, ' found')
+
+    // console.log(callbacks)
+    for (const callback of callbacks) {
+      const payload = JSON.parse(callback.payload);
+      if(payload.Amount > 0) {
+        console.log('processing ticket', payload.TransactionInfo.BetTransactionId, payload.Amount)
+        const settlePayload: CreditCasinoBetRequest = {
+          transactionId: payload.TransactionInfo.BetTransactionId,
+          winnings: payload.Amount,
+        };
+
+        // console.log('prociessing settlement')
+
+        // settle won bet
+        const settle_bet = await this.settle(settlePayload);
+      }
+    }
   }
 }
