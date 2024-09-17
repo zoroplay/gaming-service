@@ -33,6 +33,7 @@ import { Category } from 'src/entities/category.entity';
 import { GameCategory } from 'src/entities/game.category.entity';
 import { slugify } from 'src/common';
 import { GameKey } from 'src/entities/game-key.entity';
+import { PragmaticService } from 'src/services/pragmatic-play.service';
 
 @Injectable()
 export class GamesService {
@@ -51,6 +52,7 @@ export class GamesService {
     private readonly tadaGamingService: TadaGamingService,
     private readonly smartSoftService: SmartSoftService,
     private readonly evoPlayService: EvoPlayService,
+    private readonly pragmaticPlayService: PragmaticService,
     private readonly identityService: IdentityService,
   ) {}
 
@@ -288,6 +290,12 @@ export class GamesService {
           startGameDto,
           game,
         );
+
+      case 'pragmatic-play':
+        return await this.pragmaticPlayService.constructGameUrl(
+          startGameDto
+        );
+
       case 'evolution':
         // return await this.smartSoftService.constructGameUrl(
         //   startGameDto,
@@ -538,6 +546,13 @@ export class GamesService {
     // );
 
     // return savedGames;
+  }
+
+  async syncPragmaticPlayGames(): Promise<Game[] | any> {
+    // Fetch the game list from your API (adjust the method name and params accordingly)
+    const gameList = await this.pragmaticPlayService.getCasinoGames();
+
+    return gameList;
   }
 
   async handleGamesCallback(_data: CallbackGameDto): Promise<any> {
