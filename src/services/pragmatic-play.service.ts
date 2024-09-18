@@ -1,15 +1,15 @@
 /* eslint-disable prettier/prettier */
-import { Injectable, HttpException } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
+import { HttpException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { InjectRepository } from '@nestjs/typeorm';
 import * as crypto from 'crypto';
-import { StartGameDto } from 'src/proto/gaming.pb';
-import { CreditCasinoBetRequest, PlaceCasinoBetRequest, RollbackCasinoBetRequest, SettleVirtualBetRequest } from 'src/proto/betting.pb';
 import { firstValueFrom } from 'rxjs';
 import { BetService } from 'src/bet/bet.service';
-import { InjectRepository } from '@nestjs/typeorm';
+import { CreditCasinoBetRequest, PlaceCasinoBetRequest, RollbackCasinoBetRequest } from 'src/proto/betting.pb';
+import { StartGameDto } from 'src/proto/gaming.pb';
 import { Repository } from 'typeorm';
-import { Provider as ProviderEntity, Game as GameEntity } from '../entities';
+import { Game as GameEntity, Provider as ProviderEntity } from '../entities';
 
 
 @Injectable()
@@ -69,19 +69,19 @@ export class PragmaticService {
     }
 
     for (const game of games) {
-      let newGame = await this.gameRepository.findOne({ where: game.gameName });
+      let newGame = await this.gameRepository.findOne({ where: { title: game.gameName } });
 
       if (!newGame) {
         newGame = new GameEntity();
-        newGame.gameId = game.gameName;
-        newGame.title = game.gameID;
-        newGame.type = game.gameTypeID;
+        newGame.gameId = game.gameIdNumeric;
+        newGame.title = game.gameName;
+        newGame.type = 'Slot';
         newGame.description = game.typeDescription;
         newGame.provider = provider;
         newGame.imagePath = 'https://images.pexels.com/photos/414612/pexels-photo-414612.jpeg';
         newGame.bannerPath = 'https://images.pexels.com/photos/414612/pexels-photo-414612.jpeg',
 
-        await this.gameRepository.save(game)
+        await this.gameRepository.save(newGame);
       }
     }
     } catch (error) {
