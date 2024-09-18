@@ -338,6 +338,10 @@ export class GamesService {
         console.log('syncing here');
         return await this.evoPlayService.syncGames();
         break;
+        case 'pragmatic-play':
+          console.log('pragmatic syncing here');
+          return await this.pragmaticPlayService.syncGames();
+          break;
       default:
         throw new NotFoundException(
           'Specified provider does not support sync feature',
