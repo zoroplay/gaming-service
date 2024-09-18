@@ -7,7 +7,9 @@ import { StartGameDto } from 'src/proto/gaming.pb';
 import { CreditCasinoBetRequest, PlaceCasinoBetRequest, RollbackCasinoBetRequest, SettleVirtualBetRequest } from 'src/proto/betting.pb';
 import { firstValueFrom } from 'rxjs';
 import { BetService } from 'src/bet/bet.service';
-import { IdentityService } from 'src/identity/identity.service';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Provider as ProviderEntity, Game as GameEntity } from '../entities';
 
 
 @Injectable()
@@ -18,8 +20,11 @@ export class PragmaticService {
   private readonly PRAGMATIC_KEY: string;
 
   constructor(
+    @InjectRepository(ProviderEntity)
+    private providerRepository: Repository<ProviderEntity>,
+    @InjectRepository(GameEntity)
+    private gameRepository: Repository<GameEntity>,
     private readonly betService: BetService,
-    private readonly identityService: IdentityService,
     private readonly httpService: HttpService,
     private readonly configService: ConfigService, // For accessing environment variables
   ) {
@@ -37,10 +42,52 @@ export class PragmaticService {
         .post(`${this.PRAGMATIC_BASEURL}/getCasinoGames?secureLogin=${this.PRAGMATIC_SECURE_LOGIN}&hash=${hash}`)
         .toPromise();
 
+        console.log('data', data);
+
       return data.gameList;
     } catch (e) {
       throw new HttpException(e.response?.data?.message || 'Something went wrong', 500);
     }
+  }
+
+  public async syncGames() {
+    try {
+      const games: any = await this.getCasinoGames();
+
+    let provider = await this.providerRepository.findOne({
+      where: { name: 'Pragmatic Play' },
+    });
+
+    if (!provider) {
+      const newProvider: ProviderEntity = new ProviderEntity();
+      newProvider.name = 'Pragmatic Play';
+      newProvider.slug = 'pragmatic-play';
+      newProvider.description = 'Pragmatic Play';
+      newProvider.imagePath =
+        'https://images.pexels.com/photos/414612/pexels-photo-414612.jpeg';
+      provider = await this.providerRepository.save(newProvider);
+    }
+
+    for (const game of games) {
+      let newGame = await this.gameRepository.findOne({ where: game.gameName });
+
+      if (!newGame) {
+        newGame = new GameEntity();
+        newGame.gameId = game.gameName;
+        newGame.title = game.gameID;
+        newGame.type = game.gameTypeID;
+        newGame.description = game.typeDescription;
+        newGame.provider = provider;
+        newGame.imagePath = 'https://images.pexels.com/photos/414612/pexels-photo-414612.jpeg';
+        newGame.bannerPath = 'https://images.pexels.com/photos/414612/pexels-photo-414612.jpeg',
+
+        await this.gameRepository.save(game)
+      }
+    }
+    } catch (error) {
+      console.log("Error saving games", error.message)
+    }
+
   }
 
   // API Health Check
@@ -127,4 +174,5 @@ export class PragmaticService {
     const hash = this.md5Algo(`${queryParams}${this.PRAGMATIC_KEY}`);
     return hash;
   };
+
 }
