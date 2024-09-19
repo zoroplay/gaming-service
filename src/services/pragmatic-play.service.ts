@@ -18,6 +18,7 @@ export class PragmaticService {
   private readonly PRAGMATIC_BASEURL: string;
   private readonly PRAGMATIC_GAMEURL: string;
   private readonly PRAGMATIC_KEY: string;
+  private readonly PRAGMATIC_IMAGE_URL: string;
 
   constructor(
     @InjectRepository(ProviderEntity)
@@ -32,6 +33,7 @@ export class PragmaticService {
     this.PRAGMATIC_BASEURL = this.configService.get<string>('PRAGMATIC_BASEURL');
     this.PRAGMATIC_GAMEURL = this.configService.get<string>('PRAGMATIC_GAMEURL');
     this.PRAGMATIC_KEY = this.configService.get<string>('PRAGMATIC_KEY');
+    this.PRAGMATIC_IMAGE_URL = this.configService.get<string>('PRAGMATIC_IMAGE_URL');
   }
 
   // Get Casino Games
@@ -50,45 +52,81 @@ export class PragmaticService {
     }
   }
 
+  
   public async syncGames() {
     try {
       const games: any = await this.getCasinoGames();
-
-    let provider = await this.providerRepository.findOne({
-      where: { name: 'Pragmatic Play' },
-    });
-
-    if (!provider) {
-      const newProvider: ProviderEntity = new ProviderEntity();
-      newProvider.name = 'Pragmatic Play';
-      newProvider.slug = 'pragmatic-play';
-      newProvider.description = 'Pragmatic Play';
-      newProvider.imagePath =
-        'https://images.pexels.com/photos/414612/pexels-photo-414612.jpeg';
-      provider = await this.providerRepository.save(newProvider);
-    }
-
-    for (const game of games) {
-      let newGame = await this.gameRepository.findOne({ where: { title: game.gameName } });
-
-      if (!newGame) {
-        newGame = new GameEntity();
-        newGame.gameId = game.gameIdNumeric;
-        newGame.title = game.gameName;
-        newGame.type = 'Slot';
-        newGame.description = game.typeDescription;
-        newGame.provider = provider;
-        newGame.imagePath = 'https://images.pexels.com/photos/414612/pexels-photo-414612.jpeg';
-        newGame.bannerPath = 'https://images.pexels.com/photos/414612/pexels-photo-414612.jpeg',
-
-        await this.gameRepository.save(newGame);
+      console.log("games", games);
+  
+      if (!games || games.length === 0) {
+        throw new Error('No games available for processing');
       }
-    }
-    } catch (error) {
-      console.log("Error saving games", error.message)
-    }
+  
+      let provider = await this.providerRepository.findOne({
+        where: { name: 'Pragmatic Play' },
+      });
 
+      console.log("provider", provider);
+  
+      if (!provider) {
+        const newProvider: ProviderEntity = new ProviderEntity();
+        newProvider.name = 'Pragmatic Play';
+        newProvider.slug = 'pragmatic-play';
+        newProvider.description = 'Pragmatic Play';
+        newProvider.imagePath =
+          'https://images.pexels.com/photos/414612/pexels-photo-414612.jpeg';
+        provider = await this.providerRepository.save(newProvider);
+      }
+
+      const savedGames = await Promise.all(
+        Object.keys(games).map(async (key) => {
+  
+          if (Object.prototype.hasOwnProperty.call(games, key)) {
+  
+            const gameData = {
+              gameId: key,
+              title: games[key].gameName,
+              description: games[key].typeDescription,
+              type: 'Slots',
+              provider: provider,
+              status: true,
+              imagePath:`${this.PRAGMATIC_IMAGE_URL}/${games[key].gameID}.png`,
+              bannerPath: `${this.PRAGMATIC_IMAGE_URL}/${games[key].gameID}.png`,
+            };
+  
+            const gameExist = await this.gameRepository.findOne({
+              where: {
+                gameId: gameData.gameId,
+                title: gameData.title,
+              },
+              relations: {
+                provider: true,
+              },
+            });
+  
+            if (gameExist) {
+              console.log('updated game')
+              this.gameRepository.merge(gameExist, gameData);
+              return this.gameRepository.save(gameExist);
+            } else {
+              console.log('added game')
+              return this.gameRepository.save(
+                this.gameRepository.create(gameData),
+              );
+            }
+          }
+        }),
+      );
+  
+      return {
+        games: savedGames,
+      };
+  
+    } catch (error) {
+      console.log("Error saving games:", error.message);
+    }
   }
+  
 
   // API Health Check
   async apiHealthCheck(): Promise<any> {
