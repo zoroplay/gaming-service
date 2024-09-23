@@ -580,6 +580,8 @@ export class GamesService {
         return await this.handleC2Games(_data.body, _data.header);
       case 'evo-play':
         return await this.evoPlayService.handleCallback(_data);
+      case 'pragmatic-play':
+        return await this.evoPlayService.handleCallback(_data);
       default:
         throw new NotFoundException('Unknown provider');
     }
