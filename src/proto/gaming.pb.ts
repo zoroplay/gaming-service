@@ -103,6 +103,7 @@ export interface StartGameDto {
   authCode?: string | undefined;
   balanceType?: string | undefined;
   bonusId?: number | undefined;
+  language?: string | undefined;
 }
 
 export interface StartGameResponse {
