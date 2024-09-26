@@ -204,7 +204,7 @@ export class PragmaticService {
   }
 
   async authenticate(clientId, token, callback, walletType) {
-    const isValid = await this.identityService.xpressLogin({ clientId, token });
+    const isValid = await this.identityService.validateToken({ clientId, token });
 
     let response;
     const dataObject = typeof isValid.data === 'string' ? JSON.parse(isValid.data) : isValid.data;
