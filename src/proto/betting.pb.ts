@@ -152,6 +152,7 @@ export interface PlaceCasinoBetRequest {
   userId: number;
   clientId: number;
   roundId: string;
+  roundDetails?: string | undefined;
   transactionId: string;
   gameId: string;
   gameName?: string | undefined;
