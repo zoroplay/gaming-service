@@ -170,6 +170,8 @@ export class PragmaticService {
 
       const gameExist = await this.gameRepository.findOne({ where: { id: gameId }});
 
+      console.log("gameExist", gameExist);
+
       if(!gameExist) {
         return new NotFoundException('Game not found');
       }
@@ -181,12 +183,16 @@ export class PragmaticService {
         token: authCode,
         ...(demo && { playMode: "DEMO" })
       });
+
+      console.log("hash", hash);
   
       const playMode = demo ? 'playMode=DEMO' : '';
   
       const request = this.httpService.post(
         `${this.PRAGMATIC_BASEURL}/game/url?secureLogin=${this.PRAGMATIC_SECURE_LOGIN}&symbol=${gameExist.gameId}&language=${language}&externalPlayerId=${userId}&token=${authCode}&hash=${hash}&${playMode}`,
       );
+
+      console.log("request", request);
 
       const gameSession = new GameSession();
       gameSession.balance_type = balanceType;
@@ -195,8 +201,9 @@ export class PragmaticService {
       gameSession.provider = gameExist.provider.slug;
       await this.gameSessionRepo.save(gameSession);
 
-      console.log(request);
+      
       const { data } = await lastValueFrom(request);
+      console.log("data", data);
   
       return { url: data.gameURL };
     } catch (e) {
