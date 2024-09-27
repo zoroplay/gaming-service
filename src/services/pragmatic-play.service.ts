@@ -164,6 +164,7 @@ export class PragmaticService {
 
   async constructGameUrl(payload: StartGameDto): Promise<any> {
     try {
+      console.log("payload", payload);
       const balanceType = payload.balanceType;
       const { gameId, language, authCode, userId, demo } = payload;
 
