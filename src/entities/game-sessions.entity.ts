@@ -23,13 +23,13 @@ export class GameSession {
   @Column({ type: 'int', nullable: true})
   bonus_id: number;
 
-  @Column()
+  @Column({nullable: true})
   token: string;
 
   @Column()
   provider: string;
 
-  @Column()
+  @Column({nullable: true})
   balance_type: string;
 
   @CreateDateColumn({ type: 'timestamp' })

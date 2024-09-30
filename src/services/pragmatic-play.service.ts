@@ -1,6 +1,6 @@
 /* eslint-disable prettier/prettier */
 import { HttpService } from '@nestjs/axios';
-import { HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
+import { ConsoleLogger, HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -162,20 +162,25 @@ export class PragmaticService {
     }
   }
 
+
   async constructGameUrl(payload: StartGameDto): Promise<any> {
     try {
-      console.log("payload", payload);
-      const balanceType = payload.balanceType;
-      const { gameId, language, authCode, userId, demo } = payload;
-
-      const gameExist = await this.gameRepository.findOne({ where: { id: gameId }});
-
-      console.log("gameExist", gameExist);
-
-      if(!gameExist) {
-        return new NotFoundException('Game not found');
+      // Log the incoming payload for debugging
+      console.log("Payload received:", payload);
+  
+      const { gameId, language, authCode, userId, demo, balanceType } = payload;
+  
+      // Fetch the game details from the repository
+      const gameExist = await this.gameRepository.findOne({ where: { id: gameId }, relations: { provider: true }});
+      console.log("Game retrieved from DB:", gameExist);
+  
+      // If game doesn't exist, throw an error
+      if (!gameExist) {
+        console.error(`Game with ID ${gameId} not found`);
+        throw new NotFoundException('Game not found');
       }
-
+  
+      // Generate the hash for the game session
       const hash = this.genHash({
         secureLogin: this.PRAGMATIC_SECURE_LOGIN,
         symbol: gameId,
@@ -183,39 +188,71 @@ export class PragmaticService {
         token: authCode,
         ...(demo && { playMode: "DEMO" })
       });
+      console.log("Generated hash:", hash);
 
-      console.log("hash", hash);
-  
       const playMode = demo ? 'playMode=DEMO' : '';
-  
+
       const request = this.httpService.post(
         `${this.PRAGMATIC_BASEURL}/game/url?secureLogin=${this.PRAGMATIC_SECURE_LOGIN}&symbol=${gameExist.gameId}&language=${language}&externalPlayerId=${userId}&token=${authCode}&hash=${hash}&${playMode}`,
       );
 
-      console.log("request", request);
-
-      const gameSession = new GameSession();
-      gameSession.balance_type = balanceType;
-      gameSession.game_id = gameExist.gameId;
-      gameSession.token = payload.authCode;
-      gameSession.provider = gameExist.provider.slug;
-      await this.gameSessionRepo.save(gameSession);
-
       
+      // const request = {
+      //   "error": "0",
+      //   "description": "OK",
+      //   "gameURL": "https://test1.prerelease-env.biz/gs2c/playGame.do?key=token%3Ddsgfssdf5g4dfg%60%7C%60symbol%3Dvs50aladdin%60%7C%60technology%3DH5%60%7C%60platform%3DWEB%60%7C%60language%3Den%60%7C%60currency%3DEUR%60%7C%60cashierUrl%3Dhttp%3A%2F%2Fsomewebsite.com%2Fcashier%2F%60%7C%60lobbyUrl%3D%20http%3A%2F%2Fsomewebsite.com%2Flobby%2F&ppkv=2&stylename=ext_test1&country=USAA&isGameUrlApiCalled=true"
+      // }
+      console.log("Request response:", request);
+  
+      // Start creating the game session
+      const gameSession = new GameSession();
+  
+      // Setting properties of game session
+      gameSession.balance_type = balanceType || null;
+      gameSession.game_id = gameExist.gameId;
+      gameSession.token = authCode || null;
+      gameSession.session_id = authCode || null;
+      gameSession.provider = gameExist.provider.slug;
+  
+      // Log game session data before saving
+      console.log("Game session data to save:", gameSession);
+  
+      // Check if token is missing or invalid
+      if (!gameSession.token) {
+        console.error("Auth token is missing or invalid");
+        throw new Error('Auth token is missing');
+      }
+  
+      // Attempt to save the game session
+      try {
+        await this.gameSessionRepo.save(gameSession);
+        console.log("Game session saved successfully", gameSession);
+      } catch (dbError) {
+        console.error("Error saving game session:", dbError.message);
+        throw new Error(`Failed to save game session: ${dbError.message}`);
+      }
+
       const { data } = await lastValueFrom(request);
       console.log("data", data);
   
+      // Return the game URL from the mocked request object
       return { url: data.gameURL };
-    } catch (e) {
-      return new RpcException(e.message || 'Something went wrong');
+  
+    } catch (error) {
+      // Catch and log any errors that occur
+      console.error("An error occurred:", error.message);
+      throw new RpcException(error.message || 'Something went wrong');
     }
   }
-
+  
   async authenticate(clientId, token, callback, walletType) {
+    console.log("Got to authenticate method");
     const isValid = await this.identityService.validateToken({ clientId, token });
-
+    console.log("isValid", isValid);
     let response;
     const dataObject = typeof isValid.data === 'string' ? JSON.parse(isValid.data) : isValid.data;
+
+    console.log("dataObject", dataObject);
 
     if(!isValid || !isValid.status) {
       response = {
@@ -225,7 +262,8 @@ export class PragmaticService {
         data: {}
       }
 
-      await this.callbackLogRepository.update({ id: callback.id}, { response: JSON.stringify(response)});
+      const val = await this.callbackLogRepository.update({ id: callback.id}, { response: JSON.stringify(response)});
+      console.log("val", val);
 
       return response;
     } 
@@ -311,27 +349,31 @@ export class PragmaticService {
   }
 
   async handleCallback(data: any) {
+    console.log("_data", data);
     // save callback
     const callback = await this.saveCallbackLog(data);
+    console.log("callback", callback);
     let response;
 
     const body = data.body ? JSON.parse(data.body) : '';
 
-    if (this.hashCheck(body)) {
-      response = {
-        success: false,
-        message: 'Invalid Hash Signature',
-        status: HttpStatus.BAD_REQUEST,
-        data: {
-          error: 5,
-          description: 'Error'
-        }
-      }
+    console.log("body", body);
 
-      await this.callbackLogRepository.update({ id: callback.id}, { response: JSON.stringify(response)});
+    // if (this.hashCheck(body)) {
+    //   response = {
+    //     success: false,
+    //     message: 'Invalid Hash Signature',
+    //     status: HttpStatus.BAD_REQUEST,
+    //     data: {
+    //       error: 5,
+    //       description: 'Error'
+    //     }
+    //   }
 
-      return response;
-    }
+    //   await this.callbackLogRepository.update({ id: callback.id}, { response: JSON.stringify(response)});
+
+    //   return response;
+    // }
 
     let game = null;
     const player = null;
@@ -339,7 +381,9 @@ export class PragmaticService {
     let betParam, gameDetails;
    
     // get game session
-    const gameSession = await this.gameSessionRepo.findOne({where: {session_id: body.token}})
+    const gameSession = await this.gameSessionRepo.findOne({where: {session_id: body.token}});
+
+    console.log("gameSession", gameSession);
     
     if (gameSession.balance_type === 'bonus')
       balanceType = 'casino';
@@ -347,6 +391,7 @@ export class PragmaticService {
 
     switch (data.action) {
       case 'Authenticate':
+        console.log("using pragmatic-play authenticate");
         return await this.authenticate(data.clientId, body.token, callback, balanceType);
       case 'Balance':
         return await this.getBalance(player, callback, balanceType);

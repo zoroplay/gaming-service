@@ -262,6 +262,7 @@ export class GamesService {
   }
 
   async start(startGameDto: StartGameDto): Promise<any> {
+    console.log("startGameDto", startGameDto);
 
     const game: GameEntity = await this.gameRepository.findOne({
       where: {
@@ -271,6 +272,8 @@ export class GamesService {
         provider: true,
       },
     });
+
+    console.log("game", game);
 
     switch (game.provider.slug) {
       case 'shack-evolution':
@@ -286,12 +289,14 @@ export class GamesService {
           game,
         );
       case 'evo-play':
+        console.log("using evo-play");
         return await this.evoPlayService.constructGameUrl(
           startGameDto,
           game,
         );
 
       case 'pragmatic-play':
+        console.log("using pragmatic-play");
         return await this.pragmaticPlayService.constructGameUrl(
           startGameDto
         );
@@ -303,6 +308,7 @@ export class GamesService {
         // );
         break;
       case 'smart-soft':
+        console.log("using smart-soft");
         const privateKeyQuery = await this.gameKeyRepository.findOne({
           where: {
               client_id: startGameDto.clientId,
@@ -560,6 +566,7 @@ export class GamesService {
   }
 
   async handleGamesCallback(_data: CallbackGameDto): Promise<any> {
+    console.log("_data", _data);
     switch (_data.provider) {
       case 'shack-evolution':
         return await this.handleC2Games(_data.body, _data.header);
@@ -581,7 +588,8 @@ export class GamesService {
       case 'evo-play':
         return await this.evoPlayService.handleCallback(_data);
       case 'pragmatic-play':
-        return await this.evoPlayService.handleCallback(_data);
+        console.log("using pragmatic-play");
+        return await this.pragmaticPlayService.handleCallback(_data);
       default:
         throw new NotFoundException('Unknown provider');
     }

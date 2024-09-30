@@ -120,7 +120,7 @@ export class GamesController {
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'startGame')
   async startGame(request: StartGameDto): Promise<any> {
-    console.log('startGame');
+    console.log('startGame', request);
     try {
       const resp = await this.gamesService.start(request);
       return resp;
@@ -138,7 +138,7 @@ export class GamesController {
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'handleCallback')
   async handleCallback(request: CallbackGameDto): Promise<any> {
-
+    console.log("request", request);
     try {
       return await this.gamesService.handleGamesCallback(request);
     } catch (error) {
