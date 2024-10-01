@@ -183,11 +183,13 @@ export class PragmaticService {
       // Generate the hash for the game session
       const hash = this.genHash({
         secureLogin: this.PRAGMATIC_SECURE_LOGIN,
-        symbol: gameId,
+        symbol: gameExist.gameId,
         language: language,
+        externalPlayerId: userId,
         token: authCode,
         ...(demo && { playMode: "DEMO" })
       });
+
       console.log("Generated hash:", hash);
 
       const playMode = demo ? 'playMode=DEMO' : '';
@@ -619,7 +621,8 @@ export class PragmaticService {
     const unhash = queries.filter((item) => item !== "hash");
     unhash.sort();
     const queryParams = unhash.map((key) => `${key}=${query[key]}`).join("&");
-  
+    console.log("queryParams", queryParams);
+
     const hash = this.md5Algo(`${queryParams}${this.PRAGMATIC_KEY}`);
     return hash;
   };
@@ -672,3 +675,4 @@ export class PragmaticService {
   }
 
 }
+
