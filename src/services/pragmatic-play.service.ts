@@ -1,6 +1,6 @@
 /* eslint-disable prettier/prettier */
 import { HttpService } from '@nestjs/axios';
-import { ConsoleLogger, HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -357,14 +357,32 @@ export class PragmaticService {
     const callback = await this.saveCallbackLog(data);
     console.log("callback", callback);
     let response;
+    let body = {};
 
-    // const body = data.body ? JSON.parse(data.body) : '';
+  // Parse the body based on content type
+  if (data.body) {
+    try {
+      body = new URLSearchParams(data.body); // Parse the URL-encoded string into an object
+    } catch (error) {
+      console.error('Error parsing body:', error);
+      response = {
+        success: false,
+        message: 'Invalid body format',
+        status: HttpStatus.BAD_REQUEST,
+        data: { error: 5, description: 'Error' }
+      };
 
-    const body = this.convertToObject(data.body);
+      await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
+      return response;
+    }
+  }
 
-    console.log("body-one", body);
+  console.log("body", body);
 
-    if (this.hashCheck(body)) {
+  if(body instanceof URLSearchParams) {
+    const parsedBody = Object.fromEntries(body.entries());
+
+    if (this.hashCheck(parsedBody)) {
       response = {
         success: false,
         message: 'Invalid Hash Signature',
@@ -373,21 +391,32 @@ export class PragmaticService {
           error: 5,
           description: 'Error'
         }
-      }
-
-      await this.callbackLogRepository.update({ id: callback.id}, { response: JSON.stringify(response)});
-
+      };
+  
+      await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
       return response;
     }
+
+  } else {
+    response = {
+      success: false,
+      message: 'Invalid body format',
+      status: HttpStatus.BAD_REQUEST,
+      data: { error: 5, description: 'Error' }
+    };
+
+    await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
+    return response;
+  }
 
     let game = null;
     let player = null;
     let balanceType = 'main';
-    let token = body.token;
+    const token = body.get('token');
     let betParam, gameDetails;
    
     // get game session
-    const gameSession = await this.gameSessionRepo.findOne({where: {session_id: body.token}});
+    const gameSession = await this.gameSessionRepo.findOne({where: {session_id: token}});
 
     console.log("gameSession", gameSession);
     
@@ -428,7 +457,7 @@ export class PragmaticService {
       case 'Balance':
         return await this.getBalance(player, callback, balanceType);
       case 'Deposit':
-        betParam = body.data;
+        betParam = body;
         gameDetails = JSON.parse(betParam.details);
 
         game = await this.gameRepository.findOne({
@@ -454,11 +483,11 @@ export class PragmaticService {
         const placeBetPayload: PlaceCasinoBetRequest = {
           userId: player.id,
           clientId: player.clientId,
-          roundId: body.roundId,
-          roundDetails: body.roundDetails,
-          transactionId: body.reference,
-          gameId: body.gameId,
-          stake: parseFloat(body.amount),
+          roundId: body.get('roundId'),
+          roundDetails: body.get('roundDetails'),
+          transactionId: body.get('reference'),
+          gameId: body.get('gameId'),
+          stake: parseFloat(body.get('amount')),
           gameName: game.title,
           gameNumber: game.id,
           source: game.provider.slug,
@@ -486,9 +515,9 @@ export class PragmaticService {
         const debit = await this.walletService.debit({
           userId: player.id,
           clientId: player.clientId,
-          amount: body.amount.toFixed(2),
+          amount: parseFloat(body.get('amount')).toFixed(2),
           source: game.provider.slug,
-          description: `Casino Bet: (${game.title}:${body.gameId})`,
+          description: `Casino Bet: (${game.title}:${body.get('gameId')})`,
           username: player.username,
           wallet: balanceType,
           subject: 'Bet Deposit (Casino)',
@@ -521,13 +550,13 @@ export class PragmaticService {
 
         return response;
       case 'Withdraw':
-        const transactionType = body.reference;
-        const amount = body.amount;
-        const roundId = body.roundId;
-        const betId = body.reference;
+        const transactionType = body.get('reference');
+        const amount = parseFloat(body.get('amount'));
+        const roundId = body.get('roundId');
+        const betId = body.get('reference');
 
         // check if transaction ID exist and return user balance
-        if (callback.transactionId === body.reference && callback.status === true) {
+        if (callback.transactionId === body.get('reference') && callback.status === true) {
           console.log('transaction completed')
           const creditRes = await this.walletService.getWallet({
             userId: player.id,
@@ -571,13 +600,13 @@ export class PragmaticService {
           creditRes = await this.walletService.credit({
             userId: player.id,
             clientId: player.clientId,
-            amount: body.amount.toFixed(2),
-            source: body.TransactionInfo.Source,
-            description: `Casino Bet: (${body.TransactionInfo.GameName}:${body.TransactionInfo.GameNumber})`,
+            amount: parseFloat(body.get('amount')),
+            source: body.get('transactionId'),
+            description: `Casino Bet: (${body.get('transactionId')}:${body.get('transactionId')})`,
             username: player.username,
             wallet: balanceType,
             subject: 'Bet Win (Casino)',
-            channel: body.TransactionInfo.Source,
+            channel: body.get('transactionId'),
           });
 
           const response = {
