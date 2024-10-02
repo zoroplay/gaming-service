@@ -9,7 +9,7 @@ import { firstValueFrom, lastValueFrom } from 'rxjs';
 import { BetService } from 'src/bet/bet.service';
 import { IdentityService } from 'src/identity/identity.service';
 import { CreditCasinoBetRequest, PlaceCasinoBetRequest, RollbackCasinoBetRequest } from 'src/proto/betting.pb';
-import { StartGameDto } from 'src/proto/gaming.pb';
+import { CallbackGameDto, StartGameDto } from 'src/proto/gaming.pb';
 import { WalletService } from 'src/wallet/wallet.service';
 import { Repository } from 'typeorm';
 import { CallbackLog, Game as GameEntity, GameSession, Provider as ProviderEntity } from '../entities';
@@ -250,6 +250,7 @@ export class PragmaticService {
   async authenticate(clientId, token, callback, walletType) {
     console.log("Got to authenticate method");
     const isValid = await this.identityService.validateToken({ clientId, token });
+    
     console.log("isValid", isValid);
     let response;
     const dataObject = typeof isValid.data === 'string' ? JSON.parse(isValid.data) : isValid.data;
@@ -303,8 +304,8 @@ export class PragmaticService {
           status: HttpStatus.OK,
           message: 'Balance Success',
           data: {
-            Amount: walletType === 'casino' ? wallet.data.casinoBonusBalance.toFixed(2) : wallet.data.availableBalance.toFixed(2),
-            CurrencyCode: 'NGN',
+            amount: walletType === 'casino' ? wallet.data.casinoBonusBalance.toFixed(2) : wallet.data.availableBalance.toFixed(2),
+            currencyCode: 'NGN',
           },
         };
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -350,7 +351,7 @@ export class PragmaticService {
     return await firstValueFrom(this.betService.settleCasinoBet(data));
   }
 
-  async handleCallback(data: any) {
+  async handleCallback(data: CallbackGameDto) {
     console.log("_data", data);
     // save callback
     const callback = await this.saveCallbackLog(data);
@@ -361,25 +362,26 @@ export class PragmaticService {
 
     console.log("body", body);
 
-    // if (this.hashCheck(body)) {
-    //   response = {
-    //     success: false,
-    //     message: 'Invalid Hash Signature',
-    //     status: HttpStatus.BAD_REQUEST,
-    //     data: {
-    //       error: 5,
-    //       description: 'Error'
-    //     }
-    //   }
+    if (this.hashCheck(body)) {
+      response = {
+        success: false,
+        message: 'Invalid Hash Signature',
+        status: HttpStatus.BAD_REQUEST,
+        data: {
+          error: 5,
+          description: 'Error'
+        }
+      }
 
-    //   await this.callbackLogRepository.update({ id: callback.id}, { response: JSON.stringify(response)});
+      await this.callbackLogRepository.update({ id: callback.id}, { response: JSON.stringify(response)});
 
-    //   return response;
-    // }
+      return response;
+    }
 
     let game = null;
-    const player = null;
+    let player = null;
     let balanceType = 'main';
+    let token = body.token;
     let betParam, gameDetails;
    
     // get game session
@@ -389,6 +391,30 @@ export class PragmaticService {
     
     if (gameSession.balance_type === 'bonus')
       balanceType = 'casino';
+
+    if (token) {
+      const res = await this.identityService.validateToken({clientId: data.clientId, token});
+
+      console.log("res", res)
+
+      if (!res.success) {
+        const response =  {
+          success: false,
+          message: 'Invalid Session ID',
+          status: HttpStatus.NOT_FOUND
+        };
+
+        // update callback log response
+        await this.callbackLogRepository.update({ id: callback.id}, { response: JSON.stringify(response)});
+
+        return response;
+      }
+      
+      if (gameSession.balance_type === 'bonus')
+        balanceType = 'casino';
+
+      player = res.data;
+    }
 
 
     switch (data.action) {
@@ -432,7 +458,7 @@ export class PragmaticService {
           gameName: game.title,
           gameNumber: game.id,
           source: game.provider.slug,
-          cashierTransactionId: data.callback_id,
+          cashierTransactionId: data.body,
           winnings: 0,
           username: player.username,
           bonusId: gameSession.bonus_id || null
