@@ -358,9 +358,11 @@ export class PragmaticService {
     console.log("callback", callback);
     let response;
 
-    const body = data.body ? JSON.parse(data.body) : '';
+    // const body = data.body ? JSON.parse(data.body) : '';
 
-    console.log("body", body);
+    const body = this.convertToObject(data.body);
+
+    console.log("body-one", body);
 
     if (this.hashCheck(body)) {
       response = {
@@ -422,7 +424,7 @@ export class PragmaticService {
     switch (data.action) {
       case 'Authenticate':
         console.log("using pragmatic-play authenticate");
-        return await this.authenticate(data.clientId, body.token, callback, balanceType);
+        return await this.authenticate(data.clientId, token, callback, balanceType);
       case 'Balance':
         return await this.getBalance(player, callback, balanceType);
       case 'Deposit':
@@ -569,7 +571,7 @@ export class PragmaticService {
           creditRes = await this.walletService.credit({
             userId: player.id,
             clientId: player.clientId,
-            amount: body.Amount.toFixed(2),
+            amount: body.amount.toFixed(2),
             source: body.TransactionInfo.Source,
             description: `Casino Bet: (${body.TransactionInfo.GameName}:${body.TransactionInfo.GameNumber})`,
             username: player.username,
@@ -659,32 +661,86 @@ export class PragmaticService {
     const hash = this.genHash(query);
     return query.hash !== hash;
   };
+
+  convertToObject = (queryString) => {
+    const obj = {};
+    const pairs = queryString.split('&'); // Split the string by '&'
+
+    pairs.forEach(pair => {
+        const [key, value] = pair.split('='); // Split each pair by '='
+        obj[decodeURIComponent(key)] = decodeURIComponent(value); // Decode and assign to object
+    });
+
+    return obj;
+}
   
 
   // save callback request
+  // async saveCallbackLog(data) {
+  //   const action = data.action;
+  //   const body = data.body ? JSON.parse(data.body) : '';
+  //   const transactionId = 
+  //     action === 'Authenticate' 
+  //       ? body.token 
+  //       : action === 'GetBalance' 
+  //         ? body.token
+  //         : action === 'Bet' 
+  //         ? body.token 
+  //         : action === 'Refund' 
+  //         ? body.token
+  //         : action === 'Result' 
+  //         ? body.token
+  //         : action === 'BonusWin' 
+  //         ? data.header['x-sessionid']
+  //         : action === 'promoWin' 
+  //         ? data.header['x-sessionid'] 
+  //         : action === 'JackpotWin' 
+  //         ? data.header['x-sessionid'] 
+  //           : body.transactionId;
+
+  //   try{
+  //     let callback = await this.callbackLogRepository.findOne({where: {transactionId}});
+      
+  //     if (callback) return callback;
+      
+  //     callback = new CallbackLog();
+  //     callback.transactionId = transactionId;
+  //     callback.request_type = action;
+  //     callback.payload = JSON.stringify(body);
+
+
+  //     return await this.callbackLogRepository.save(callback);
+
+  //   } catch(e) {
+  //     console.log('Error saving callback log', e.message)
+  //   }
+  // }
+
   async saveCallbackLog(data) {
     const action = data.action;
-    const body = data.body ? JSON.parse(data.body) : '';
+    const body = data.body ? new URLSearchParams(data.body) : new URLSearchParams();
+
+    console.log('body-Callback', body);
     const transactionId = 
       action === 'Authenticate' 
-        ? body.token 
-        : action === 'GetBalance' 
-          ? body.token
+        ? body.get('token') 
+        : action === 'Balance' 
+          ? body.get('userId')
           : action === 'Bet' 
-          ? body.token 
+          ? body.get('token') 
           : action === 'Refund' 
-          ? body.token
+          ? body.get('token')
           : action === 'Result' 
-          ? body.token
+          ? body.get('token') 
           : action === 'BonusWin' 
           ? data.header['x-sessionid']
           : action === 'promoWin' 
           ? data.header['x-sessionid'] 
           : action === 'JackpotWin' 
           ? data.header['x-sessionid'] 
-            : body.transactionId;
+            : body.get('transactionId');
 
-    try{
+    try {
       let callback = await this.callbackLogRepository.findOne({where: {transactionId}});
       
       if (callback) return callback;
@@ -692,15 +748,15 @@ export class PragmaticService {
       callback = new CallbackLog();
       callback.transactionId = transactionId;
       callback.request_type = action;
-      callback.payload = JSON.stringify(body);
-
+      callback.payload = JSON.stringify(Object.fromEntries(body)); // Convert URLSearchParams back to JSON
 
       return await this.callbackLogRepository.save(callback);
 
     } catch(e) {
-      console.log('Error saving callback log', e.message)
+      console.log('Error saving callback log', e.message);
     }
-  }
+}
+
 
 }
 
