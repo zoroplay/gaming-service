@@ -293,7 +293,7 @@ export class PragmaticService {
     if (player) {
       //TODO: USE PLAYER UserID AND ClientID to get balance from wallet service;
       const wallet = await this.walletService.getWallet({
-        userId: player.id,
+        userId: player.playerId,
         clientId: player.clientId,
         wallet: walletType
       });
@@ -415,6 +415,8 @@ export class PragmaticService {
 
       player = res.data;
     }
+
+    console.log("player", player)
 
 
     switch (data.action) {
