@@ -276,9 +276,12 @@ export class PragmaticService {
       status: HttpStatus.OK,
       message: "Authentication Successful",
       data: {
-        playerId: dataObject.playerId,
-        balance: walletType === 'casino' ? dataObject.casinoBalance.toFixed(2) : dataObject.balance.toFixed(2),
-        currency: dataObject.currency
+        userId: dataObject.playerId,
+        cash: walletType === 'casino' ? dataObject.casinoBalance.toFixed(2) : dataObject.balance.toFixed(2),
+        currency: dataObject.currency,
+        bonus: dataObject.casinoBalance,
+        error: 0,
+        description: 'Success',
       }
     }
 
