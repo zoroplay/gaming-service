@@ -285,15 +285,15 @@ export class PragmaticService {
 
   }
 
-  async getBalance(player, callback, walletType) {
+  async getBalance(clientId, player, callback, walletType) {
     console.log("Got to balance method");
     let response;
 
     if (player) {
       //TODO: USE PLAYER UserID AND ClientID to get balance from wallet service;
       const wallet = await this.walletService.getWallet({
-        userId: player.playerId,
-        clientId: player.clientId,
+        userId: player.id,
+        clientId,
         wallet: walletType
       });
 
@@ -353,7 +353,7 @@ export class PragmaticService {
     return response;
   }
 
-  async bet(player, callback, body, balanceType) {
+  async bet(clientId, player, callback, body, balanceType) {
     console.log("Got to bet method");
     console.log("player", player, body, balanceType);
     let response: any;
@@ -376,8 +376,8 @@ export class PragmaticService {
       }
 
       const getWallet = await this.walletService.getWallet({
-        userId: player.playerId,
-        clientId: player.clientId
+        userId: player.id,
+        clientId
       });
 
       if(!getWallet || !getWallet.status) {
@@ -413,8 +413,9 @@ export class PragmaticService {
       }
 
       const placeBetPayload: PlaceCasinoBetRequest = {
-        userId: player.playerId,
-        clientId: player.clientId,
+        userId: player.id,
+        clientId,
+        username: player.username,
         roundId: body.get('roundId'),
         transactionId: body.get('reference'),
         gameId: body.get('gameId'),
@@ -442,8 +443,8 @@ export class PragmaticService {
       }
 
       const debit = await this.walletService.debit({
-        userId: player.playerId,
-        clientId: player.clientId,
+        userId: player.id,
+        clientId,
         amount: body.get('amount'),
         source: gameExist.provider.slug,
         description: `Casino Bet: (${gameExist.title}:${body.get('reference')})`,
@@ -489,7 +490,7 @@ export class PragmaticService {
       response = {
         success: false,
         status: HttpStatus.BAD_REQUEST,
-        message: `Player with userId ${player.playerID} not found`,
+        message: `Player with userId ${player.id} not found`,
         data: {}
       }
 
@@ -498,7 +499,7 @@ export class PragmaticService {
     }
   }
 
-  async win(player, callback, body, balanceType) {
+  async win(clientId, player, callback, body, balanceType) {
     console.log("Got to win method");
     console.log("player", player, body, balanceType);
     let response: any;
@@ -549,12 +550,12 @@ export class PragmaticService {
         }
 
         const creditResponse = await this.walletService.credit({
-          userId: player.playerId,
-          clientId: player.clientId,
+          userId: player.id,
+          clientId,
           amount: body.get('amount').toFixed(2),
           source: gameExist.provider.slug,
           description: `Casino Bet: (${gameExist.title})`,
-          username: player.playerNickname,
+          username: player.username,
           wallet: balanceType,
           subject: 'Bet Win (Casino)',
           channel: gameExist.type,
@@ -608,8 +609,8 @@ export class PragmaticService {
          }
 
          const getWallet = await this.walletService.getWallet({
-          userId: player.playerId,
-          clientId: player.clientId,
+          userId: player.id,
+          clientId,
         });
 
         response = {
@@ -637,7 +638,7 @@ export class PragmaticService {
       response = {
         success: false,
         status: HttpStatus.BAD_REQUEST,
-        message: `Player with userId ${player.playerID} not found`,
+        message: `Player with userId ${player.id} not found`,
         data: {}
       }
 
@@ -647,7 +648,7 @@ export class PragmaticService {
   
   }
 
-  async refund(player, callback, body, balanceType) {
+  async refund(clientId, player, callback, body, balanceType) {
     console.log("Got to refund method");
     console.log("player", player, body, balanceType);
     let response: any;
@@ -711,12 +712,12 @@ export class PragmaticService {
       }
 
       const rollbackWalletRes = await this.walletService.credit({
-        userId: player.playerId,
-        clientId: player.clientId,
+        userId: player.id,
+        clientId,
         amount: callbackPayload.amount,
         source: gameExist.provider.slug,
         description: `Bet Cancelled: (${gameExist.title})`,
-        username: player.playerNickname,
+        username: player.username,
         wallet: balanceType,
         subject: 'Bet refund (Casino)',
         channel: gameExist.title,
@@ -742,7 +743,7 @@ export class PragmaticService {
         data: {
           status: "ok",
           data: {
-            transactionId: callbackLog.transactionId,
+            transactionId: transaction.data.transactionId,
             error: 0,
             description: 'Successful',
           },
@@ -845,19 +846,19 @@ export class PragmaticService {
   }
 
     let player = null;
-    const balanceType = 'main';
-    const token = callback.transactionId;
+    let balanceType = 'main';
+    const token = body.get("token");
    
-    // get game session
-    // const gameSession = await this.gameSessionRepo.findOne({where: {session_id: token}});
+    //get game session
+    const gameSession = await this.gameSessionRepo.findOne({where: {session_id: token}});
 
-    // // console.log("gameSession", gameSession);
+    console.log("gameSession", gameSession);
     
-    // // if (gameSession.balance_type === 'bonus')
-    // //   balanceType = 'casino';
+    if (gameSession.balance_type === 'bonus')
+      balanceType = 'casino';
 
     if (token) {
-      const res = await this.identityService.validateToken({clientId: data.clientId, token});
+      const res = await this.identityService.getDetails({clientId: data.clientId, userId: parseFloat(body.get('userId'))});
 
       console.log("res", res)
 
@@ -888,13 +889,13 @@ export class PragmaticService {
         console.log("using pragmatic-play authenticate");
         return await this.authenticate(data.clientId, token, callback, balanceType);
       case 'Balance':
-        return await this.getBalance(player, callback, balanceType);
+        return await this.getBalance(data.clientId, player, callback, balanceType);
       case 'Bet':
-        return await this.bet(player, callback, body, balanceType);
+        return await this.bet(data.clientId, player, callback, body, balanceType);
       case 'Result':
-        return await this.win(player, callback, body, balanceType);
+        return await this.win(data.clientId, player, callback, body, balanceType);
       case 'Refund':
-        return await this.refund(player, callback, body, balanceType);
+        return await this.refund(data.clientId, player, callback, body, balanceType);
       case 'BonusWin':
         console.log("processing...")
       case 'JackpotWin':
@@ -945,21 +946,21 @@ export class PragmaticService {
     console.log('body-Callback', body);
     const transactionId = 
       action === 'Authenticate' 
-        ? body.get('token') 
+        ? body.get('hash') 
         : action === 'Balance' 
-          ? body.get('userId')
+          ? body.get('hash')
           : action === 'Bet' 
-          ? body.get('reference') 
+          ? body.get('hash') 
           : action === 'Refund' 
-          ? body.get('reference')
+          ? body.get('hash')
           : action === 'Result' 
-          ? body.get('reference') 
+          ? body.get('hash') 
           : action === 'BonusWin' 
-          ? body.get('reference') 
+          ? body.get('hash') 
           : action === 'promoWin' 
-          ? body.get('reference') 
+          ? body.get('hash') 
           : action === 'JackpotWin' 
-          ? body.get('reference') 
+          ? body.get('hash') 
             : body.get('transactionId');
 
     try {
@@ -980,3 +981,5 @@ export class PragmaticService {
 }
 
 }
+
+
