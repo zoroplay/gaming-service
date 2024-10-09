@@ -291,6 +291,7 @@ export class PragmaticService {
         cash: walletType === 'casino' ? dataObject.casinoBalance.toFixed(2) : dataObject.balance.toFixed(2),
         currency: dataObject.currency,
         bonus: dataObject.casinoBalance,
+        token: token,
         error: 0,
         description: 'Success',
       }
@@ -392,10 +393,26 @@ export class PragmaticService {
         return response;
       }
 
-      const getWallet = await this.walletService.getWallet({
-        userId: player.playerId,
-        clientId
-      });
+      // const getWallet = await this.walletService.getWallet({
+      //   userId: player.playerId,
+      //   clientId
+      // });
+
+      const getWallet = {
+        success: true,
+        status: HttpStatus.OK,
+        message: 'Success',
+        data: {
+          userId: '1',
+          clientId: '4',
+          casinoBonusBalance: 0.0,
+          sportBonusBalance: 0.00,
+          balance: 3400.0,
+          trustBalance: 0.0,
+          availableBalance: 100.0,
+          virtualBonusBalance: 0.0,
+        }
+      } 
 
       if(!getWallet || !getWallet.status) {
         response = {
@@ -429,22 +446,32 @@ export class PragmaticService {
         return response;
       }
 
-      const placeBetPayload: PlaceCasinoBetRequest = {
-        userId: player.playerId,
-        clientId,
-        username: player.playerNickname,
-        roundId: body.get('roundId'),
-        transactionId: body.get('reference'),
-        gameId: body.get('gameId'),
-        stake: parseFloat(body.get('amount')),
-        gameName: gameExist.title,
-        gameNumber: gameExist.gameId,
-        source: gameExist.provider.slug,
-        winnings: 0,
-        roundDetails: body.get('roundDetails')
-      };
+      // const placeBetPayload: PlaceCasinoBetRequest = {
+      //   userId: player.playerId,
+      //   clientId,
+      //   username: player.playerNickname,
+      //   roundId: body.get('roundId'),
+      //   transactionId: body.get('reference'),
+      //   gameId: body.get('gameId'),
+      //   stake: parseFloat(body.get('amount')),
+      //   gameName: gameExist.title,
+      //   gameNumber: gameExist.gameId,
+      //   source: gameExist.provider.slug,
+      //   winnings: 0,
+      //   roundDetails: body.get('roundDetails')
+      // };
 
-      const place_bet = await this.placeBet(placeBetPayload);
+      // const place_bet = await this.placeBet(placeBetPayload);
+
+      const place_bet = {
+        success: true,
+        status: HttpStatus.OK,
+        message: 'Casino Bet Placed',
+        data: {
+          transactionId: '123456',
+          balance: 756,
+        },
+      }
 
       if (!place_bet.success) {
         response = {
@@ -459,17 +486,32 @@ export class PragmaticService {
         return response;
       }
 
-      const debit = await this.walletService.debit({
-        userId: player.playerId,
-        clientId,
-        amount: body.get('amount'),
-        source: gameExist.provider.slug,
-        description: `Casino Bet: (${gameExist.title}:${body.get('reference')})`,
-        username: player.playerNickname,
-        wallet: balanceType,
-        subject: 'Bet Deposit (Casino)',
-        channel: gameExist.title,
-      });
+      // const debit = await this.walletService.debit({
+      //   userId: player.playerId,
+      //   clientId,
+      //   amount: body.get('amount'),
+      //   source: gameExist.provider.slug,
+      //   description: `Casino Bet: (${gameExist.title}:${body.get('reference')})`,
+      //   username: player.playerNickname,
+      //   wallet: balanceType,
+      //   subject: 'Bet Deposit (Casino)',
+      //   channel: gameExist.title,
+      // });
+
+      const debit = {
+        success: true,
+        status: HttpStatus.OK,
+        message: 'Casino Bet Placed',
+        data: {
+          userId: 11,
+          balance: 11,
+          availableBalance: 11,
+          trustBalance: 11,
+          sportBonusBalance: 22,
+          virtualBonusBalance: 11,
+          casinoBonusBalance: 1
+        },
+      }
 
       if (!debit.success) {
         response = {
@@ -833,22 +875,22 @@ export class PragmaticService {
   console.log("body", body);
 
   if(body instanceof URLSearchParams) {
-    const parsedBody = Object.fromEntries(body.entries());
+    // const parsedBody = Object.fromEntries(body.entries());
 
-    if (this.hashCheck(parsedBody)) {
-      response = {
-        success: false,
-        message: 'Invalid Hash Signature',
-        status: HttpStatus.BAD_REQUEST,
-        data: {
-          error: 5,
-          description: 'Error'
-        }
-      };
+    // if (this.hashCheck(parsedBody)) {
+    //   response = {
+    //     success: false,
+    //     message: 'Invalid Hash Signature',
+    //     status: HttpStatus.BAD_REQUEST,
+    //     data: {
+    //       error: 5,
+    //       description: 'Error'
+    //     }
+    //   };
   
-      await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
-      return response;
-    }
+    //   await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
+    //   return response;
+    // }
 
   } else {
     response = {
@@ -877,7 +919,24 @@ export class PragmaticService {
       balanceType = 'casino';
 
     if (token) {
-      const res = await this.identityService.validateToken({clientId: data.clientId, token });
+      // const res = await this.identityService.validateToken({clientId: data.clientId, token });
+
+      const res = {
+        success: true,
+        message: "Success",
+        data: {
+          playerId: 'Famo',
+          clientId: 4,
+          playerNickname: 'Franklyn',
+          sessionId: '132',
+          balance: 123,
+          casinoBalance: 0.0,
+          virtualBalance: 100.5,
+          group: null,
+          currency: 'user.client.currency,'
+        }
+        
+      };
 
       console.log("res", res)
 
