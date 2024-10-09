@@ -875,22 +875,22 @@ export class PragmaticService {
   console.log("body", body);
 
   if(body instanceof URLSearchParams) {
-    // const parsedBody = Object.fromEntries(body.entries());
+    const parsedBody = Object.fromEntries(body.entries());
 
-    // if (this.hashCheck(parsedBody)) {
-    //   response = {
-    //     success: false,
-    //     message: 'Invalid Hash Signature',
-    //     status: HttpStatus.BAD_REQUEST,
-    //     data: {
-    //       error: 5,
-    //       description: 'Error'
-    //     }
-    //   };
+    if (this.hashCheck(parsedBody)) {
+      response = {
+        success: false,
+        message: 'Invalid Hash Signature',
+        status: HttpStatus.BAD_REQUEST,
+        data: {
+          error: 5,
+          description: 'Error'
+        }
+      };
   
-    //   await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
-    //   return response;
-    // }
+      await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
+      return response;
+    }
 
   } else {
     response = {
@@ -919,24 +919,24 @@ export class PragmaticService {
       balanceType = 'casino';
 
     if (token) {
-      // const res = await this.identityService.validateToken({clientId: data.clientId, token });
+      const res = await this.identityService.validateToken({clientId: data.clientId, token });
 
-      const res = {
-        success: true,
-        message: "Success",
-        data: {
-          playerId: 'Famo',
-          clientId: 4,
-          playerNickname: 'Franklyn',
-          sessionId: '132',
-          balance: 123,
-          casinoBalance: 0.0,
-          virtualBalance: 100.5,
-          group: null,
-          currency: 'user.client.currency,'
-        }
+      // const res = {
+      //   success: true,
+      //   message: "Success",
+      //   data: {
+      //     playerId: 'Famo',
+      //     clientId: 4,
+      //     playerNickname: 'Franklyn',
+      //     sessionId: '132',
+      //     balance: 123,
+      //     casinoBalance: 0.0,
+      //     virtualBalance: 100.5,
+      //     group: null,
+      //     currency: 'user.client.currency,'
+      //   }
         
-      };
+      // };
 
       console.log("res", res)
 
