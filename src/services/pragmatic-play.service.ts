@@ -244,6 +244,23 @@ export class PragmaticService {
   async authenticate(clientId, token, callback, walletType) {
     console.log("Got to authenticate method");
     const isValid = await this.identityService.validateToken({ clientId, token });
+
+    //  const isValid = {
+    //     success: true,
+    //     status: HttpStatus.OK,
+    //     message: 'Success',
+    //     data: {
+    //       playerId: '1',
+    //       clientId: '4',
+    //       playerNickname: 'frank',
+    //       casinoBalance: 0.0,
+    //       sessionId: '123',
+    //       balance: 100.0,
+    //       virtualBalance: 0.0,
+    //       currency: 'NGN',
+    //       group: null,
+    //     }
+    //   }
     
     console.log("isValid", isValid);
     let response: any;
@@ -292,7 +309,7 @@ export class PragmaticService {
     if (player) {
       //TODO: USE PLAYER UserID AND ClientID to get balance from wallet service;
       const wallet = await this.walletService.getWallet({
-        userId: player.id,
+        userId: player.playerId,
         clientId,
         wallet: walletType
       });
@@ -376,7 +393,7 @@ export class PragmaticService {
       }
 
       const getWallet = await this.walletService.getWallet({
-        userId: player.id,
+        userId: player.playerId,
         clientId
       });
 
@@ -413,9 +430,9 @@ export class PragmaticService {
       }
 
       const placeBetPayload: PlaceCasinoBetRequest = {
-        userId: player.id,
+        userId: player.playerId,
         clientId,
-        username: player.username,
+        username: player.playerNickname,
         roundId: body.get('roundId'),
         transactionId: body.get('reference'),
         gameId: body.get('gameId'),
@@ -443,12 +460,12 @@ export class PragmaticService {
       }
 
       const debit = await this.walletService.debit({
-        userId: player.id,
+        userId: player.playerId,
         clientId,
         amount: body.get('amount'),
         source: gameExist.provider.slug,
         description: `Casino Bet: (${gameExist.title}:${body.get('reference')})`,
-        username: player.username,
+        username: player.playerNickname,
         wallet: balanceType,
         subject: 'Bet Deposit (Casino)',
         channel: gameExist.title,
@@ -490,7 +507,7 @@ export class PragmaticService {
       response = {
         success: false,
         status: HttpStatus.BAD_REQUEST,
-        message: `Player with userId ${player.id} not found`,
+        message: `Player with userId ${player.playerId} not found`,
         data: {}
       }
 
@@ -550,12 +567,12 @@ export class PragmaticService {
         }
 
         const creditResponse = await this.walletService.credit({
-          userId: player.id,
+          userId: player.playerId,
           clientId,
           amount: body.get('amount').toFixed(2),
           source: gameExist.provider.slug,
           description: `Casino Bet: (${gameExist.title})`,
-          username: player.username,
+          username: player.playerNickname,
           wallet: balanceType,
           subject: 'Bet Win (Casino)',
           channel: gameExist.type,
@@ -609,7 +626,7 @@ export class PragmaticService {
          }
 
          const getWallet = await this.walletService.getWallet({
-          userId: player.id,
+          userId: player.playerId,
           clientId,
         });
 
@@ -638,7 +655,7 @@ export class PragmaticService {
       response = {
         success: false,
         status: HttpStatus.BAD_REQUEST,
-        message: `Player with userId ${player.id} not found`,
+        message: `Player with userId ${player.playerId} not found`,
         data: {}
       }
 
@@ -712,12 +729,12 @@ export class PragmaticService {
       }
 
       const rollbackWalletRes = await this.walletService.credit({
-        userId: player.id,
+        userId: player.playerId,
         clientId,
         amount: callbackPayload.amount,
         source: gameExist.provider.slug,
         description: `Bet Cancelled: (${gameExist.title})`,
-        username: player.username,
+        username: player.playerNickname,
         wallet: balanceType,
         subject: 'Bet refund (Casino)',
         channel: gameExist.title,
@@ -758,7 +775,7 @@ export class PragmaticService {
       response = {
         success: false,
         status: HttpStatus.BAD_REQUEST,
-        message: `Player with userId ${player.playerID} not found`,
+        message: `Player with userId ${player.playerId} not found`,
         data: {}
       }
 
@@ -848,6 +865,8 @@ export class PragmaticService {
     let player = null;
     let balanceType = 'main';
     const token = body.get("token");
+
+    console.log("token", token);
    
     //get game session
     const gameSession = await this.gameSessionRepo.findOne({where: {session_id: token}});
@@ -858,7 +877,7 @@ export class PragmaticService {
       balanceType = 'casino';
 
     if (token) {
-      const res = await this.identityService.getDetails({clientId: data.clientId, userId: parseFloat(body.get('userId'))});
+      const res = await this.identityService.validateToken({clientId: data.clientId, token });
 
       console.log("res", res)
 
@@ -981,5 +1000,3 @@ export class PragmaticService {
 }
 
 }
-
-
