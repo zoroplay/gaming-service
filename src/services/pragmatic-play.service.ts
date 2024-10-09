@@ -291,6 +291,7 @@ export class PragmaticService {
         cash: walletType === 'casino' ? dataObject.casinoBalance.toFixed(2) : dataObject.balance.toFixed(2),
         currency: dataObject.currency,
         bonus: dataObject.casinoBalance,
+        token: token,
         error: 0,
         description: 'Success',
       }
@@ -397,6 +398,22 @@ export class PragmaticService {
         clientId
       });
 
+      // const getWallet = {
+      //   success: true,
+      //   status: HttpStatus.OK,
+      //   message: 'Success',
+      //   data: {
+      //     userId: '1',
+      //     clientId: '4',
+      //     casinoBonusBalance: 0.0,
+      //     sportBonusBalance: 0.00,
+      //     balance: 3400.0,
+      //     trustBalance: 0.0,
+      //     availableBalance: 100.0,
+      //     virtualBonusBalance: 0.0,
+      //   }
+      // } 
+
       if(!getWallet || !getWallet.status) {
         response = {
           success: false,
@@ -446,6 +463,16 @@ export class PragmaticService {
 
       const place_bet = await this.placeBet(placeBetPayload);
 
+      // const place_bet = {
+      //   success: true,
+      //   status: HttpStatus.OK,
+      //   message: 'Casino Bet Placed',
+      //   data: {
+      //     transactionId: '123456',
+      //     balance: 756,
+      //   },
+      // }
+
       if (!place_bet.success) {
         response = {
           success: false,
@@ -470,6 +497,21 @@ export class PragmaticService {
         subject: 'Bet Deposit (Casino)',
         channel: gameExist.title,
       });
+
+      // const debit = {
+      //   success: true,
+      //   status: HttpStatus.OK,
+      //   message: 'Casino Bet Placed',
+      //   data: {
+      //     userId: 11,
+      //     balance: 11,
+      //     availableBalance: 11,
+      //     trustBalance: 11,
+      //     sportBonusBalance: 22,
+      //     virtualBonusBalance: 11,
+      //     casinoBonusBalance: 1
+      //   },
+      // }
 
       if (!debit.success) {
         response = {
@@ -878,6 +920,23 @@ export class PragmaticService {
 
     if (token) {
       const res = await this.identityService.validateToken({clientId: data.clientId, token });
+
+      // const res = {
+      //   success: true,
+      //   message: "Success",
+      //   data: {
+      //     playerId: 'Famo',
+      //     clientId: 4,
+      //     playerNickname: 'Franklyn',
+      //     sessionId: '132',
+      //     balance: 123,
+      //     casinoBalance: 0.0,
+      //     virtualBalance: 100.5,
+      //     group: null,
+      //     currency: 'user.client.currency,'
+      //   }
+        
+      // };
 
       console.log("res", res)
 
