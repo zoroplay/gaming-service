@@ -887,7 +887,7 @@ export class PragmaticService {
       await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
       return response;
     }
-  }
+  }1
 
   console.log("body", body);
 
@@ -1035,6 +1035,7 @@ export class PragmaticService {
 }
 
   async saveCallbackLog(data) {
+    console.log('body-data', data);
     const action = data.action;
     const body = data.body ? new URLSearchParams(data.body) : new URLSearchParams();
 
