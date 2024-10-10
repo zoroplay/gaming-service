@@ -398,6 +398,8 @@ export class PragmaticService {
         clientId
       });
 
+      console.log("getWallet", getWallet);
+
       // const getWallet = {
       //   success: true,
       //   status: HttpStatus.OK,
@@ -463,6 +465,8 @@ export class PragmaticService {
 
       const place_bet = await this.placeBet(placeBetPayload);
 
+      console.log("place_bet", place_bet);
+
       // const place_bet = {
       //   success: true,
       //   status: HttpStatus.OK,
@@ -497,6 +501,8 @@ export class PragmaticService {
         subject: 'Bet Deposit (Casino)',
         channel: gameExist.title,
       });
+
+      console.log("debit", debit);
 
       // const debit = {
       //   success: true,
@@ -586,9 +592,10 @@ export class PragmaticService {
           winnings: parseFloat(body.get('amount')),
         };
 
-        console.log("settlePayload");
 
         const settle_bet = await this.result(settlePayload);
+
+        console.log("settle_bet", settle_bet);
 
         // console.log(settle_bet)
         if (!settle_bet.success) {
@@ -622,6 +629,8 @@ export class PragmaticService {
           channel: gameExist.type,
         });
 
+        console.log("creditResponse", creditResponse);
+
         response = {
           success: true,
           message: 'Win Successful',
@@ -650,6 +659,8 @@ export class PragmaticService {
          // settle won bet
          const close_bet = await this.betService.closeRound(payload);
 
+         console.log("close_bet", close_bet);
+
          if (!close_bet.success) {
           response = {
             success: false,
@@ -673,6 +684,8 @@ export class PragmaticService {
           userId: player.playerId,
           clientId,
         });
+
+        console.log("getWallet", getWallet);
 
         response = {
           success: true,
@@ -784,6 +797,8 @@ export class PragmaticService {
         channel: gameExist.title,
       }); 
 
+      console.log('rollbackWalletRes', rollbackWalletRes);
+
       if (!rollbackWalletRes.success) {
         console.log('transaction error')
         response = {
@@ -872,7 +887,7 @@ export class PragmaticService {
       await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
       return response;
     }
-  }
+  }1
 
   console.log("body", body);
 
@@ -1020,6 +1035,7 @@ export class PragmaticService {
 }
 
   async saveCallbackLog(data) {
+    console.log('body-data', data);
     const action = data.action;
     const body = data.body ? new URLSearchParams(data.body) : new URLSearchParams();
 
