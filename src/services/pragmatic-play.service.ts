@@ -451,7 +451,7 @@ export class PragmaticService {
         clientId,
         username: player.playerNickname,
         roundId: body.get('roundId'),
-        transactionId: body.get('reference'),
+        transactionId: body.get('roundId'),
         gameId: body.get('gameId'),
         stake: parseFloat(body.get('amount')),
         gameName: gameExist.title,
@@ -534,7 +534,7 @@ export class PragmaticService {
           cash: parseFloat(debit.data.balance.toFixed(2)),
           transactionId: place_bet.data.transactionId,
           currency: player.currency,
-          bonus: balanceType === 'casino' ? debit.data.casinoBonusBalance.toFixed(2) : debit.data.balance.toFixed(2),
+          bonus:  debit.data.casinoBonusBalance.toFixed(2),
           usedPromo: balanceType === 'casino' ? debit.data.casinoBonusBalance.toFixed(2) : 0,
           error: 0,
           description: 'Successful',
@@ -582,9 +582,11 @@ export class PragmaticService {
 
       if (parseFloat(body.get('amount')) > 0) {
         const settlePayload: SettleCasinoBetRequest = {
-          transactionId: body.get('reference'),
+          transactionId: body.get('roundId'),
           winnings: parseFloat(body.get('amount')),
         };
+
+        console.log("settlePayload");
 
         const settle_bet = await this.result(settlePayload);
 
@@ -715,7 +717,7 @@ export class PragmaticService {
     if(player) {
 
       const reversePayload: RollbackCasinoBetRequest = {
-        transactionId: body.get('reference'),
+        transactionId: body.get('roundId'),
       };
 
       console.log("reversePayload", reversePayload);
@@ -1028,11 +1030,11 @@ export class PragmaticService {
         : action === 'Balance' 
           ? body.get('hash')
           : action === 'Bet' 
-          ? body.get('hash') 
+          ? body.get('roundId') 
           : action === 'Refund' 
-          ? body.get('hash')
+          ? body.get('roundId')
           : action === 'Result' 
-          ? body.get('hash') 
+          ? body.get('roundId') 
           : action === 'BonusWin' 
           ? body.get('hash') 
           : action === 'promoWin' 
