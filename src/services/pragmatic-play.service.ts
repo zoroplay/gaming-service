@@ -621,7 +621,7 @@ export class PragmaticService {
         const creditResponse = await this.walletService.credit({
           userId: player.playerId,
           clientId,
-          amount: body.get('amount').toFixed(2),
+          amount: parseFloat(body.get('amount')),
           source: gameExist.provider.slug,
           description: `Casino Bet: (${gameExist.title})`,
           username: player.playerNickname,
@@ -685,7 +685,7 @@ export class PragmaticService {
           data: {
             status: "ok",
             data: {
-              cash: parseFloat(creditResponse.data.balance.toFixed(2)),
+              cash: creditResponse.data.balance.toFixed(2),
               transactionId: settle_bet.data.transactionId,
               currency: player.currency,
               bonus: geUpdatedtWallet.data.casinoBonusBalance.toFixed(2),
@@ -760,7 +760,7 @@ export class PragmaticService {
           data: {
             status: "ok",
             data: {
-              cash: parseFloat(getWallet.data.balance.toFixed(2)),
+              cash: getWallet.data.balance.toFixed(2),
               transactionId: close_bet.data.transactionId,
               currency: player.currency,
               bonus: getWallet.data.casinoBonusBalance.toFixed(2),
