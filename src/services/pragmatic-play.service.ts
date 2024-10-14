@@ -659,6 +659,25 @@ export class PragmaticService {
 
         console.log("geUpdatedtWallet", geUpdatedtWallet);
 
+        if (!geUpdatedtWallet.success) {
+          response = {
+            success: false,
+            message: 'Unable to complete request ' + geUpdatedtWallet.message,
+            status: HttpStatus.INTERNAL_SERVER_ERROR,
+            data: {
+              status: "error",
+              error: {
+                message: 'Unable to complete request',
+                scope: "internal",
+                no_refund: "1",
+              }
+            },
+          };
+          // update callback log response
+          await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
+          return response;
+         }
+
         response = {
           success: true,
           message: 'Win Successful',
@@ -714,6 +733,25 @@ export class PragmaticService {
         });
 
         console.log("getWallet", getWallet);
+
+        if (!getWallet.success) {
+          response = {
+            success: false,
+            message: 'Unable to complete request ' + getWallet.message,
+            status: HttpStatus.INTERNAL_SERVER_ERROR,
+            data: {
+              status: "error",
+              error: {
+                message: 'Unable to complete request',
+                scope: "internal",
+                no_refund: "1",
+              }
+            },
+          };
+          // update callback log response
+          await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
+          return response;
+         }
 
         response = {
           success: true,
