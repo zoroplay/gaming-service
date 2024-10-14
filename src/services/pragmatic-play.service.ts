@@ -509,13 +509,7 @@ export class PragmaticService {
       //   status: HttpStatus.OK,
       //   message: 'Casino Bet Placed',
       //   data: {
-      //     userId: 11,
       //     balance: 11,
-      //     availableBalance: 11,
-      //     trustBalance: 11,
-      //     sportBonusBalance: 22,
-      //     virtualBonusBalance: 11,
-      //     casinoBonusBalance: 1
       //   },
       // }
 
@@ -532,6 +526,13 @@ export class PragmaticService {
         return response;
       }
 
+      const getUpdatedWallet = await this.walletService.getWallet({
+        userId: player.playerId,
+        clientId
+      });
+
+      console.log("getWallet", getUpdatedWallet);
+
       response = {
         success: true,
         status: HttpStatus.OK,
@@ -540,8 +541,8 @@ export class PragmaticService {
           cash: parseFloat(debit.data.balance.toFixed(2)),
           transactionId: place_bet.data.transactionId,
           currency: player.currency,
-          bonus:  debit.data.casinoBonusBalance.toFixed(2),
-          usedPromo: balanceType === 'casino' ? debit.data.casinoBonusBalance.toFixed(2) : 0,
+          bonus: getUpdatedWallet.data.casinoBonusBalance.toFixed(2) || 0,
+          usedPromo: balanceType === 'casino' ? parseFloat(body.get('amount')) : 0,
           error: 0,
           description: 'Successful',
         },
