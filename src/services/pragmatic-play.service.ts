@@ -652,7 +652,7 @@ export class PragmaticService {
         return response;
       } else {
         const payload: SettleCasinoBetRequest = {
-          transactionId: body.get('reference'),
+          transactionId: body.get('roundId'),
           winnings: parseFloat(body.get('amount')),
         };
 
@@ -735,7 +735,7 @@ export class PragmaticService {
 
       console.log("reversePayload", reversePayload);
 
-      const callbackLog = await this.callbackLogRepository.findOne({where: {transactionId: reversePayload.transactionId }})
+      const callbackLog = await this.callbackLogRepository.findOne({where: {transactionId: body.get('hash') }})
 
       if (!callbackLog) {
         console.log('Callback log found')
@@ -772,6 +772,16 @@ export class PragmaticService {
       console.log('update ticket')
       const transaction = await this.rollback(reversePayload);
 
+      // const transaction = {
+      //   success: true,
+      //   status: HttpStatus.OK,
+      //   message: 'Casino Bet Placed',
+      //   data: {
+      //     transactionId: '123456',
+      //     balance: 756,
+      //   },
+      // }
+
       if (!transaction.success) {
         console.log('transaction error')
         response = {
@@ -795,7 +805,22 @@ export class PragmaticService {
         wallet: balanceType,
         subject: 'Bet refund (Casino)',
         channel: gameExist.title,
-      }); 
+      });
+
+      // const rollbackWalletRes = {
+      //   success: true,
+      //   status: HttpStatus.OK,
+      //   message: 'Casino Bet Placed',
+      //   data: {
+      //     userId: 11,
+      //     balance: 11,
+      //     availableBalance: 11,
+      //     trustBalance: 11,
+      //     sportBonusBalance: 22,
+      //     virtualBonusBalance: 11,
+      //     casinoBonusBalance: 1
+      //   },
+      // }
 
       console.log('rollbackWalletRes', rollbackWalletRes);
 
@@ -970,8 +995,8 @@ export class PragmaticService {
         return response;
       }
       
-      // if (gameSession.balance_type === 'bonus')
-      //   balanceType = 'casino';
+      if (gameSession.balance_type === 'bonus')
+        balanceType = 'casino';
 
       player = res.data;
     }
@@ -1048,9 +1073,9 @@ export class PragmaticService {
           : action === 'Bet' 
           ? body.get('roundId') 
           : action === 'Refund' 
-          ? body.get('roundId')
+          ? body.get('hash')
           : action === 'Result' 
-          ? body.get('roundId') 
+          ? body.get('hash') 
           : action === 'BonusWin' 
           ? body.get('hash') 
           : action === 'promoWin' 
