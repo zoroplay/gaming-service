@@ -630,7 +630,34 @@ export class PragmaticService {
           channel: gameExist.type,
         });
 
+        if(!creditResponse.success) {
+          response = {
+            success: false,
+            message: 'Unable to complete request ' + creditResponse.message,
+            status: HttpStatus.INTERNAL_SERVER_ERROR,
+            data: {
+              status: "error",
+              error: {
+                message: 'Unable to complete request',
+                scope: "internal",
+                no_refund: "1",
+              }
+            },
+          };
+          // update callback log response
+          await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
+          return response;
+
+        }
+
         console.log("creditResponse", creditResponse);
+
+        const geUpdatedtWallet = await this.walletService.getWallet({
+          userId: player.playerId,
+          clientId,
+        });
+
+        console.log("geUpdatedtWallet", geUpdatedtWallet);
 
         response = {
           success: true,
@@ -642,7 +669,7 @@ export class PragmaticService {
               cash: parseFloat(creditResponse.data.balance.toFixed(2)),
               transactionId: settle_bet.data.transactionId,
               currency: player.currency,
-              bonus: creditResponse.data.casinoBonusBalance.toFixed(2),
+              bonus: geUpdatedtWallet.data.casinoBonusBalance.toFixed(2),
               error: 0,
               description: 'Successful',
             },
