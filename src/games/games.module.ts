@@ -22,6 +22,7 @@ import { CacheModule } from '@nestjs/cache-manager';
 import { Category } from 'src/entities/category.entity';
 import { GameCategory } from 'src/entities/game.category.entity';
 import { ScheduleModule } from '@nestjs/schedule';
+import { PragmaticService } from 'src/services/pragmatic-play.service';
 
 @Module({
   imports: [
@@ -47,6 +48,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     SmartSoftService,
     EvoPlayService,
     VirtualService,
+    PragmaticService
   ],
 })
 export class GamesModule {}
