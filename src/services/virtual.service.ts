@@ -28,7 +28,7 @@ export class VirtualService {
             const {token, requestId, clientId} = params;
             const res = await this.identityService.xpressLogin({clientId, token});
             
-            // console.log('identity response ', res);
+            console.log('identity response ', res);
 
             if(!res.status) {
                 return errorHandler.invalidSecureToken();
