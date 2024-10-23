@@ -76,7 +76,7 @@ export class VirtualService {
     async getBalance(params: XpressRequest): Promise<XpressResponse> {
         console.log('balance request', params);
         try {
-            const {group, playerId, sessionId, clientId, requestId} = params;
+            const {group, playerId, sessionId, clientId, requestId, currency} = params;
             const isValid = await this.identityService.validateXpressSession({sessionId, clientId});
             // console.log(isValid)
             if (isValid.success) {
@@ -99,7 +99,7 @@ export class VirtualService {
 
                 const data = {
                     playerId, // operator identifier+playerID
-                    currency: 'NGN',
+                    currency,
                     balance: walletRes.data.availableBalance,
                     sessionId,
                     group,
