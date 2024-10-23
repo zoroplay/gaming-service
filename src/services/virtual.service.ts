@@ -243,6 +243,7 @@ export class VirtualService {
 
     async doCredit(params: XpressRequest): Promise<XpressResponse> {
         try {
+            console.log(params)
             const {group, playerId, sessionId, requestId, gameId, gameCycle, transactionId, transactionAmount, transactionCategory, gameCycleClosed, clientId} = params;            
             // get virtual bet
             const virtualBetRes = await this.bettingService.validateVirtualBet({
@@ -268,6 +269,7 @@ export class VirtualService {
                 category: transactionCategory,
                 gameCycleClosed: gameCycleClosed ? 1 : 0,
             })
+            console.log(betRes);
             let balance, oldBalance;
 
             if (transactionAmount > 0) {
@@ -322,6 +324,7 @@ export class VirtualService {
         
             data.fingerprint = MD5(hashStr).toString();
 
+            console.log(data)
             return {
                 status: true,
                 code: 200,
