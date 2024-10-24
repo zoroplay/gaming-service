@@ -97,7 +97,7 @@ export class VirtualService {
                     clientId,
                 });
 
-                const balance = walletRes.data.balance;
+                const balance = walletRes.data.availableBalance;
 
                 const data = {
                     playerId, // operator identifier+playerID
