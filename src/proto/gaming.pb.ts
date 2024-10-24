@@ -296,14 +296,14 @@ export interface XpressResponse {
 export interface XpressData {
   playerId: string;
   currency: string;
-  balance: number;
+  balance: string;
   sessionId: string;
   group: string;
   timestamp: string;
   requestId: string;
   fingerprint: string;
   playerNickname?: string | undefined;
-  oldBalance?: number | undefined;
+  oldBalance?: string | undefined;
   gameCycle?: string | undefined;
   transactionId?: string | undefined;
   transactionAmount?: number | undefined;
