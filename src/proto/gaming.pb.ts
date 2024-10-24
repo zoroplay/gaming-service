@@ -26,6 +26,7 @@ export interface FetchGamesRequest {
   clientId: number;
   categoryId?: number | undefined;
   providerId?: number | undefined;
+  gameName?: string | undefined;
 }
 
 export interface Empty {
@@ -296,14 +297,14 @@ export interface XpressResponse {
 export interface XpressData {
   playerId: string;
   currency: string;
-  balance: number;
+  balance: string;
   sessionId: string;
   group: string;
   timestamp: string;
   requestId: string;
   fingerprint: string;
   playerNickname?: string | undefined;
-  oldBalance?: number | undefined;
+  oldBalance?: string | undefined;
   gameCycle?: string | undefined;
   transactionId?: string | undefined;
   transactionAmount?: number | undefined;
@@ -355,6 +356,8 @@ export interface GamingServiceClient {
 
   fetchGames(request: FetchGamesRequest): Observable<Games>;
 
+  fetchGamesByName(request: FetchGamesRequest): Observable<Games>;
+
   syncGames(request: SyncGameDto): Observable<Games>;
 
   findOneGame(request: FindOneGameDto): Observable<Game>;
@@ -405,6 +408,8 @@ export interface GamingServiceController {
 
   fetchGames(request: FetchGamesRequest): Promise<Games> | Observable<Games> | Games;
 
+  fetchGamesByName(request: FetchGamesRequest): Promise<Games> | Observable<Games> | Games;
+
   syncGames(request: SyncGameDto): Promise<Games> | Observable<Games> | Games;
 
   findOneGame(request: FindOneGameDto): Promise<Game> | Observable<Game> | Game;
@@ -454,6 +459,7 @@ export function GamingServiceControllerMethods() {
       "createGame",
       "findAllGames",
       "fetchGames",
+      "fetchGamesByName",
       "syncGames",
       "findOneGame",
       "updateGame",

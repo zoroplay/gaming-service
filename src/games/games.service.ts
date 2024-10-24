@@ -35,6 +35,7 @@ import { slugify } from 'src/common';
 import { GameKey } from 'src/entities/game-key.entity';
 import { PragmaticService } from 'src/services/pragmatic-play.service';
 
+
 @Injectable()
 export class GamesService {
   constructor(
@@ -174,6 +175,30 @@ export class GamesService {
 
     return final;
   }
+
+  async fetchGamesByName(searchGamesDto: FetchGamesRequest): Promise<Games> {
+    const { gameName } = searchGamesDto;
+  
+    const query = this.gameRepository.createQueryBuilder('games');
+  
+    if (gameName) {
+      // Use LIKE to allow partial match (wildcard search) on gameName
+      query.andWhere('games.title LIKE :gameName', { gameName: `%${gameName}%` });
+    }
+  
+    const games = await query.getMany();
+     // Convert TypeORM entities to proto-generated types
+     const protoResponse: Game[] = games.map((entity: GameEntity) =>
+      this.entityToProtoService.entityToProto(entity),
+    );
+
+    const final = {
+      games: protoResponse,
+    };
+
+    return final;
+  }
+
 
   async queryGames(
     paginationDtoStream: Observable<PaginationDto>,

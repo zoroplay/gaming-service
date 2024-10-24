@@ -28,7 +28,7 @@ export class VirtualService {
             const {token, requestId, clientId} = params;
             const res = await this.identityService.xpressLogin({clientId, token});
             
-            // console.log('identity response ', res);
+            console.log('identity response ', res);
 
             if(!res.status) {
                 return errorHandler.invalidSecureToken();
@@ -48,7 +48,7 @@ export class VirtualService {
                 const data = {
                     playerId: user.playerId,
                     currency: user.currency,
-                    balance: user.balance,
+                    balance: user.balance.toFixed(2),
                     sessionId: user.sessionId,
                     group: user.group,
                     timestamp: dayjs().toISOString(),
@@ -58,6 +58,7 @@ export class VirtualService {
 
                 const hashStr = `${data.playerId}${data.currency}${data.balance}${data.sessionId}${data.group}${data.timestamp}${data.requestId}${privateKeyQuery.value}`;
             
+                console.log(hashStr)
                 data.fingerprint = MD5(hashStr).toString();
 
                 return {
@@ -76,7 +77,7 @@ export class VirtualService {
     async getBalance(params: XpressRequest): Promise<XpressResponse> {
         console.log('balance request', params);
         try {
-            const {group, playerId, sessionId, clientId, requestId} = params;
+            const {group, playerId, sessionId, clientId, requestId, currency} = params;
             const isValid = await this.identityService.validateXpressSession({sessionId, clientId});
             // console.log(isValid)
             if (isValid.success) {
@@ -99,8 +100,8 @@ export class VirtualService {
 
                 const data = {
                     playerId, // operator identifier+playerID
-                    currency: 'NGN',
-                    balance: walletRes.data.availableBalance,
+                    currency,
+                    balance: walletRes.data.availableBalance.toFixed(2),
                     sessionId,
                     group,
                     timestamp: dayjs().toISOString(),
@@ -109,6 +110,8 @@ export class VirtualService {
                 };
                 const hashStr = `${data.playerId}${data.currency}${data.balance}${data.sessionId}${data.group}${data.timestamp}${data.requestId}${privateKeyQuery.value}`;
             
+                console.log(hashStr);
+
                 data.fingerprint = MD5(hashStr).toString();
 
                 console.log('balance response', data);
@@ -194,15 +197,14 @@ export class VirtualService {
                     subject: 'Bet Deposit (Virtual)',
                     channel: 'goldenrace',
                 });
-                console.log(debitRes)
 
                 const oldBalance = debitRes.data.balance + transactionAmount;
 
                 const data = {
                     playerId,
                     currency: params.currency,
-                    balance: debitRes.data.balance,
-                    oldBalance,
+                    balance: debitRes.data.balance.toFixed(2),
+                    oldBalance: oldBalance.toFixed(2),
                     transactionId,
                     sessionId,
                     group,
@@ -243,6 +245,7 @@ export class VirtualService {
 
     async doCredit(params: XpressRequest): Promise<XpressResponse> {
         try {
+            console.log(params)
             const {group, playerId, sessionId, requestId, gameId, gameCycle, transactionId, transactionAmount, transactionCategory, gameCycleClosed, clientId} = params;            
             // get virtual bet
             const virtualBetRes = await this.bettingService.validateVirtualBet({
@@ -268,6 +271,7 @@ export class VirtualService {
                 category: transactionCategory,
                 gameCycleClosed: gameCycleClosed ? 1 : 0,
             })
+            console.log(betRes);
             let balance, oldBalance;
 
             if (transactionAmount > 0) {
@@ -299,8 +303,8 @@ export class VirtualService {
             const data = {
                 playerId,
                 currency: params.currency,
-                balance,
-                oldBalance,
+                balance: balance.toFixed(2),
+                oldBalance: oldBalance.toFixed(2),
                 transactionId,
                 sessionId,
                 group,
@@ -322,6 +326,7 @@ export class VirtualService {
         
             data.fingerprint = MD5(hashStr).toString();
 
+            console.log(data)
             return {
                 status: true,
                 code: 200,
@@ -391,8 +396,8 @@ export class VirtualService {
             const data = {
                 playerId,
                 currency: params.currency,
-                balance: creditRes.data.balance,
-                oldBalance,
+                balance: creditRes.data.balance.toFixed(2),
+                oldBalance: oldBalance.toFixed(2),
                 transactionId,
                 sessionId,
                 group,
@@ -449,7 +454,7 @@ export class VirtualService {
                 const data = {
                     playerId,
                     currency: params.currency,
-                    balance: user.balance,
+                    balance: user.balance.toFixed(2),
                     sessionId,
                     group,
                     timestamp: dayjs().toISOString(),
