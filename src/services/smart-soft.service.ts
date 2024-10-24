@@ -137,6 +137,7 @@ export class SmartSoftService {
     let sessionId = data.header['x-sessionid'];
     let gameSession;
 
+    console.log(sessionId);
     if (sessionId) {
       const res = await this.identityService.validateXpressSession({clientId: data.clientId, sessionId});
 
@@ -177,7 +178,7 @@ export class SmartSoftService {
         console.log('GetBalance');
         return await this.getBalance(player, callback, balanceType, sessionId);
       case 'Deposit':
-        console.log('Deposit');
+        console.log('Deposit', body);
         const gameName = body.TransactionInfo.GameName;
         
         const walletRes = await this.walletService.getWallet({
