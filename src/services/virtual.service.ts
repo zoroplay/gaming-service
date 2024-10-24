@@ -48,7 +48,7 @@ export class VirtualService {
                 const data = {
                     playerId: user.playerId,
                     currency: user.currency,
-                    balance: user.balance.toFixed(2),
+                    balance: this.isPrecise(user.balance) ? user.balance.toFixed(2) : ""+user.balance,
                     sessionId: user.sessionId,
                     group: user.group,
                     timestamp: dayjs().toISOString(),
@@ -97,11 +97,12 @@ export class VirtualService {
                     clientId,
                 });
 
+                const balance = walletRes.data.balance;
 
                 const data = {
                     playerId, // operator identifier+playerID
                     currency,
-                    balance: walletRes.data.availableBalance.toFixed(2),
+                    balance: this.isPrecise(balance) ? balance.toFixed(2) : ""+balance,
                     sessionId,
                     group,
                     timestamp: dayjs().toISOString(),
@@ -198,13 +199,14 @@ export class VirtualService {
                     channel: 'goldenrace',
                 });
 
+                const balance = debitRes.data.balance;
                 const oldBalance = debitRes.data.balance + transactionAmount;
 
                 const data = {
                     playerId,
                     currency: params.currency,
-                    balance: debitRes.data.balance.toFixed(2),
-                    oldBalance: oldBalance.toFixed(2),
+                    balance: this.isPrecise(balance) ? balance.toFixed(2) : ""+balance,
+                    oldBalance: this.isPrecise(oldBalance) ? balance.toFixed(2) : ""+oldBalance,
                     transactionId,
                     sessionId,
                     group,
@@ -225,8 +227,6 @@ export class VirtualService {
                 const hashStr = `${data.playerId}${data.currency}${data.balance}${data.oldBalance}${data.transactionId}${data.sessionId}${data.group}${data.timestamp}${data.requestId}${privateKeyQuery.value}`;
             
                 data.fingerprint = MD5(hashStr).toString();
-
-                console.log(data);
 
                 return {
                     status: true,
@@ -303,8 +303,8 @@ export class VirtualService {
             const data = {
                 playerId,
                 currency: params.currency,
-                balance: balance.toFixed(2),
-                oldBalance: oldBalance.toFixed(2),
+                balance: this.isPrecise(balance) ? balance.toFixed(2) : ""+balance,
+                oldBalance: this.isPrecise(oldBalance) ? balance.toFixed(2) : ""+oldBalance,
                 transactionId,
                 sessionId,
                 group,
@@ -391,13 +391,14 @@ export class VirtualService {
                 
             });
 
+            const balance = creditRes.data.balance;
             const oldBalance = creditRes.data.balance - transactionAmount;
 
             const data = {
                 playerId,
                 currency: params.currency,
-                balance: creditRes.data.balance.toFixed(2),
-                oldBalance: oldBalance.toFixed(2),
+                balance: this.isPrecise(balance) ? balance.toFixed(2) : ""+balance,
+                oldBalance: this.isPrecise(oldBalance) ? balance.toFixed(2) : ""+oldBalance,
                 transactionId,
                 sessionId,
                 group,
@@ -454,7 +455,7 @@ export class VirtualService {
                 const data = {
                     playerId,
                     currency: params.currency,
-                    balance: user.balance.toFixed(2),
+                    balance: this.isPrecise(user.balance) ? user.balance.toFixed(2) : ""+user.balance,
                     sessionId,
                     group,
                     timestamp: dayjs().toISOString(),
@@ -490,5 +491,9 @@ export class VirtualService {
             return errorHandler.internalError();
         }
         
+    }
+
+    isPrecise(num){
+        return String(num).split(".")[1]?.length > 0;
     }
 }
