@@ -23,13 +23,11 @@ export class VirtualService {
     ) {}
 
     async doXpressLogin(params: XpressRequest): Promise<XpressResponse> {
-        console.log('login request', params);
+        // console.log('login request', params);
         try{
             const {token, requestId, clientId} = params;
             const res = await this.identityService.xpressLogin({clientId, token});
             
-            console.log('identity response ', res);
-
             if(!res.status) {
                 return errorHandler.invalidSecureToken();
             } else {
@@ -58,7 +56,6 @@ export class VirtualService {
 
                 const hashStr = `${data.playerId}${data.currency}${parseFloat(data.balance)}${data.sessionId}${data.group}${data.timestamp}${data.requestId}${privateKeyQuery.value}`;
             
-                console.log(hashStr)
                 data.fingerprint = MD5(hashStr).toString();
 
                 return {
@@ -75,7 +72,7 @@ export class VirtualService {
     }
 
     async getBalance(params: XpressRequest): Promise<XpressResponse> {
-        console.log('balance request', params);
+        // console.log('balance request', params);
         try {
             const {group, playerId, sessionId, clientId, requestId, currency} = params;
             const isValid = await this.identityService.validateXpressSession({sessionId, clientId});
@@ -111,11 +108,8 @@ export class VirtualService {
                 };
                 const hashStr = `${data.playerId}${data.currency}${parseFloat(data.balance)}${data.sessionId}${data.group}${data.timestamp}${data.requestId}${privateKeyQuery.value}`;
             
-                console.log(hashStr);
-
                 data.fingerprint = MD5(hashStr).toString();
 
-                console.log('balance response', data);
                 return {
                     status: true,
                     code: 200,
@@ -132,7 +126,7 @@ export class VirtualService {
     }
 
     async doDebit(params: XpressRequest): Promise<XpressResponse> {
-        console.log('debit request', params);
+        // console.log('debit request', params);
         try {
             const {clientId, group, playerId, sessionId, requestId, gameId, gameCycle, transactionId, transactionAmount, transactionCategory} = params;
 
@@ -245,7 +239,7 @@ export class VirtualService {
 
     async doCredit(params: XpressRequest): Promise<XpressResponse> {
         try {
-            console.log(params)
+            // console.log(params)
             const {group, playerId, sessionId, requestId, gameId, gameCycle, transactionId, transactionAmount, transactionCategory, gameCycleClosed, clientId} = params;            
             // get virtual bet
             const virtualBetRes = await this.bettingService.validateVirtualBet({
@@ -271,7 +265,7 @@ export class VirtualService {
                 category: transactionCategory,
                 gameCycleClosed: gameCycleClosed ? 1 : 0,
             })
-            console.log(betRes);
+            // console.log(betRes);
             let balance, oldBalance;
 
             if (transactionAmount > 0) {
@@ -326,7 +320,7 @@ export class VirtualService {
         
             data.fingerprint = MD5(hashStr).toString();
 
-            console.log(data)
+            // console.log(data)
             return {
                 status: true,
                 code: 200,
@@ -341,7 +335,7 @@ export class VirtualService {
     }
 
     async doRollback(params: XpressRequest): Promise<XpressResponse> {
-        console.log('rollback request', params);
+        // console.log('rollback request', params);
 
         try {
             const {group, playerId, requestId, gameId, gameCycle, sessionId, transactionId, transactionAmount, transactionCategory, clientId} = params;
@@ -416,7 +410,7 @@ export class VirtualService {
                 }
             });
 
-            console.log('rollback response', data)
+            // console.log('rollback response', data)
             
             const hashStr = `${data.playerId}${data.currency}${parseFloat(data.balance)}${parseFloat(data.oldBalance)}${data.transactionId}${data.sessionId}${data.group}${data.timestamp}${data.requestId}${privateKeyQuery.value}`;
         
@@ -437,7 +431,7 @@ export class VirtualService {
 
     async doLogout(params: XpressRequest): Promise<XpressResponse> {
         try {
-            console.log('logout request', params);
+            // console.log('logout request', params);
 
             const {group, playerId, sessionId, requestId, clientId} = params;
 

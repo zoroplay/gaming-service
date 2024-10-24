@@ -28,7 +28,6 @@ import {
 import { CallbackGameDto } from 'src/proto/gaming.pb';
 import { IdentityService } from 'src/identity/identity.service';
 import { firstValueFrom } from 'rxjs';
-import { Cron, CronExpression, Timeout } from '@nestjs/schedule';
 
 const getCellValue = (row:  Excel.Row, cellIndex: number) => {
   const cell = row.getCell(cellIndex);
@@ -90,7 +89,7 @@ export class SmartSoftService {
       gameSession.balance_type = balanceType;
       gameSession.game_id = game.gameId;
       gameSession.token = token;
-      gameSession.provider = game.provider.slug;
+      gameSession.provider = 'smart-soft';
       if (data.bonusId)
         gameSession.bonus_id = data.bonusId;
 
@@ -137,7 +136,6 @@ export class SmartSoftService {
     let sessionId = data.header['x-sessionid'];
     let gameSession;
 
-    console.log(sessionId);
     if (sessionId) {
       const res = await this.identityService.validateXpressSession({clientId: data.clientId, sessionId});
 
@@ -178,7 +176,7 @@ export class SmartSoftService {
         console.log('GetBalance');
         return await this.getBalance(player, callback, balanceType, sessionId);
       case 'Deposit':
-        console.log('Deposit', body);
+        console.log('Deposit');
         const gameName = body.TransactionInfo.GameName;
         
         const walletRes = await this.walletService.getWallet({
@@ -209,7 +207,7 @@ export class SmartSoftService {
           stake: body.Amount,
           gameName: body.TransactionInfo.GameName,
           gameNumber: body.TransactionInfo.GameNumber,
-          source: game.provider.slug,
+          source: 'smart-soft',
           cashierTransactionId: body.TransactionInfo.CashierTransacitonId,
           winnings: 0,
           username: player.username,
@@ -234,7 +232,7 @@ export class SmartSoftService {
           userId: player.id,
           clientId: player.clientId,
           amount: body.Amount.toFixed(2),
-          source: game.provider.slug,
+          source: 'smart-soft',
           description: `Casino Bet: (${gameName}:${body.TransactionInfo.GameNumber})`,
           username: player.username,
           wallet: balanceType,
