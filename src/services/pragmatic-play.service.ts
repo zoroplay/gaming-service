@@ -683,8 +683,6 @@ export class PragmaticService {
           message: 'Win Successful',
           status: HttpStatus.OK,
           data: {
-            status: "ok",
-            data: {
               cash: creditResponse.data.balance.toFixed(2),
               transactionId: settle_bet.data.transactionId,
               currency: player.currency,
@@ -692,7 +690,6 @@ export class PragmaticService {
               error: 0,
               description: 'Successful',
             },
-          }
         };
 
         await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
