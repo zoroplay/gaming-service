@@ -263,7 +263,6 @@ export class GamesService {
 
   async start(startGameDto: StartGameDto): Promise<any> {
 
-    console.log('start game', startGameDto)
     const game: GameEntity = await this.gameRepository.findOne({
       where: {
         id: startGameDto.gameId,

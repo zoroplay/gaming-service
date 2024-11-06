@@ -66,7 +66,6 @@ export class SmartSoftService {
   async constructGameUrl(data, game: GameEntity, portalName) {
     try {
 
-      console.log(data, portalName)
       let gameCategory = game.type;
       let balanceType = data.balanceType;
 
@@ -106,7 +105,6 @@ export class SmartSoftService {
 
   // callback handler
   async handleCallback(data: CallbackGameDto, portal: string) {
-    console.log('handle callback', data, portal)
     // save callback
     const callback = await this.saveCallbackLog(data);
 
