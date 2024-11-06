@@ -66,6 +66,7 @@ export class SmartSoftService {
   async constructGameUrl(data, game: GameEntity, portalName) {
     try {
 
+      console.log(data, portalName)
       let gameCategory = game.type;
       let balanceType = data.balanceType;
 
