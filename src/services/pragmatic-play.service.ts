@@ -344,8 +344,8 @@ export class PragmaticService {
           status: HttpStatus.OK,
           message: 'Balance Success',
           data: {
-            cash:  dataObject.data.availableBalance.toFixed(2),
-            bonus: dataObject.data.casinoBonusBalance.toFixed(2),
+            cash:  parseFloat(dataObject.data.availableBalance.toFixed(2)),
+            bonus: parseFloat(dataObject.data.casinoBonusBalance.toFixed(2)),
             currency: player.currency,
             error: 0,
             description: 'Success',
@@ -544,8 +544,8 @@ export class PragmaticService {
           cash: parseFloat(debit.data.balance.toFixed(2)),
           transactionId: place_bet.data.transactionId,
           currency: player.currency,
-          bonus: getUpdatedWallet.data.casinoBonusBalance.toFixed(2) || 0,
-          usedPromo: balanceType === 'casino' ? parseFloat(body.get('amount')) : 0,
+          bonus: parseFloat(getUpdatedWallet.data.casinoBonusBalance.toFixed(2)) || 0.00,
+          usedPromo: balanceType === 'casino' ? parseFloat(body.get('amount')) : 0.00,
           error: 0,
           description: 'Successful',
         },
@@ -686,10 +686,10 @@ export class PragmaticService {
           message: 'Win Successful',
           status: HttpStatus.OK,
           data: {
-              cash: creditResponse.data.balance.toFixed(2),
+              cash: parseFloat(creditResponse.data.balance.toFixed(2)),
               transactionId: settle_bet.data.transactionId,
               currency: player.currency,
-              bonus: geUpdatedtWallet.data.casinoBonusBalance.toFixed(2),
+              bonus: parseFloat(geUpdatedtWallet.data.casinoBonusBalance.toFixed(2)),
               error: 0,
               description: 'Successful',
             },
@@ -1395,6 +1395,12 @@ export class PragmaticService {
     let response;
     let body = {};
 
+    // Check if callback already has a response
+  if (callback?.response && Object.keys(JSON.parse(callback.response)).length > 0) {
+    console.log("Existing callback response found. Returning it.");
+    return JSON.parse(callback.response);
+  }
+
   // Parse the body based on content type
   if (data.body) {
     try {
@@ -1572,7 +1578,7 @@ export class PragmaticService {
           : action === 'Bet' 
           ? body.get('roundId') 
           : action === 'Refund' 
-          ? body.get('hash')
+          ? body.get('roundId')
           : action === 'Result' 
           ? body.get('hash') 
           : action === 'BonusWin' 
