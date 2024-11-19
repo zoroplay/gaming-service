@@ -1391,15 +1391,9 @@ export class PragmaticService {
     console.log("_data", data);
     // save callback
     const callback = await this.saveCallbackLog(data);
-    console.log("callback", callback);
+    console.log("callback-4", callback);
     let response;
     let body = {};
-
-    // Check if callback already has a response
-  if (callback?.response && Object.keys(JSON.parse(callback.response)).length > 0) {
-    console.log("Existing callback response found. Returning it.");
-    return JSON.parse(callback.response);
-  }
 
   // Parse the body based on content type
   if (data.body) {
@@ -1591,6 +1585,8 @@ export class PragmaticService {
 
     try {
       let callback = await this.callbackLogRepository.findOne({where: {transactionId}});
+
+      console.log("callback_0,,", callback);
       
       if (callback) return callback;
 
