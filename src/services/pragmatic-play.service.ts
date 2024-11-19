@@ -1593,6 +1593,8 @@ export class PragmaticService {
       let callback = await this.callbackLogRepository.findOne({where: {transactionId}});
       
       if (callback) return callback;
+
+      console.log("callback", callback);
       
       callback = new CallbackLog();
       callback.transactionId = transactionId;
