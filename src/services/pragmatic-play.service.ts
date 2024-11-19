@@ -376,6 +376,7 @@ export class PragmaticService {
 
   async bet(clientId, player, callback, body, balanceType) {
     console.log("Got to bet method");
+    console.log("bet-callback", callback);
     console.log("player", player, body, balanceType);
     let response: any;
 
@@ -1556,7 +1557,7 @@ export class PragmaticService {
     });
 
     return obj;
-}
+  }
 
   async saveCallbackLog(data) {
     console.log('body-data', data);
@@ -1572,9 +1573,9 @@ export class PragmaticService {
           : action === 'Bet' 
           ? body.get('roundId') 
           : action === 'Refund' 
-          ? body.get('hash')
+          ? body.get('roundId')
           : action === 'Result' 
-          ? body.get('hash') 
+          ? body.get('roundId') 
           : action === 'BonusWin' 
           ? body.get('hash') 
           : action === 'promoWin' 
@@ -1585,27 +1586,22 @@ export class PragmaticService {
 
     try {
       let callback = await this.callbackLogRepository.findOne({where: {transactionId}});
-
-      console.log("callback_0", callback);
       
       if (callback) return callback;
-
-      console.log("callback-1", callback);
       
       callback = new CallbackLog();
       callback.transactionId = transactionId;
       callback.request_type = action;
       callback.payload = JSON.stringify(Object.fromEntries(body)); // Convert URLSearchParams back to JSON
 
-      const callback2 = await this.callbackLogRepository.save(callback);
-
-      console.log("callback-2", callback2);
-
-      return callback2;
+      return await this.callbackLogRepository.save(callback);
 
     } catch(e) {
       console.log('Error saving callback log', e.message);
     }
 }
+
+
+
 
 }
