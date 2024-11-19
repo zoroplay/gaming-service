@@ -1594,14 +1594,18 @@ export class PragmaticService {
       
       if (callback) return callback;
 
-      console.log("callback", callback);
+      console.log("callback-1", callback);
       
       callback = new CallbackLog();
       callback.transactionId = transactionId;
       callback.request_type = action;
       callback.payload = JSON.stringify(Object.fromEntries(body)); // Convert URLSearchParams back to JSON
 
-      return await this.callbackLogRepository.save(callback);
+      const callback2 = await this.callbackLogRepository.save(callback);
+
+      console.log("callback-2", callback2);
+
+      return callback2;
 
     } catch(e) {
       console.log('Error saving callback log', e.message);
