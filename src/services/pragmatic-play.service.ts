@@ -1572,7 +1572,7 @@ export class PragmaticService {
           : action === 'Bet' 
           ? body.get('roundId') 
           : action === 'Refund' 
-          ? body.get('roundId')
+          ? body.get('hash')
           : action === 'Result' 
           ? body.get('hash') 
           : action === 'BonusWin' 
@@ -1586,7 +1586,7 @@ export class PragmaticService {
     try {
       let callback = await this.callbackLogRepository.findOne({where: {transactionId}});
 
-      console.log("callback_0,,", callback);
+      console.log("callback_0", callback);
       
       if (callback) return callback;
 
