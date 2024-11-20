@@ -1235,10 +1235,10 @@ export class PragmaticService {
 
       console.log("reversePayload", reversePayload);
 
-      const callbackLog = await this.callbackLogRepository.findOne({where: {transactionId: body.get('hash') }})
+      const callbackLog = await this.callbackLogRepository.findOne({where: {transactionId: body.get('roundId') }})
 
       if (!callbackLog) {
-        console.log('Callback log found')
+        console.log('Callback log not found')
         response = {
           success: 0,
           status: HttpStatus.BAD_REQUEST,
