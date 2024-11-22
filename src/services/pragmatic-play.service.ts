@@ -1614,7 +1614,7 @@ export class PragmaticService {
     let body = {};
   
     // Check for existing callback response
-    if (callback?.response && Object.keys(JSON.parse(callback.response)).length > 0) {
+    if (callback?.response != null) {
       console.log("Existing callback response found. Returning it.");
       return JSON.parse(callback.response);
     }
