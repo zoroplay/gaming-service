@@ -1432,9 +1432,10 @@ export class PragmaticService {
     let response;
     let body = {};
 
-    // if (callback?.response && Object.keys(JSON.parse(callback.response)).length > 0) {
-    //   return JSON.parse(callback.response); // callback.response is expected to be a string
-    // }
+    if (callback?.response != null) {
+      console.log("Existing callback response found. Returning it.");
+      return JSON.parse(callback.response);
+    }
 
   // Parse the body based on content type
   if (data.body) {
