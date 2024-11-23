@@ -1285,10 +1285,9 @@ export class PragmaticService {
       if (!transaction.success) {
         console.log('transaction error')
         response = {
-          success: 0,
-          status: HttpStatus.INTERNAL_SERVER_ERROR,
-          message: `Unsuccessful rollback`,
-          data: {}
+          transactionId: 0,
+          error: 0,
+          description: `Unsuccessful rollback`,
         }
   
         await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
@@ -1327,10 +1326,8 @@ export class PragmaticService {
       if (!rollbackWalletRes.success) {
         console.log('transaction error')
         response = {
-          success: 0,
-          status: HttpStatus.INTERNAL_SERVER_ERROR,
-          message: `Unsuccessful rollback`,
-          data: {}
+          error: 120,
+          description: `Unsuccessful rollback`,
         }
   
         await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
