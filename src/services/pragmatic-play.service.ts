@@ -1793,11 +1793,22 @@ export class PragmaticService {
             : body.get('transactionId');
 
     try {
-      let callback = await this.callbackLogRepository.findOne({
-        where: { transactionId, request_type: action },
-      });
+      let callback;
+      if (action !== 'Authenticate') {
+        // Check for an existing callback for actions other than Authenticate
+        callback = await this.callbackLogRepository.findOne({
+          where: { transactionId, request_type: action },
+        });
+  
+        if (callback) return callback;
+      }
+
+
+      // let callback = await this.callbackLogRepository.findOne({
+      //   where: { transactionId, request_type: action },
+      // });
       
-      if (callback) return callback;
+      // if (callback) return callback;
       
       callback = new CallbackLog();
       callback.transactionId = transactionId;
