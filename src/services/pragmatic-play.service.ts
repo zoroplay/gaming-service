@@ -291,7 +291,7 @@ export class PragmaticService {
       message: "Authentication Successful",
       data: {
         userId: dataObject.playerId,
-        cash: walletType === 'casino' ? dataObject.casinoBalance.toFixed(2) : dataObject.available_balance.toFixed(2),
+        cash: walletType === 'casino' ? dataObject.casinoBalance.toFixed(2) : dataObject.balance.toFixed(2),
         currency: dataObject.currency,
         bonus: dataObject.casinoBalance,
         token: token,
