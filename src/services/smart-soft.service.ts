@@ -107,7 +107,6 @@ export class SmartSoftService {
   async handleCallback(data: CallbackGameDto, portal: string) {
     // save callback
     try {
-      console.log('callback',  data)
       const callback = await this.saveCallbackLog(data);
 
       const body = data.body ? JSON.parse(data.body) : '';
