@@ -152,7 +152,6 @@ export interface PlaceCasinoBetRequest {
   userId: number;
   clientId: number;
   roundId: string;
-  roundDetails?: string | undefined;
   transactionId: string;
   gameId: string;
   gameName?: string | undefined;
@@ -250,6 +249,7 @@ export interface UpdateBetRequest {
   status: string;
   entityType: string;
   clientId: number;
+  selectionId?: number | undefined;
 }
 
 export interface UpdateBetResponse {
@@ -311,6 +311,7 @@ export interface BetSlip {
   eventDate: string;
   eventPrefix: string;
   isBonus?: boolean | undefined;
+  id?: number | undefined;
 }
 
 export interface Combo {
@@ -370,6 +371,8 @@ export interface BetSlipHistory {
   eventDate: string;
   selectionId: string;
   eventPrefix: string;
+  score: string;
+  htScore: string;
 }
 
 export interface BetHistory {
@@ -396,6 +399,8 @@ export interface BetHistory {
   events: string;
   markets: string;
   betCategoryDesc: string;
+  isBonusBet?: boolean | undefined;
+  pendingGames?: number | undefined;
 }
 
 export interface BetHistoryResponse {
@@ -528,6 +533,8 @@ export interface BettingServiceClient {
 
   getSalesReport(request: SalesReportRequest): Observable<CommonResponseObj>;
 
+  getShopUserCommissions(request: SalesReportRequest): Observable<CommonResponseObj>;
+
   getTotalSalesReport(request: NetworkSalesRequest): Observable<CommonResponseObj>;
 
   deletePlayerData(request: SettingsById): Observable<CommonResponseObj>;
@@ -614,6 +621,10 @@ export interface BettingServiceController {
     request: SalesReportRequest,
   ): Promise<CommonResponseObj> | Observable<CommonResponseObj> | CommonResponseObj;
 
+  getShopUserCommissions(
+    request: SalesReportRequest,
+  ): Promise<CommonResponseObj> | Observable<CommonResponseObj> | CommonResponseObj;
+
   getTotalSalesReport(
     request: NetworkSalesRequest,
   ): Promise<CommonResponseObj> | Observable<CommonResponseObj> | CommonResponseObj;
@@ -658,6 +669,7 @@ export function BettingServiceControllerMethods() {
       "getRetailBets",
       "getRetailVBets",
       "getSalesReport",
+      "getShopUserCommissions",
       "getTotalSalesReport",
       "deletePlayerData",
       "getCommissions",

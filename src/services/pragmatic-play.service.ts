@@ -370,7 +370,7 @@ export class PragmaticService {
           userId: player.id,
           clientId: player.clientId,
           roundId: body.roundId,
-          roundDetails: body.roundDetails,
+          // roundDetails: body.roundDetails,
           transactionId: body.reference,
           gameId: body.gameId,
           stake: parseFloat(body.amount),
