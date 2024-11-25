@@ -19,6 +19,8 @@ import {
   CommonResponse,
   FetchGamesRequest,
   CallbackGameDto,
+  SaveCategoryRequest,
+  FindOneCategoryDto,
 } from 'src/proto/gaming.pb';
 import { Observable } from 'rxjs';
 import { GrpcMethod } from '@nestjs/microservices';
@@ -87,29 +89,48 @@ export class GamesController {
     return this.gamesService.fetchGamesByName(payload);
   }
 
-  @GrpcMethod(GAMING_SERVICE_NAME, 'fetchGamesByName')
-  createCategories(payload: FetchGamesRequest): Promise<any> {
+
+
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'saveCategory')
+  createCategories(payload: SaveCategoryRequest): Promise<any> {
     console.log('fetch gameNames');
-    return this.gamesService.fetchGamesByName(payload);
+    return this.gamesService.saveCategory(payload);
   }
 
-  @GrpcMethod(GAMING_SERVICE_NAME, 'fetchGamesByName')
-  updateCategory(payload: FetchGamesRequest): Promise<any> {
+  @GrpcMethod(GAMING_SERVICE_NAME, 'updateCategory')
+  updateCategory(payload: SaveCategoryRequest): Promise<any> {
     console.log('fetch gameNames');
-    return this.gamesService.fetchGamesByName(payload);
+    return this.gamesService.updateCategory(payload);
   }
 
-  @GrpcMethod(GAMING_SERVICE_NAME, 'fetchGamesByName')
-  deleteCategory(payload: FetchGamesRequest): Promise<any> {
-    console.log('fetch gameNames');
-    return this.gamesService.fetchGamesByName(payload);
+  @GrpcMethod(GAMING_SERVICE_NAME, 'findOneCategory')
+  findOneCategory(payload: FindOneCategoryDto): Promise<any> {
+    console.log('fetch category', payload);
+    return this.gamesService.findOneCategory(payload);
   }
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'deleteCategory')
+  async deleteCategory(payload: FindOneCategoryDto): Promise<void> {
+    console.log('Payload received by gRPC server for deletion:', payload);
+    const { id } = payload;
+
+    if (!id) {
+      throw new Error('Invalid payload: Missing `id` property.');
+    }
+
+    return this.gamesService.deleteCategory(payload);
+  }
+
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'FetchCategories')
   FetchCategories(): Promise<any> {
-    console.log('fetchc categories');
+    console.log('fetch categories');
     return this.gamesService.fetchCategories();
   }
+
+
+
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'syncGames')
   syncGames(syncGameDto: SyncGameDto) {
