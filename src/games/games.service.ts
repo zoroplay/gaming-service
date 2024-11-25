@@ -149,33 +149,40 @@ export class GamesService {
     console.log(final);
     return final;
   }
+// Make sure to import the interface
 
-  async fetchGames({categoryId, clientId, providerId}: FetchGamesRequest): Promise<Games> {
-    const query = this.gameRepository
-      .createQueryBuilder('games')
-      .where('games.status = :status', { status: 1 });
+async fetchGames({ categoryId, clientId, providerId }: FetchGamesRequest): Promise<Games> {
+  // Build the base query to filter games by status
+  const query = this.gameRepository
+    .createQueryBuilder('games')
+    .where('games.status = :status', { status: 1 });
 
-    if (categoryId && categoryId !== 1) {
-      query
-        .leftJoin(GameCategory, 'gamecat', 'gamecat.gameId = games.id')
-        .andWhere('gamecat.categoryId = :category', { category: categoryId });
-    }
-
-    if (providerId) 
-      query.andWhere('games.providerId = :providerId', { providerId });
-
-    const games = await query.getMany();
-    // Convert TypeORM entities to proto-generated types
-    const protoResponse: Game[] = games.map((entity: GameEntity) =>
-      this.entityToProtoService.entityToProto(entity),
-    );
-
-    const final = {
-      games: protoResponse,
-    };
-
-    return final;
+  if (categoryId && categoryId !== 1) {
+    query
+      .leftJoin(GameCategory, 'gamecat', 'gamecat.gameId = games.id')
+      .andWhere('gamecat.categoryId = :category', { category: categoryId });
   }
+
+  if (providerId) {
+    query.andWhere('games.providerId = :providerId', { providerId });
+  }
+
+  // Fetch the games based on the query
+  const games = await query.getMany();
+
+  // Convert TypeORM entities to proto-generated types
+  const protoResponse: Game[] = games.map((entity: GameEntity) =>
+    this.entityToProtoService.entityToProto(entity),
+  );
+
+  // Return the games and totalGames, ensuring that it matches the Games interface
+  const final: Games = {
+    games: protoResponse,
+  };
+
+  return final;
+}
+
 
   async fetchGamesByName(searchGamesDto: FetchGamesRequest): Promise<Games> {
     const { gameName } = searchGamesDto;
@@ -227,7 +234,7 @@ export class GamesService {
     return await this.providerRepository.findOneBy({ id });
   }
 
-  async SaveCategory(createCategoryDto: SaveCategoryRequest): Promise<Category> {
+  async saveCategory(createCategoryDto: SaveCategoryRequest): Promise<Category> {
     const newCategory: Category = new Category();
     newCategory.client_id = createCategoryDto.clientId;
     newCategory.name = createCategoryDto.name;
@@ -244,6 +251,7 @@ export class GamesService {
 
   async findOneCategory(request: FindOneCategoryDto): Promise<Category> {
     const { id } = request;
+    console.log("id", id);
     const category = await this.categoryRepository.findOne({
       where: { id },
       relations: ['games'], // Eager load related games if needed
@@ -271,17 +279,19 @@ export class GamesService {
     return updatedCategory;
   }
 
-  async deleteCategory(request: FindOneCategoryDto): Promise<void> {
+  async deleteCategory(request: FindOneCategoryDto) {
     const { id } = request;
-    const category = await this.categoryRepository.findOneBy({ id });
+    console.log('Deleting category with ID:', id);
   
+    const category = await this.categoryRepository.findOneBy({ id });
     if (!category) {
       throw new Error(`Category with ID ${id} not found`);
     }
   
     await this.categoryRepository.remove(category);
+    
   }
-
+  
   async findOne(id: number): Promise<GameEntity | null> {
     return await this.gameRepository.findOneBy({ id });
   }

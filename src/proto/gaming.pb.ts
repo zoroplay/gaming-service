@@ -370,7 +370,7 @@ export interface GamingServiceClient {
 
   removeGame(request: UpdateGameDto): Observable<Game>;
 
-  saveCategory(request: SaveCategoryRequest): Observable<CommonResponse>;
+  saveCategory(request: SaveCategoryRequest): Observable<Category>;
 
   fetchCategories(request: Empty): Observable<Categories>;
 
@@ -378,7 +378,7 @@ export interface GamingServiceClient {
 
   updateCategory(request: SaveCategoryRequest): Observable<Category>;
 
-  deleteCategory(request: FindOneCategoryDto): Observable<Category>;
+  deleteCategory(request: FindOneCategoryDto): Observable<Empty>;
 
   registerBonus(request: Empty): Observable<CommonResponse>;
 
@@ -428,7 +428,7 @@ export interface GamingServiceController {
 
   removeGame(request: UpdateGameDto): Promise<Game> | Observable<Game> | Game;
 
-  saveCategory(request: SaveCategoryRequest): Promise<CommonResponse> | Observable<CommonResponse> | CommonResponse;
+  saveCategory(request: SaveCategoryRequest): Promise<Category> | Observable<Category> | Category;
 
   fetchCategories(request: Empty): Promise<Categories> | Observable<Categories> | Categories;
 
@@ -436,7 +436,7 @@ export interface GamingServiceController {
 
   updateCategory(request: SaveCategoryRequest): Promise<Category> | Observable<Category> | Category;
 
-  deleteCategory(request: FindOneCategoryDto): Promise<Category> | Observable<Category> | Category;
+  deleteCategory(request: FindOneCategoryDto): Promise<Empty> | Observable<Empty> | Empty;
 
   registerBonus(request: Empty): Promise<CommonResponse> | Observable<CommonResponse> | CommonResponse;
 
