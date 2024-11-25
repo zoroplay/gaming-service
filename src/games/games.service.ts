@@ -2,38 +2,39 @@
 import { Injectable, NotFoundException, Provider } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Observable, Subject } from 'rxjs';
+import { slugify } from 'src/common';
+import { Category } from 'src/entities/category.entity';
+import { GameKey } from 'src/entities/game-key.entity';
+import { GameCategory } from 'src/entities/game.category.entity';
+import { IdentityService } from 'src/identity/identity.service';
+import {
+  CallbackGameDto,
+  Categories,
+  CommonResponse,
+  CreateGameDto,
+  CreateProviderDto,
+  FetchGamesRequest,
+  FindOneCategoryDto,
+  Game,
+  Games,
+  PaginationDto,
+  SaveCategoryRequest,
+  StartGameDto,
+  SyncGameDto,
+  UpdateGameDto
+} from 'src/proto/gaming.pb';
+import {
+  C2GamingService,
+  ShackEvolutionService,
+  SmartSoftService,
+  TadaGamingService,
+} from 'src/services';
+import { EntityToProtoService } from 'src/services/entity-to-proto.service';
+import { EvoPlayService } from 'src/services/evo-play.service';
+import { PragmaticService } from 'src/services/pragmatic-play.service';
+import { FindManyOptions, ILike, Repository } from 'typeorm';
 import { Game as GameEntity } from '../entities/game.entity';
 import { Provider as ProviderEntity } from '../entities/provider.entity';
-import {
-  CreateGameDto,
-  UpdateGameDto,
-  SyncGameDto,
-  StartGameDto,
-  PaginationDto,
-  Games,
-  Game,
-  CallbackGameDto,
-  CreateProviderDto,
-  Providers,
-  CommonResponse,
-  Categories,
-  FetchGamesRequest,
-} from 'src/proto/gaming.pb';
-import { FindManyOptions, ILike, Repository } from 'typeorm';
-import { EntityToProtoService } from 'src/services/entity-to-proto.service';
-import {
-  ShackEvolutionService,
-  C2GamingService,
-  TadaGamingService,
-  SmartSoftService,
-} from 'src/services';
-import { EvoPlayService } from 'src/services/evo-play.service';
-import { IdentityService } from 'src/identity/identity.service';
-import { Category } from 'src/entities/category.entity';
-import { GameCategory } from 'src/entities/game.category.entity';
-import { slugify } from 'src/common';
-import { GameKey } from 'src/entities/game-key.entity';
-import { PragmaticService } from 'src/services/pragmatic-play.service';
 
 
 @Injectable()
@@ -199,7 +200,6 @@ export class GamesService {
     return final;
   }
 
-
   async queryGames(
     paginationDtoStream: Observable<PaginationDto>,
   ): Promise<Observable<GameEntity[]>> {
@@ -227,9 +227,59 @@ export class GamesService {
     return await this.providerRepository.findOneBy({ id });
   }
 
+  async SaveCategory(createCategoryDto: SaveCategoryRequest): Promise<Category> {
+    const newCategory: Category = new Category();
+    newCategory.client_id = createCategoryDto.clientId;
+    newCategory.name = createCategoryDto.name;
+    newCategory.slug = slugify(createCategoryDto.name);
+  
+    const savedCategory = await this.categoryRepository.save(newCategory);
+    return savedCategory;
+  }
+
   async fetchCategories(): Promise<Categories> {
     const categories = await this.categoryRepository.find();
     return { data: categories };
+  }
+
+  async findOneCategory(request: FindOneCategoryDto): Promise<Category> {
+    const { id } = request;
+    const category = await this.categoryRepository.findOne({
+      where: { id },
+      relations: ['games'], // Eager load related games if needed
+    });
+  
+    if (!category) {
+      throw new Error(`Category with ID ${id} not found`);
+    }
+    return category;
+  }
+
+  async updateCategory(createCategoryDto: SaveCategoryRequest): Promise<Category> {
+    const { id } = createCategoryDto
+    const category = await this.categoryRepository.findOneBy({ id });
+  
+    if (!category) {
+      throw new Error(`Category with ID ${createCategoryDto.id} not found`);
+    }
+  
+    category.client_id = createCategoryDto.clientId ?? category.client_id;
+    category.name = createCategoryDto.name ?? category.name;
+    category.slug = slugify(createCategoryDto.name) ?? category.slug;
+  
+    const updatedCategory = await this.categoryRepository.save(category);
+    return updatedCategory;
+  }
+
+  async deleteCategory(request: FindOneCategoryDto): Promise<void> {
+    const { id } = request;
+    const category = await this.categoryRepository.findOneBy({ id });
+  
+    if (!category) {
+      throw new Error(`Category with ID ${id} not found`);
+    }
+  
+    await this.categoryRepository.remove(category);
   }
 
   async findOne(id: number): Promise<GameEntity | null> {
