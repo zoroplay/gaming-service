@@ -87,6 +87,24 @@ export class GamesController {
     return this.gamesService.fetchGamesByName(payload);
   }
 
+  @GrpcMethod(GAMING_SERVICE_NAME, 'fetchGamesByName')
+  createCategories(payload: FetchGamesRequest): Promise<any> {
+    console.log('fetch gameNames');
+    return this.gamesService.fetchGamesByName(payload);
+  }
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'fetchGamesByName')
+  updateCategory(payload: FetchGamesRequest): Promise<any> {
+    console.log('fetch gameNames');
+    return this.gamesService.fetchGamesByName(payload);
+  }
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'fetchGamesByName')
+  deleteCategory(payload: FetchGamesRequest): Promise<any> {
+    console.log('fetch gameNames');
+    return this.gamesService.fetchGamesByName(payload);
+  }
+
   @GrpcMethod(GAMING_SERVICE_NAME, 'FetchCategories')
   FetchCategories(): Promise<any> {
     console.log('fetchc categories');
