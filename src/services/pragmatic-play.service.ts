@@ -166,88 +166,6 @@ export class PragmaticService {
   }
 
 
-  // async constructGameUrl(payload: StartGameDto): Promise<any> {
-  //   try {
-  //     // Log the incoming payload for debugging
-  //     console.log("Payload received:", payload);
-  
-  //     const { gameId, language, authCode, userId, demo, balanceType } = payload;
-  
-  //     // Fetch the game details from the repository
-  //     const gameExist = await this.gameRepository.findOne({ where: { id: gameId }, relations: { provider: true }});
-  //     console.log("Game retrieved from DB:", gameExist);
-  
-  //     // If game doesn't exist, throw an error
-  //     if (!gameExist) {
-  //       console.error(`Game with ID ${gameId} not found`);
-  //       throw new NotFoundException('Game not found');
-  //     }
-  
-  //     // Generate the hash for the game session
-  //     const hash = this.genHash({
-  //       secureLogin: this.PRAGMATIC_SECURE_LOGIN,
-  //       symbol: gameExist.gameId,
-  //       language: language,
-  //       externalPlayerId: userId,
-  //       token: authCode,
-  //       ...(demo && { playMode: "DEMO" })
-  //     });
-
-  //     console.log("Generated hash:", hash);
-
-  //     const playMode = demo ? 'playMode=DEMO' : '';
-
-  //     const request = this.httpService.post(
-  //       `${this.PRAGMATIC_BASEURL}/game/url?secureLogin=${this.PRAGMATIC_SECURE_LOGIN}&symbol=${gameExist.gameId}&language=${language}&externalPlayerId=${userId}&token=${authCode}&hash=${hash}&${playMode}`,
-  //     );
-
-  //     console.log("Request response:", request);
-
-  //     const val = await lastValueFrom(request);
-
-  //     console.log("val response:", val);
-  
-  //     // Start creating the game session
-  //     const gameSession = new GameSession();
-  
-  //     // Setting properties of game session
-  //     gameSession.balance_type = balanceType || null;
-  //     gameSession.game_id = gameExist.gameId;
-  //     gameSession.token = authCode || null;
-  //     gameSession.session_id = authCode || null;
-  //     gameSession.provider = gameExist.provider.slug;
-  
-  //     // Log game session data before saving
-  //     console.log("Game session data to save:", gameSession);
-  
-  //     // Check if token is missing or invalid
-  //     if (!gameSession.token) {
-  //       console.error("Auth token is missing or invalid");
-  //       throw new Error('Auth token is missing');
-  //     }
-  
-  //     // Attempt to save the game session
-  //     try {
-  //       await this.gameSessionRepo.save(gameSession);
-  //       console.log("Game session saved successfully", gameSession);
-  //     } catch (dbError) {
-  //       console.error("Error saving game session:", dbError.message);
-  //       throw new Error(`Failed to save game session: ${dbError.message}`);
-  //     }
-
-  //     const { data } = await lastValueFrom(request);
-  //     console.log("data", data);
-  
-  //     // Return the game URL from the mocked request object
-  //     return { url: data.gameURL };
-  
-  //   } catch (error) {
-  //     // Catch and log any errors that occur
-  //     console.error("An error occurred:", error.message);
-  //     throw new RpcException(error.message || 'Something went wrong');
-  //   }
-  // }
-
   async constructGameUrl(payload: StartGameDto): Promise<any> {
     try {
       // Log the incoming payload for debugging
@@ -256,10 +174,7 @@ export class PragmaticService {
       const { gameId, language, authCode, userId, demo, balanceType } = payload;
   
       // Fetch the game details from the repository
-      const gameExist = await this.gameRepository.findOne({
-        where: { id: gameId },
-        relations: { provider: true },
-      });
+      const gameExist = await this.gameRepository.findOne({ where: { id: gameId }, relations: { provider: true }});
       console.log("Game retrieved from DB:", gameExist);
   
       // If game doesn't exist, throw an error
@@ -275,24 +190,22 @@ export class PragmaticService {
         language: language,
         externalPlayerId: userId,
         token: authCode,
-        ...(demo && { playMode: "DEMO" }),
+        ...(demo && { playMode: "DEMO" })
       });
-  
+
       console.log("Generated hash:", hash);
-  
+
       const playMode = demo ? 'playMode=DEMO' : '';
-  
-      // Construct the HTTP request
-      const url = `${this.PRAGMATIC_BASEURL}/game/url?secureLogin=${this.PRAGMATIC_SECURE_LOGIN}&symbol=${gameExist.gameId}&language=${language}&externalPlayerId=${userId}&token=${authCode}&hash=${hash}&${playMode}`;
-      const request = this.httpService.post(url);
-  
-      // Log request details
-      console.log("Request parameters:", {
-        url: url,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+
+      const request = this.httpService.post(
+        `${this.PRAGMATIC_BASEURL}/game/url?secureLogin=${this.PRAGMATIC_SECURE_LOGIN}&symbol=${gameExist.gameId}&language=${language}&externalPlayerId=${userId}&token=${authCode}&hash=${hash}&${playMode}`,
+      );
+
+      console.log("Request response:", request);
+
+      const val = await lastValueFrom(request);
+
+      console.log("val response:", val);
   
       // Start creating the game session
       const gameSession = new GameSession();
@@ -321,22 +234,109 @@ export class PragmaticService {
         console.error("Error saving game session:", dbError.message);
         throw new Error(`Failed to save game session: ${dbError.message}`);
       }
+
+      const { data } = await lastValueFrom(request);
+      console.log("data", data);
   
-      // Log and handle response from API
-      try {
-        const response = await lastValueFrom(request);
-        console.log("Pragmatic API response data:", response.data);
-        return { url: response.data.gameURL };
-      } catch (error) {
-        console.error("Error response from Pragmatic API:", error.response?.data || error.message);
-        throw new RpcException(error.message || 'Pragmatic Play API error');
-      }
+      // Return the game URL from the mocked request object
+      return { url: data.gameURL };
+  
     } catch (error) {
       // Catch and log any errors that occur
       console.error("An error occurred:", error.message);
       throw new RpcException(error.message || 'Something went wrong');
     }
   }
+
+  // async constructGameUrl(payload: StartGameDto): Promise<any> {
+  //   try {
+  //     // Log the incoming payload for debugging
+  //     console.log("Payload received:", payload);
+  
+  //     const { gameId, language, authCode, userId, demo, balanceType } = payload;
+  
+  //     // Fetch the game details from the repository
+  //     const gameExist = await this.gameRepository.findOne({
+  //       where: { id: gameId },
+  //       relations: { provider: true },
+  //     });
+  //     console.log("Game retrieved from DB:", gameExist);
+  
+  //     // If game doesn't exist, throw an error
+  //     if (!gameExist) {
+  //       console.error(`Game with ID ${gameId} not found`);
+  //       throw new NotFoundException('Game not found');
+  //     }
+  
+  //     // Generate the hash for the game session
+  //     const hash = this.genHash({
+  //       secureLogin: this.PRAGMATIC_SECURE_LOGIN,
+  //       symbol: gameExist.gameId,
+  //       language: language,
+  //       externalPlayerId: userId,
+  //       token: authCode,
+  //       ...(demo && { playMode: "DEMO" }),
+  //     });
+  
+  //     console.log("Generated hash:", hash);
+  
+  //     const playMode = demo ? 'playMode=DEMO' : '';
+  
+  //     // Construct the HTTP request
+  //     const url = `${this.PRAGMATIC_BASEURL}/game/url?secureLogin=${this.PRAGMATIC_SECURE_LOGIN}&symbol=${gameExist.gameId}&language=${language}&externalPlayerId=${userId}&token=${authCode}&hash=${hash}&${playMode}`;
+  //     const request = this.httpService.post(url);
+  
+  //     // Log request details
+  //     console.log("Request parameters:", {
+  //       url: url,
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //       },
+  //     });
+  
+  //     // Start creating the game session
+  //     const gameSession = new GameSession();
+  
+  //     // Setting properties of game session
+  //     gameSession.balance_type = balanceType || null;
+  //     gameSession.game_id = gameExist.gameId;
+  //     gameSession.token = authCode || null;
+  //     gameSession.session_id = authCode || null;
+  //     gameSession.provider = gameExist.provider.slug;
+  
+  //     // Log game session data before saving
+  //     console.log("Game session data to save:", gameSession);
+  
+  //     // Check if token is missing or invalid
+  //     if (!gameSession.token) {
+  //       console.error("Auth token is missing or invalid");
+  //       throw new Error('Auth token is missing');
+  //     }
+  
+  //     // Attempt to save the game session
+  //     try {
+  //       await this.gameSessionRepo.save(gameSession);
+  //       console.log("Game session saved successfully", gameSession);
+  //     } catch (dbError) {
+  //       console.error("Error saving game session:", dbError.message);
+  //       throw new Error(`Failed to save game session: ${dbError.message}`);
+  //     }
+  
+  //     // Log and handle response from API
+  //     try {
+  //       const response = await lastValueFrom(request);
+  //       console.log("Pragmatic API response data:", response.data);
+  //       return { url: response.data.gameURL };
+  //     } catch (error) {
+  //       console.error("Error response from Pragmatic API:", error.response?.data || error.message);
+  //       throw new RpcException(error.message || 'Pragmatic Play API error');
+  //     }
+  //   } catch (error) {
+  //     // Catch and log any errors that occur
+  //     console.error("An error occurred:", error.message);
+  //     throw new RpcException(error.message || 'Something went wrong');
+  //   }
+  // }
   
   
   async authenticate(clientId, token, callback, walletType) {
