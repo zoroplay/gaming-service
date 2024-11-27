@@ -202,6 +202,10 @@ export class PragmaticService {
       );
 
       console.log("Request response:", request);
+
+      const val = await lastValueFrom(request);
+
+      console.log("val response:", val);
   
       // Start creating the game session
       const gameSession = new GameSession();
