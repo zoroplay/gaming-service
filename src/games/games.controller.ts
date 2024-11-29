@@ -129,9 +129,6 @@ export class GamesController {
     return this.gamesService.fetchCategories();
   }
 
-
-
-
   @GrpcMethod(GAMING_SERVICE_NAME, 'syncGames')
   syncGames(syncGameDto: SyncGameDto) {
     console.log('syncGames', syncGameDto);
