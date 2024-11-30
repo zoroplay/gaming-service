@@ -65,7 +65,7 @@ export class SmartSoftService {
   // start game here
   async constructGameUrl(data, game: GameEntity, portalName) {
     try {
-      console.log(data, portalName)
+
       let gameCategory = game.type;
       let balanceType = data.balanceType;
 
@@ -172,6 +172,7 @@ export class SmartSoftService {
 
       switch (data.action) {
         case 'ActivateSession':
+          console.log('SMARTSOFT: Activate Session', data, body.Token);
           return await this.activateSession(data.clientId, body.Token, callback, portal);
         case 'GetBalance':
           console.log('GetBalance');
