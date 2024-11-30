@@ -172,7 +172,7 @@ export class SmartSoftService {
 
       switch (data.action) {
         case 'ActivateSession':
-          console.log('SMARTSOFT: Activate Session', data, body.Token);
+          console.log('SMARTSOFT: Activate Session', body.Token);
           return await this.activateSession(data.clientId, body.Token, callback, portal);
         case 'GetBalance':
           console.log('GetBalance');
@@ -534,7 +534,7 @@ export class SmartSoftService {
   // Activate Player Session
   async activateSession(clientId, token, callback, portal) {
     const res = await this.identityService.xpressLogin({clientId, token});
-
+    console.log('identity response', res);
     if (!res.status) {
       const response = {
         success: false,
