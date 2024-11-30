@@ -65,7 +65,7 @@ export class SmartSoftService {
   // start game here
   async constructGameUrl(data, game: GameEntity, portalName) {
     try {
-
+      console.log(data, portalName)
       let gameCategory = game.type;
       let balanceType = data.balanceType;
 
@@ -99,7 +99,7 @@ export class SmartSoftService {
         url: sessionUrl,
       };
     } catch (e) {
-      console.error(e.message);
+      console.error(`Error generating game link: ${e.message}`);
     }
   }
 
