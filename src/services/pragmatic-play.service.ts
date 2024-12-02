@@ -1843,14 +1843,3 @@ export class PragmaticService {
 
 
 }
-
-CallbackLog {
-  gaming-service  |   transactionId: '674d964f77b14f19b14401c3',
-  gaming-service  |   request_type: 'Bet',
-  gaming-service  |   payload: '{"amount":"28.0","gameId":"vs7fire88","hash":"03b76ce5da3fd0650b00aed52b4f4628","providerId":"PragmaticPlay","reference":"674d964f77b14f19b14401c3","roundDetails":"spin","roundId":"679222763000","timestamp":"1733137999621","token":"M41PEX5YRJTSHEJGEXSLM4YYQBYA47YOCBWKXE13","userId":"214989"}',
-  gaming-service  |   response: null,
-  gaming-service  |   id: '3296aa71-9ac1-4953-9290-52b7ceed9e4f',
-  gaming-service  |   status: false,
-  gaming-service  |   createdAt: 2024-12-02T11:13:19.875Z,
-  gaming-service  |   updatedAt: 2024-12-02T11:13:19.875Z
-  gaming-service  | }
