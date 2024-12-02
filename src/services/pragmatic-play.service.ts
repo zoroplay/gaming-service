@@ -652,10 +652,6 @@ export class PragmaticService {
       // }
 
       response = {
-        success: true,
-        status: HttpStatus.OK,
-        message: 'Deposit, successful',
-        data: {
           cash: parseFloat(getUpdatedWallet.data.availableBalance.toFixed(2)),
           transactionId: place_bet.data.transactionId,
           currency: player.currency,
@@ -663,10 +659,11 @@ export class PragmaticService {
           usedPromo: balanceType === 'casino' ? parseFloat(body.get('amount')) : 0.00,
           error: 0,
           description: 'Successful',
-        },
       };
 
       await this.callbackLogRepository.update({ id: callback.id}, { response: JSON.stringify(response)});
+
+      console.log("bet-response", response);
 
       return response;
 
