@@ -1488,24 +1488,24 @@ export class PragmaticService {
       balanceType = 'casino';
 
     if (token) {
-      // const res = await this.identityService.validateToken({clientId: data.clientId, token });
+      const res = await this.identityService.validateToken({clientId: data.clientId, token });
 
-      const res = {
-        success: true,
-        message: "Success",
-        data: {
-          playerId: 'Famo',
-          clientId: 4,
-          playerNickname: 'Franklyn',
-          sessionId: '132',
-          balance: 1450.0,
-          casinoBalance: 0.0,
-          virtualBalance: 0.5,
-          group: null,
-          currency: 'NGN'
-        }
+      // const res = {
+      //   success: true,
+      //   message: "Success",
+      //   data: {
+      //     playerId: 'Famo',
+      //     clientId: 4,
+      //     playerNickname: 'Franklyn',
+      //     sessionId: '132',
+      //     balance: 1450.0,
+      //     casinoBalance: 0.0,
+      //     virtualBalance: 0.5,
+      //     group: null,
+      //     currency: 'NGN'
+      //   }
         
-      };
+      // };
 
       console.log("res", res)
 
