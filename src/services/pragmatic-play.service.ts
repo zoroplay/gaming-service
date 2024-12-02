@@ -704,12 +704,29 @@ export class PragmaticService {
       }
 
       if (parseFloat(body.get('amount')) > 0) {
+        const callbackLog = await this.callbackLogRepository.findOne({where: {transactionId: body.get('roundId'), request_type: 'Bet' }});
+
+        if (!callbackLog) {
+          console.log('Callback log not found')
+          response = {
+            transactionId: 0,
+            error: 0,
+            description: `Unsuccessful credit`,
+          }
+    
+          await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
+          return response;
+  
+        }
+
+        const callbackPayload = JSON.parse(callbackLog.payload); 
+
+        console.log("callbackResponse", callbackPayload);
+
         const settlePayload: SettleCasinoBetRequest = {
-          transactionId: body.get('reference'),
+          transactionId: callbackPayload.reference,
           winnings: parseFloat(body.get('amount')),
         };
-
-
         const settle_bet = await this.result(settlePayload);
 
         console.log("settle_bet", settle_bet);
@@ -1228,7 +1245,7 @@ export class PragmaticService {
 
       console.log("reversePayload", reversePayload);
 
-      const callbackLog = await this.callbackLogRepository.findOne({where: {transactionId: body.get('reference'), request_type: 'Bet' }})
+      const callbackLog = await this.callbackLogRepository.findOne({where: {transactionId: body.get('reference'), request_type: 'Bet' }});
 
       if (!callbackLog) {
         console.log('Callback log not found')
@@ -1818,3 +1835,4 @@ export class PragmaticService {
 }
 
 
+// RWKDG3AEDG9KYTS9
