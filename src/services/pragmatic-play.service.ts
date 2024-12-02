@@ -655,7 +655,7 @@ export class PragmaticService {
         status: HttpStatus.OK,
         message: 'Deposit, successful',
         data: {
-          cash: parseFloat(getUpdatedWallet.data.balance.toFixed(2)),
+          cash: parseFloat(getUpdatedWallet.data.availableBalance.toFixed(2)),
           transactionId: place_bet.data.transactionId,
           currency: player.currency,
           bonus: parseFloat(getUpdatedWallet.data.casinoBonusBalance.toFixed(2)) || 0.00,
