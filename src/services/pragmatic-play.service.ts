@@ -15,6 +15,7 @@ import { Repository } from 'typeorm';
 import { CallbackLog, Game as GameEntity, GameSession, Provider as ProviderEntity } from '../entities';
 import { CasinoGame } from 'src/entities/casino-game.entity';
 import { generateTrxNo } from 'src/common';
+import { Raw } from "typeorm";
 
 
 @Injectable()
@@ -1841,10 +1842,3 @@ export class PragmaticService {
 
 
 }
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function Raw(arg0: (alias: any) => string): string | import("typeorm").FindOperator<string> {
-  throw new Error('Function not implemented.');
-}
-
-
