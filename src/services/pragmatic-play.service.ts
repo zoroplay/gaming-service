@@ -709,6 +709,7 @@ export class PragmaticService {
 
         const callbackLog = await this.callbackLogRepository.findOne({
           where: {
+            request_type: 'Bet',
             payload: Raw((alias) => `${alias} LIKE '%"roundId":"${body.get('roundId')}"%'`),
           },
         });
