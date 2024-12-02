@@ -704,7 +704,13 @@ export class PragmaticService {
       }
 
       if (parseFloat(body.get('amount')) > 0) {
-        const callbackLog = await this.callbackLogRepository.findOne({where: {transactionId: body.get('roundId'), request_type: 'Bet' }});
+        // const callbackLog = await this.callbackLogRepository.findOne({where: {transactionId: body.get('roundId'), request_type: 'Bet' }});
+
+        const callbackLog = await this.callbackLogRepository.findOne({
+          where: {
+            payload: Raw((alias) => `${alias} LIKE '%"roundId":"${body.get('roundId')}"%'`),
+          },
+        });
 
         if (!callbackLog) {
           console.log('Callback log not found')
@@ -718,6 +724,8 @@ export class PragmaticService {
           return response;
   
         }
+
+        console.log('callbackLog', callbackLog);
 
         const callbackPayload = JSON.parse(callbackLog.payload); 
 
@@ -1834,5 +1842,9 @@ export class PragmaticService {
 
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function Raw(arg0: (alias: any) => string): string | import("typeorm").FindOperator<string> {
+  throw new Error('Function not implemented.');
+}
 
-// RWKDG3AEDG9KYTS9
+
