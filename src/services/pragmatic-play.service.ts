@@ -239,6 +239,7 @@ export class PragmaticService {
 
       const { data } = await lastValueFrom(request);
       console.log("data", data);
+      console.log("gameUrl", data.gameURL);
   
       // Return the game URL from the mocked request object
       return { url: data.gameURL };
@@ -617,8 +618,8 @@ export class PragmaticService {
       if (!debit.success) {
         response = {
           success: false,
-          status: HttpStatus.INTERNAL_SERVER_ERROR,
-          message: 'Incomplete request',
+          status: HttpStatus.BAD_REQUEST,
+          message: 'Error debiting user wallet',
         };
 
         const val = await this.callbackLogRepository.update({ id: callback.id}, { response: JSON.stringify(response)});
