@@ -604,7 +604,7 @@ export class PragmaticService {
         username: player.playerNickname,
         wallet: balanceType,
         subject: 'Bet Deposit (Casino)',
-        channel: gameExist.title,
+        channel: 'web',
       });
 
       console.log("debit", debit);
