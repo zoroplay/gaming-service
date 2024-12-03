@@ -565,6 +565,9 @@ export class PragmaticService {
         roundDetails: body.get('roundDetails')
       };
 
+
+      console.log("placeBetPayload", placeBetPayload);
+
       const place_bet = await this.placeBet(placeBetPayload);
 
       console.log("place_bet", place_bet);
@@ -1812,6 +1815,7 @@ export class PragmaticService {
     try {
       let callback;
       if (action !== 'Authenticate' || action !== 'Balance') {
+        console.log("Got in this box");
         // Check for an existing callback for actions other than Authenticate
         callback = await this.callbackLogRepository.findOne({
           where: { transactionId, request_type: action },
@@ -1838,6 +1842,5 @@ export class PragmaticService {
       console.log('Error saving callback log', e.message);
     }
 }
-
 
 }
