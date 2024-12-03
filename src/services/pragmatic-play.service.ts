@@ -1275,11 +1275,24 @@ export class PragmaticService {
 
       if (!callbackLog) {
         console.log('Callback log not found')
+
         response = {
-          transactionId: 0,
-          error: 0,
-          description: `Unsuccessful rollback`,
-        }
+          success: true,
+          message: 'Refund Unsuccessful',
+          status: HttpStatus.OK,
+          data: {
+            transactionId: 0,
+            error: 0,
+            description: `Unsuccessful rollback`,
+          },
+        };
+
+
+        // response = {
+        //   transactionId: 0,
+        //   error: 0,
+        //   description: `Unsuccessful rollback`,
+        // }
   
         await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
         return response;
@@ -1320,10 +1333,15 @@ export class PragmaticService {
       if (!transaction.success) {
         console.log('transaction error')
         response = {
-          transactionId: 0,
-          error: 0,
-          description: `Unsuccessful rollback`,
-        }
+          success: true,
+          message: 'Refund Unsuccessful',
+          status: HttpStatus.OK,
+          data: {
+            transactionId: 0,
+            error: 0,
+            description: `Unsuccessful rollback`,
+          },
+        };
   
         await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
         return response;
@@ -1361,9 +1379,15 @@ export class PragmaticService {
       if (!rollbackWalletRes.success) {
         console.log('transaction error')
         response = {
-          error: 120,
-          description: `Unsuccessful rollback`,
-        }
+          success: true,
+          message: 'Refund Unsuccessful',
+          status: HttpStatus.OK,
+          data: {
+            transactionId: 0,
+            error: 0,
+            description: `Unsuccessful rollback`,
+          },
+        };
   
         await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
         return response;
