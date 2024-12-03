@@ -655,6 +655,10 @@ export class PragmaticService {
       // }
 
       response = {
+        success: true,
+        message: 'Win Successful',
+        status: HttpStatus.OK,
+        data: {
           cash: parseFloat(getUpdatedWallet.data.availableBalance.toFixed(2)),
           transactionId: place_bet.data.transactionId,
           currency: player.currency,
@@ -662,7 +666,18 @@ export class PragmaticService {
           usedPromo: balanceType === 'casino' ? parseFloat(body.get('amount')) : 0.00,
           error: 0,
           description: 'Successful',
+          },
       };
+
+      // response = {
+      //     cash: parseFloat(getUpdatedWallet.data.availableBalance.toFixed(2)),
+      //     transactionId: place_bet.data.transactionId,
+      //     currency: player.currency,
+      //     bonus: parseFloat(getUpdatedWallet.data.casinoBonusBalance.toFixed(2)) || 0.00,
+      //     usedPromo: balanceType === 'casino' ? parseFloat(body.get('amount')) : 0.00,
+      //     error: 0,
+      //     description: 'Successful',
+      // };
 
       await this.callbackLogRepository.update({ id: callback.id}, { response: JSON.stringify(response)});
 
