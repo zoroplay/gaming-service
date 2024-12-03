@@ -1814,7 +1814,7 @@ export class PragmaticService {
 
     try {
       let callback;
-      if (action !== 'Authenticate' || action !== 'Balance') {
+      if (action !== 'Balance') {
         console.log("Got in this box");
         // Check for an existing callback for actions other than Authenticate
         callback = await this.callbackLogRepository.findOne({
