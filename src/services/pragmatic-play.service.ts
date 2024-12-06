@@ -924,7 +924,7 @@ export class PragmaticService {
           userId: player.playerId,
           clientId,
           amount: parseFloat(body.get('amount')),
-          source: 'gameExist.provider.slug',
+          source: 'pragmatic-play',
           description: `Bonus Win: ()`,
           username: player.playerNickname,
           wallet: balanceType,
@@ -1070,12 +1070,12 @@ export class PragmaticService {
           userId: player.playerId,
           clientId,
           amount: parseFloat(body.get('amount')),
-          source: 'gameExist.provider.slug',
+          source: 'pragmatic-play',
           description: `Bonus Win: ()`,
           username: player.playerNickname,
           wallet: balanceType,
-          subject: 'Bonus Win (Pragmatic-play)',
-          channel: 'gameExist.type',
+          subject: 'Promo Win (Pragmatic-play)',
+          channel: 'pragmatic-play',
         });
 
         if(!creditResponse.success) {
@@ -1169,7 +1169,7 @@ export class PragmaticService {
           userId: player.playerId,
           clientId,
           amount: parseFloat(body.get('amount')),
-          source: 'gameExist.provider.slug',
+          source: 'pragmatic-play',
           description: `Jackpot Win: ()`,
           username: player.playerNickname,
           wallet: balanceType,
