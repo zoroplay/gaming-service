@@ -902,22 +902,6 @@ export class PragmaticService {
     let response: any;
 
     if(player) {
-      // const gameExist = await this.casinoGameRepository.findOne({ where: { reference: body.get('reference') }});
-      // console.log("Game retrieved from DB:", gameExist);
-  
-      // // If game doesn't exist, throw an error
-      // if (!gameExist) {
-      //   response = {
-      //     success: false,
-      //     status: HttpStatus.BAD_REQUEST,
-      //     message: `Game with id ${body.get('gameId')}not Found`,
-      //     data: {}
-      //   }
-
-      //   await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
-      //   return response;
-      // }
-
       if (parseFloat(body.get('amount')) > 0) {
 
         const creditResponse = await this.walletService.credit({
@@ -987,10 +971,10 @@ export class PragmaticService {
           message: 'Bonus Win Successful',
           status: HttpStatus.OK,
           data: {
-              cash: geUpdatedtWallet.data.balance.toFixed(2),
+              cash: parseFloat(geUpdatedtWallet.data.availableBalance.toFixed(2)),
               transactionId: transactionNo,
               currency: player.currency,
-              bonus: geUpdatedtWallet.data.casinoBonusBalance.toFixed(2),
+              bonus: parseFloat(geUpdatedtWallet.data.casinoBonusBalance.toFixed(2)),
               error: 0,
               description: 'Successful',
             },
@@ -1019,53 +1003,7 @@ export class PragmaticService {
     let response: any;
 
     if(player) {
-      const gameExist = await this.casinoGameRepository.findOne({ where: { reference: body.get('reference') }});
-      console.log("Game retrieved from DB:", gameExist);
-  
-      // If game doesn't exist, throw an error
-      // if (!gameExist) {
-      //   response = {
-      //     success: false,
-      //     status: HttpStatus.BAD_REQUEST,
-      //     message: `Game with id ${body.get('gameId')}not Found`,
-      //     data: {}
-      //   }
-
-      //   await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
-      //   return response;
-      // }
-
       if (parseFloat(body.get('amount')) > 0) {
-        const settlePayload: SettleCasinoBetRequest = {
-          transactionId: body.get('bonusCode'),
-          winnings: parseFloat(body.get('amount')),
-        };
-
-
-        const settle_bet = await this.result(settlePayload);
-
-        console.log("settle_bet", settle_bet);
-
-        console.log(settle_bet)
-        if (!settle_bet.success) {
-          response = {
-            success: false,
-            message: 'Unable to complete request ' + settle_bet.message,
-            status: HttpStatus.INTERNAL_SERVER_ERROR,
-            data: {
-              status: "error",
-              error: {
-                message: 'Unable to complete request',
-                scope: "internal",
-                no_refund: "1",
-              }
-            },
-          };
-          // update callback log response
-          await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
-          return response;
-        }
-
         const creditResponse = await this.walletService.credit({
           userId: player.playerId,
           clientId,
@@ -1077,6 +1015,8 @@ export class PragmaticService {
           subject: 'Promo Win (Pragmatic-play)',
           channel: 'pragmatic-play',
         });
+
+        console.log("creditResponse", creditResponse);
 
         if(!creditResponse.success) {
           response = {
@@ -1098,7 +1038,7 @@ export class PragmaticService {
 
         }
 
-        console.log("creditResponse", creditResponse);
+        const transactionNo = generateTrxNo();
 
         const geUpdatedtWallet = await this.walletService.getWallet({
           userId: player.playerId,
@@ -1128,13 +1068,13 @@ export class PragmaticService {
 
         response = {
           success: true,
-          message: 'Bonus Win Successful',
+          message: 'Promo Win Successful',
           status: HttpStatus.OK,
           data: {
-              cash: creditResponse.data.balance.toFixed(2),
-              transactionId: settle_bet.data.transactionId,
+              cash: parseFloat(geUpdatedtWallet.data.availableBalance.toFixed(2)),
+              transactionId: transactionNo,
               currency: player.currency,
-              bonus: geUpdatedtWallet.data.casinoBonusBalance.toFixed(2),
+              bonus: parseFloat(geUpdatedtWallet.data.casinoBonusBalance.toFixed(2)),
               error: 0,
               description: 'Successful',
             },
@@ -1177,6 +1117,8 @@ export class PragmaticService {
           channel: 'pragmatic-play',
         });
 
+        console.log("creditResponse", creditResponse);
+
         if(!creditResponse.success) {
           response = {
             success: false,
@@ -1196,8 +1138,6 @@ export class PragmaticService {
           return response;
 
         }
-
-        console.log("creditResponse", creditResponse);
 
         const transactionNo = generateTrxNo();
 
@@ -1232,10 +1172,10 @@ export class PragmaticService {
           message: 'Jackpot Win Successful',
           status: HttpStatus.OK,
           data: {
-              cash: geUpdatedtWallet.data.balance.toFixed(2),
+              cash: parseFloat(geUpdatedtWallet.data.availableBalance.toFixed(2)),
               transactionId: transactionNo,
               currency: player.currency,
-              bonus: geUpdatedtWallet.data.casinoBonusBalance.toFixed(2),
+              bonus: parseFloat(geUpdatedtWallet.data.casinoBonusBalance.toFixed(2)),
               error: 0,
               description: 'Successful',
             },
