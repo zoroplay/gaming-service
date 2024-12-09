@@ -1326,18 +1326,17 @@ export class PragmaticService {
 }
 
   async promoWin(clientId, player, callback, body, balanceType) {
-    console.log("Got to bonus win method");
+    console.log("Got to promo win method");
     console.log("player", player, body, balanceType);
     let response: any;
 
     if(player) {
-      if (parseFloat(body.get('amount')) > 0) {
         const creditResponse = await this.walletService.credit({
           userId: player.playerId,
           clientId,
           amount: parseFloat(body.get('amount')),
           source: 'pragmatic-play',
-          description: `Promo Win: ()`,
+          description: `Promo Win`,
           username: player.playerNickname,
           wallet: balanceType,
           subject: 'Promo Win (Pragmatic-play)',
@@ -1352,13 +1351,10 @@ export class PragmaticService {
             message: 'Unable to complete request ' + creditResponse.message,
             status: HttpStatus.INTERNAL_SERVER_ERROR,
             data: {
-              status: "error",
-              error: {
                 message: 'Unable to complete request',
                 scope: "internal",
                 no_refund: "1",
               }
-            },
           };
           // update callback log response
           await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
@@ -1381,13 +1377,10 @@ export class PragmaticService {
             message: 'Unable to complete request ' + geUpdatedtWallet.message,
             status: HttpStatus.INTERNAL_SERVER_ERROR,
             data: {
-              status: "error",
-              error: {
                 message: 'Unable to complete request',
                 scope: "internal",
                 no_refund: "1",
               }
-            },
           };
           // update callback log response
           await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
@@ -1410,10 +1403,9 @@ export class PragmaticService {
 
         await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
         return response;
-      }
     } else {
       response = {
-        success: false,
+        success: true,
         status: HttpStatus.BAD_REQUEST,
         message: `Player with userId ${player.playerId} not found`,
         data: {}
@@ -1527,32 +1519,30 @@ export class PragmaticService {
   // }
 
   async jackpotWin(clientId, player, callback, body, balanceType) {
-  console.log("Got to jackpot win method");
-  console.log("player", player, body, balanceType);
-  let response: any;
-
-  if (player) {
-    // Retrieve the progWin from jackpotDetails in the body
-    const jackpotDetails = body.get('jackpotDetails');
-    const progWin = parseFloat(jackpotDetails?.progressive || '0');
-
-    if (progWin > 0) {
-
+    console.log("Got to jackpot win method");
+    console.log("player", player, body, balanceType);
+    let response: any;
+  
+    if (player) {
+      // Retrieve the progWin from jackpotDetails in the body
+      const jackpotDetails = body.get('jackpotDetails');
+      const progWin = parseFloat(jackpotDetails?.progressive || '0');
+  
       // Credit the user's wallet with the progWin amount
       const creditResponse = await this.walletService.credit({
         userId: player.playerId,
         clientId,
         amount: progWin,
         source: 'pragmatic-play',
-        description: `Jackpot Win: ()`,
+        description: `Jackpot Win`,
         username: player.playerNickname,
         wallet: balanceType,
         subject: 'Jackpot Win (Pragmatic-play)',
         channel: 'pragmatic-play',
       });
-
+  
       console.log("creditResponse", creditResponse);
-
+  
       if (!creditResponse.success) {
         response = {
           success: true,
@@ -1571,16 +1561,16 @@ export class PragmaticService {
         await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
         return response;
       }
-
+  
       const transactionNo = generateTrxNo();
-
+  
       const geUpdatedtWallet = await this.walletService.getWallet({
         userId: player.playerId,
         clientId,
       });
-
+  
       console.log("geUpdatedtWallet", geUpdatedtWallet);
-
+  
       if (!geUpdatedtWallet.success) {
         response = {
           success: true,
@@ -1599,7 +1589,7 @@ export class PragmaticService {
         await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
         return response;
       }
-
+  
       response = {
         success: true,
         message: 'Jackpot Win Successful',
@@ -1613,32 +1603,22 @@ export class PragmaticService {
           description: 'Successful',
         },
       };
-
+  
       await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
       return response;
     } else {
       response = {
-        success: false,
+        success: true,
         status: HttpStatus.BAD_REQUEST,
-        message: `Invalid jackpot win amount`,
+        message: `Player with userId ${player.playerId} not found`,
         data: {}
       };
-
+  
       await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
       return response;
     }
-  } else {
-    response = {
-      success: false,
-      status: HttpStatus.BAD_REQUEST,
-      message: `Player with userId ${player.playerId} not found`,
-      data: {}
-    };
-
-    await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
-    return response;
   }
-}
+  
 
 
   async refund(clientId, player, callback, body, balanceType) {
