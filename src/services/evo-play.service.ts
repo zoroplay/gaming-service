@@ -343,7 +343,7 @@ export class EvoPlayService {
     let balanceType = 'main';
 
     // get game session
-    const gameSession = await this.gameSessionRepo.findOne({where: {session_id: body.token}});
+    const gameSession = await this.gameSessionRepo.findOne({where: {token: body.token}});
 
     console.log("gameSession", gameSession);
       
