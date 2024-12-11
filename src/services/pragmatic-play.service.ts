@@ -1518,106 +1518,258 @@ export class PragmaticService {
   
   // }
 
+  // async jackpotWin(clientId, player, callback, body, balanceType) {
+  //   console.log("Got to jackpot win method");
+  //   console.log("player", player, body, balanceType);
+  //   let response: any;
+  
+  //   if (player) {
+  //     // Retrieve the progWin from jackpotDetails in the body
+  //     const jackpotDetails = body.get('jackpotDetails');
+  //     const progWin = parseFloat(jackpotDetails?.progressive || '0');
+  
+  //     // Credit the user's wallet with the progWin amount
+  //     const creditResponse = await this.walletService.credit({
+  //       userId: player.playerId,
+  //       clientId,
+  //       amount: progWin,
+  //       source: 'pragmatic-play',
+  //       description: `Jackpot Win`,
+  //       username: player.playerNickname,
+  //       wallet: balanceType,
+  //       subject: 'Jackpot Win (Pragmatic-play)',
+  //       channel: 'pragmatic-play',
+  //     });
+  
+  //     console.log("creditResponse", creditResponse);
+  
+  //     if (!creditResponse.success) {
+  //       response = {
+  //         success: true,
+  //         message: 'Unable to complete request ' + creditResponse.message,
+  //         status: HttpStatus.INTERNAL_SERVER_ERROR,
+  //         data: {
+  //           status: "error",
+  //           error: {
+  //             message: 'Unable to complete request',
+  //             scope: "internal",
+  //             no_refund: "1",
+  //           }
+  //         },
+  //       };
+  //       // update callback log response
+  //       await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
+  //       return response;
+  //     }
+  
+  //     const transactionNo = generateTrxNo();
+  
+  //     const geUpdatedtWallet = await this.walletService.getWallet({
+  //       userId: player.playerId,
+  //       clientId,
+  //     });
+  
+  //     console.log("geUpdatedtWallet", geUpdatedtWallet);
+  
+  //     if (!geUpdatedtWallet.success) {
+  //       response = {
+  //         success: true,
+  //         message: 'Unable to complete request ' + geUpdatedtWallet.message,
+  //         status: HttpStatus.INTERNAL_SERVER_ERROR,
+  //         data: {
+  //           status: "error",
+  //           error: {
+  //             message: 'Unable to complete request',
+  //             scope: "internal",
+  //             no_refund: "1",
+  //           }
+  //         },
+  //       };
+  //       // update callback log response
+  //       await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
+  //       return response;
+  //     }
+  
+  //     response = {
+  //       success: true,
+  //       message: 'Jackpot Win Successful',
+  //       status: HttpStatus.OK,
+  //       data: {
+  //         cash: parseFloat(geUpdatedtWallet.data.availableBalance.toFixed(2)),
+  //         transactionId: transactionNo,
+  //         currency: player.currency,
+  //         bonus: parseFloat(geUpdatedtWallet.data.casinoBonusBalance.toFixed(2)),
+  //         error: 0,
+  //         description: 'Successful',
+  //       },
+  //     };
+  
+  //     await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
+  //     return response;
+  //   } else {
+  //     response = {
+  //       success: true,
+  //       status: HttpStatus.BAD_REQUEST,
+  //       message: `Player with userId ${player.playerId} not found`,
+  //       data: {}
+  //     };
+  
+  //     await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
+  //     return response;
+  //   }
+  // }
+
   async jackpotWin(clientId, player, callback, body, balanceType) {
     console.log("Got to jackpot win method");
     console.log("player", player, body, balanceType);
+  
     let response: any;
   
     if (player) {
-      // Retrieve the progWin from jackpotDetails in the body
-      const jackpotDetails = body.get('jackpotDetails');
-      const progWin = parseFloat(jackpotDetails?.progressive || '0');
+      try {
+        // Retrieve the jackpotDetails and parse the progressive win amount
+        const jackpotDetails = JSON.parse(body.get('jackpotDetails') || '{}');
+        const progWin = parseFloat(jackpotDetails.progressive || '0');
   
-      // Credit the user's wallet with the progWin amount
-      const creditResponse = await this.walletService.credit({
-        userId: player.playerId,
-        clientId,
-        amount: progWin,
-        source: 'pragmatic-play',
-        description: `Jackpot Win`,
-        username: player.playerNickname,
-        wallet: balanceType,
-        subject: 'Jackpot Win (Pragmatic-play)',
-        channel: 'pragmatic-play',
-      });
+        if (progWin <= 0) {
+          response = {
+            success: true,
+            message: 'No progressive win amount found',
+            status: HttpStatus.BAD_REQUEST,
+            data: {
+              error: 'Invalid jackpot details',
+              description: 'Progressive win amount must be greater than zero',
+            },
+          };
+          await this.callbackLogRepository.update(
+            { id: callback.id },
+            { response: JSON.stringify(response) }
+          );
+          return response;
+        }
   
-      console.log("creditResponse", creditResponse);
+        // Credit the user's wallet with the progWin amount
+        const creditResponse = await this.walletService.credit({
+          userId: player.playerId,
+          clientId,
+          amount: progWin,
+          source: 'pragmatic-play',
+          description: `Jackpot Win`,
+          username: player.playerNickname,
+          wallet: balanceType,
+          subject: 'Jackpot Win (Pragmatic-play)',
+          channel: 'pragmatic-play',
+        });
   
-      if (!creditResponse.success) {
+        console.log("creditResponse", creditResponse);
+  
+        if (!creditResponse.success) {
+          response = {
+            success: false,
+            message: 'Unable to complete request ' + creditResponse.message,
+            status: HttpStatus.INTERNAL_SERVER_ERROR,
+            data: {
+              error: {
+                message: 'Unable to complete request',
+                scope: 'internal',
+                no_refund: '1',
+              },
+            },
+          };
+          await this.callbackLogRepository.update(
+            { id: callback.id },
+            { response: JSON.stringify(response) }
+          );
+          return response;
+        }
+  
+        // Generate transaction number and fetch updated wallet balances
+        const transactionNo = generateTrxNo();
+        const updatedWallet = await this.walletService.getWallet({
+          userId: player.playerId,
+          clientId,
+        });
+  
+        console.log("updatedWallet", updatedWallet);
+  
+        if (!updatedWallet.success) {
+          response = {
+            success: false,
+            message: 'Unable to fetch updated wallet details',
+            status: HttpStatus.INTERNAL_SERVER_ERROR,
+            data: {
+              error: {
+                message: 'Unable to complete request',
+                scope: 'internal',
+                no_refund: '1',
+              },
+            },
+          };
+          await this.callbackLogRepository.update(
+            { id: callback.id },
+            { response: JSON.stringify(response) }
+          );
+          return response;
+        }
+  
+        // Construct success response
         response = {
           success: true,
-          message: 'Unable to complete request ' + creditResponse.message,
-          status: HttpStatus.INTERNAL_SERVER_ERROR,
+          message: 'Jackpot Win Successful',
+          status: HttpStatus.OK,
           data: {
-            status: "error",
-            error: {
-              message: 'Unable to complete request',
-              scope: "internal",
-              no_refund: "1",
-            }
+            cash: parseFloat(updatedWallet.data.availableBalance.toFixed(2)),
+            transactionId: transactionNo,
+            currency: player.currency,
+            bonus: parseFloat(updatedWallet.data.casinoBonusBalance.toFixed(2)),
+            error: 0,
+            description: 'Successful',
           },
         };
-        // update callback log response
-        await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
+  
+        await this.callbackLogRepository.update(
+          { id: callback.id },
+          { response: JSON.stringify(response) }
+        );
         return response;
-      }
   
-      const transactionNo = generateTrxNo();
-  
-      const geUpdatedtWallet = await this.walletService.getWallet({
-        userId: player.playerId,
-        clientId,
-      });
-  
-      console.log("geUpdatedtWallet", geUpdatedtWallet);
-  
-      if (!geUpdatedtWallet.success) {
+      } catch (error) {
+        console.error("Error in jackpotWin method:", error);
         response = {
-          success: true,
-          message: 'Unable to complete request ' + geUpdatedtWallet.message,
+          success: false,
+          message: 'Internal server error',
           status: HttpStatus.INTERNAL_SERVER_ERROR,
           data: {
-            status: "error",
             error: {
-              message: 'Unable to complete request',
-              scope: "internal",
-              no_refund: "1",
-            }
+              message: 'An error occurred during processing',
+              scope: 'internal',
+            },
           },
         };
-        // update callback log response
-        await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
+        await this.callbackLogRepository.update(
+          { id: callback.id },
+          { response: JSON.stringify(response) }
+        );
         return response;
       }
-  
+    } else {
       response = {
-        success: true,
-        message: 'Jackpot Win Successful',
-        status: HttpStatus.OK,
+        success: false,
+        status: HttpStatus.BAD_REQUEST,
+        message: 'Player not found',
         data: {
-          cash: parseFloat(geUpdatedtWallet.data.availableBalance.toFixed(2)),
-          transactionId: transactionNo,
-          currency: player.currency,
-          bonus: parseFloat(geUpdatedtWallet.data.casinoBonusBalance.toFixed(2)),
-          error: 0,
-          description: 'Successful',
+          error: 'Player not available for jackpot win',
         },
       };
   
-      await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
-      return response;
-    } else {
-      response = {
-        success: true,
-        status: HttpStatus.BAD_REQUEST,
-        message: `Player with userId ${player.playerId} not found`,
-        data: {}
-      };
-  
-      await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
+      await this.callbackLogRepository.update(
+        { id: callback.id },
+        { response: JSON.stringify(response) }
+      );
       return response;
     }
   }
+  
   
 
 
@@ -2247,4 +2399,3 @@ export class PragmaticService {
 }
 
 }
-
