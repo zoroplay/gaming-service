@@ -241,6 +241,8 @@ export class EvoPlayService {
       gameSession.provider = game.provider.slug;
       await this.gameSessionRepo.save(gameSession);
 
+      console.log("game-session created", gameSession)
+
       if(response.data.error) {
         return {success: false, message: response.data.error.message}
       } else {
@@ -297,7 +299,7 @@ export class EvoPlayService {
   async handleCallback(data: any) {
     const body = JSON.parse(data.body);
 
-    // console.log(body);
+    console.log(body);
 
     const callback = await this.saveCallbackLog(body);
     
@@ -341,7 +343,9 @@ export class EvoPlayService {
     let balanceType = 'main';
 
     // get game session
-    const gameSession = await this.gameSessionRepo.findOne({where: {session_id: body.token}})
+    const gameSession = await this.gameSessionRepo.findOne({where: {session_id: body.token}});
+
+    console.log("gameSession", gameSession);
       
     if (gameSession.balance_type === 'bonus')
       balanceType = 'casino';
