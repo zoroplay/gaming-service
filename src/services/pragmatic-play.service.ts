@@ -7,15 +7,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import * as crypto from 'crypto';
 import { firstValueFrom, lastValueFrom } from 'rxjs';
 import { BetService } from 'src/bet/bet.service';
+import { generateTrxNo } from 'src/common';
+import { CasinoGame } from 'src/entities/casino-game.entity';
 import { IdentityService } from 'src/identity/identity.service';
 import { CreditCasinoBetRequest, PlaceCasinoBetRequest, RollbackCasinoBetRequest, SettleCasinoBetRequest } from 'src/proto/betting.pb';
 import { CallbackGameDto, StartGameDto } from 'src/proto/gaming.pb';
 import { WalletService } from 'src/wallet/wallet.service';
-import { Repository } from 'typeorm';
+import { Raw, Repository } from 'typeorm';
 import { CallbackLog, Game as GameEntity, GameSession, Provider as ProviderEntity } from '../entities';
-import { CasinoGame } from 'src/entities/casino-game.entity';
-import { generateTrxNo } from 'src/common';
-import { Raw } from "typeorm";
 
 
 @Injectable()
@@ -61,6 +60,36 @@ export class PragmaticService {
         console.log('data', data);
 
       return data.gameList;
+    } catch (e) {
+      return new RpcException(e.messag || 'Something went wrong')
+    }
+  }
+
+  async getActiveJackpotFeeds(): Promise<any> {
+    try {
+      const hash = this.genHash({ secureLogin: this.PRAGMATIC_SECURE_LOGIN });
+      const { data } = await this.httpService
+        .post(`${this.PRAGMATIC_BASEURL}/JackpotFeeds/extended/jackpots?login=${this.PRAGMATIC_SECURE_LOGIN}&hash=${hash}`)
+        .toPromise();
+
+        console.log('data', data);
+
+      return data;
+    } catch (e) {
+      return new RpcException(e.messag || 'Something went wrong')
+    }
+  }
+
+  async getJackpotWinners(): Promise<any> {
+    try {
+      const hash = this.genHash({ secureLogin: this.PRAGMATIC_SECURE_LOGIN });
+      const { data } = await this.httpService
+        .post(`${this.PRAGMATIC_BASEURL}/JackpotFeeds/extended/jackpots?login=${this.PRAGMATIC_SECURE_LOGIN}&hash=${hash}`)
+        .toPromise();
+
+        console.log('data', data);
+
+      return data;
     } catch (e) {
       return new RpcException(e.messag || 'Something went wrong')
     }
@@ -173,7 +202,7 @@ export class PragmaticService {
       // Log the incoming payload for debugging
       console.log("Payload received:", payload);
   
-      const { gameId, language, authCode, userId, demo, balanceType } = payload;
+      const { gameId, language, authCode, userId, demo, balanceType, homeUrl } = payload;
   
       // Fetch the game details from the repository
       const gameExist = await this.gameRepository.findOne({ where: { id: gameId }, relations: { provider: true }});
@@ -189,6 +218,7 @@ export class PragmaticService {
       const hash = this.genHash({
         secureLogin: this.PRAGMATIC_SECURE_LOGIN,
         symbol: gameExist.gameId,
+        lobbyUrl: homeUrl,
         language: language,
         externalPlayerId: userId,
         token: authCode,
@@ -200,7 +230,7 @@ export class PragmaticService {
       const playMode = demo ? 'playMode=DEMO' : '';
 
       const request = this.httpService.post(
-        `${this.PRAGMATIC_BASEURL}/game/url?secureLogin=${this.PRAGMATIC_SECURE_LOGIN}&symbol=${gameExist.gameId}&language=${language}&externalPlayerId=${userId}&token=${authCode}&hash=${hash}&${playMode}`,
+        `${this.PRAGMATIC_BASEURL}/game/url?secureLogin=${this.PRAGMATIC_SECURE_LOGIN}&symbol=${gameExist.gameId}&language=${language}&externalPlayerId=${userId}&token=${authCode}&hash=${hash}&${playMode}&lobbyUrl=${homeUrl}`,
       );
 
       console.log("Request response:", request);
@@ -250,97 +280,6 @@ export class PragmaticService {
       throw new RpcException(error.message || 'Something went wrong');
     }
   }
-
-  // async constructGameUrl(payload: StartGameDto): Promise<any> {
-  //   try {
-  //     // Log the incoming payload for debugging
-  //     console.log("Payload received:", payload);
-  
-  //     const { gameId, language, authCode, userId, demo, balanceType } = payload;
-  
-  //     // Fetch the game details from the repository
-  //     const gameExist = await this.gameRepository.findOne({
-  //       where: { id: gameId },
-  //       relations: { provider: true },
-  //     });
-  //     console.log("Game retrieved from DB:", gameExist);
-  
-  //     // If game doesn't exist, throw an error
-  //     if (!gameExist) {
-  //       console.error(`Game with ID ${gameId} not found`);
-  //       throw new NotFoundException('Game not found');
-  //     }
-  
-  //     // Generate the hash for the game session
-  //     const hash = this.genHash({
-  //       secureLogin: this.PRAGMATIC_SECURE_LOGIN,
-  //       symbol: gameExist.gameId,
-  //       language: language,
-  //       externalPlayerId: userId,
-  //       token: authCode,
-  //       ...(demo && { playMode: "DEMO" }),
-  //     });
-  
-  //     console.log("Generated hash:", hash);
-  
-  //     const playMode = demo ? 'playMode=DEMO' : '';
-  
-  //     // Construct the HTTP request
-  //     const url = `${this.PRAGMATIC_BASEURL}/game/url?secureLogin=${this.PRAGMATIC_SECURE_LOGIN}&symbol=${gameExist.gameId}&language=${language}&externalPlayerId=${userId}&token=${authCode}&hash=${hash}&${playMode}`;
-  //     const request = this.httpService.post(url);
-  
-  //     // Log request details
-  //     console.log("Request parameters:", {
-  //       url: url,
-  //       headers: {
-  //         'Content-Type': 'application/json',
-  //       },
-  //     });
-  
-  //     // Start creating the game session
-  //     const gameSession = new GameSession();
-  
-  //     // Setting properties of game session
-  //     gameSession.balance_type = balanceType || null;
-  //     gameSession.game_id = gameExist.gameId;
-  //     gameSession.token = authCode || null;
-  //     gameSession.session_id = authCode || null;
-  //     gameSession.provider = gameExist.provider.slug;
-  
-  //     // Log game session data before saving
-  //     console.log("Game session data to save:", gameSession);
-  
-  //     // Check if token is missing or invalid
-  //     if (!gameSession.token) {
-  //       console.error("Auth token is missing or invalid");
-  //       throw new Error('Auth token is missing');
-  //     }
-  
-  //     // Attempt to save the game session
-  //     try {
-  //       await this.gameSessionRepo.save(gameSession);
-  //       console.log("Game session saved successfully", gameSession);
-  //     } catch (dbError) {
-  //       console.error("Error saving game session:", dbError.message);
-  //       throw new Error(`Failed to save game session: ${dbError.message}`);
-  //     }
-  
-  //     // Log and handle response from API
-  //     try {
-  //       const response = await lastValueFrom(request);
-  //       console.log("Pragmatic API response data:", response.data);
-  //       return { url: response.data.gameURL };
-  //     } catch (error) {
-  //       console.error("Error response from Pragmatic API:", error.response?.data || error.message);
-  //       throw new RpcException(error.message || 'Pragmatic Play API error');
-  //     }
-  //   } catch (error) {
-  //     // Catch and log any errors that occur
-  //     console.error("An error occurred:", error.message);
-  //     throw new RpcException(error.message || 'Something went wrong');
-  //   }
-  // }
-  
   
   async authenticate(clientId, token, callback, walletType) {
     console.log("Got to authenticate method");
@@ -1621,7 +1560,7 @@ export class PragmaticService {
 
   async jackpotWin(clientId, player, callback, body, balanceType) {
     console.log("Got to jackpot win method");
-    console.log("player", player, body, balanceType);
+    console.log("player", player, body, balanceType, callback);
   
     let response: any;
   
@@ -1630,6 +1569,7 @@ export class PragmaticService {
         // Retrieve the jackpotDetails and parse the progressive win amount
         const jackpotDetails = JSON.parse(body.get('jackpotDetails') || '{}');
         const progWin = parseFloat(jackpotDetails.progressive || '0');
+        console.log("progWin", progWin);
   
         if (progWin <= 0) {
           response = {
@@ -1956,190 +1896,11 @@ export class PragmaticService {
     return await firstValueFrom(this.betService.settleCasinoBet(data));
   }
 
-  async handleCallback(data: CallbackGameDto) {
-    console.log("_data", data);
-    // save callback
-    const callback = await this.saveCallbackLog(data);
-
-    // const callback = {
-    //   id: "2cb4a648-0d70-48ab-a2df-a5ab3f09c37f",
-    //   roundId: "677040410000",
-    //   type: "Bet",
-    //   request: {
-    //     amount: "200.0",
-    //     gameId: "vs50kingkong",
-    //     hash: "92bc34b68d4a68bf110deaad3da2d3fc",
-    //     providerId: "PragmaticPlay",
-    //     reference: "67401445c5802149b2274bfd",
-    //     roundDetails: "spin",
-    //     roundId: "677040410000",
-    //     timestamp: "1732252741478",
-    //     token: "TWXANDFQIOEHDFOLTANVIJF7UBOMWFJAJJXDGMYI",
-    //     userId: "214986"
-    //   },
-    //   response: {
-    //     success: true,
-    //     status: 200,
-    //     message: "Deposit, successful",
-    //     data: {
-    //       cash: 15700.5,
-    //       transactionId: "MHYPI00XEF4MTAHO",
-    //       currency: "NGN",
-    //       bonus: 0,
-    //       usedPromo: 0,
-    //       error: 0,
-    //       description: "Successful"
-    //     }
-    //   },
-    //   status: "0",
-    //   createdAt: "2024-11-22 05:19:01.538256",
-    //   updatedAt: "2024-11-22 05:19:02.000000"
-    // }
-
-    console.log("callback-4", callback);
-    let response;
-    let body = {};
-
-    if (callback?.response != null) {
-      console.log("Existing callback response found. Returning it.");
-      return JSON.parse(callback.response);
-    }
-
-  // Parse the body based on content type
-  if (data.body) {
-    try {
-      body = new URLSearchParams(data.body); // Parse the URL-encoded string into an object
-    } catch (error) {
-      console.error('Error parsing body:', error);
-      response = {
-        success: false,
-        message: 'Invalid body format',
-        status: HttpStatus.BAD_REQUEST,
-        data: { error: 5, description: 'Error' }
-      };
-
-      await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
-      return response;
-    }
-  }1
-
-  console.log("body", body);
-
-  if(body instanceof URLSearchParams) {
-    const parsedBody = Object.fromEntries(body.entries());
-
-    if (this.hashCheck(parsedBody)) {
-      response = {
-        success: false,
-        message: 'Invalid Hash Signature',
-        status: HttpStatus.BAD_REQUEST,
-        data: {
-          error: 5,
-          description: 'Error'
-        }
-      };
-  
-      await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
-      return response;
-    }
-
-  } else {
-    response = {
-      success: false,
-      message: 'Invalid body format',
-      status: HttpStatus.BAD_REQUEST,
-      data: { error: 5, description: 'Error' }
-    };
-
-    await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
-    return response;
-  }
-
-    let player = null;
-    let balanceType = 'main';
-    const token = body.get("token");
-
-    console.log("token", token);
-   
-    //get game session
-    const gameSession = await this.gameSessionRepo.findOne({where: {session_id: token}});
-
-    console.log("gameSession", gameSession);
-    
-    if (gameSession.balance_type === 'bonus')
-      balanceType = 'casino';
-
-    if (token) {
-      const res = await this.identityService.validateToken({clientId: data.clientId, token });
-
-      // const res = {
-      //   success: true,
-      //   message: "Success",
-      //   data: {
-      //     playerId: 'Famo',
-      //     clientId: 4,
-      //     playerNickname: 'Franklyn',
-      //     sessionId: '132',
-      //     balance: 1450.0,
-      //     casinoBalance: 0.0,
-      //     virtualBalance: 0.5,
-      //     group: null,
-      //     currency: 'NGN'
-      //   }
-        
-      // };
-
-      console.log("res", res)
-
-      if (!res.success) {
-        const response =  {
-          success: false,
-          message: 'Invalid Session ID',
-          status: HttpStatus.NOT_FOUND
-        };
-
-        // update callback log response
-        await this.callbackLogRepository.update({ id: callback.id}, { response: JSON.stringify(response)});
-
-        return response;
-      }
-      
-      if (gameSession.balance_type === 'bonus')
-        balanceType = 'casino';
-
-      player = res.data;
-    }
-
-    console.log("player", player)
-
-
-    switch (data.action) {
-      case 'Authenticate':
-        console.log("using pragmatic-play authenticate");
-        return await this.authenticate(data.clientId, token, callback, balanceType);
-      case 'Balance':
-        return await this.getBalance(data.clientId, player, callback, balanceType);
-      case 'Bet':
-        return await this.bet(data.clientId, player, callback, body, balanceType);
-      case 'Result':
-        return await this.win(data.clientId, player, callback, body, balanceType);
-      case 'Refund':
-        return await this.refund(data.clientId, player, callback, body, balanceType);
-      case 'BonusWin':
-        return await this.bonusWin(data.clientId, player, callback, body, balanceType);
-      case 'JackpotWin':
-        return await this.jackpotWin(data.clientId, player, callback, body, balanceType);
-      case 'PromoWin':
-        return await this.promoWin(data.clientId, player, callback, body, balanceType);
-      default:
-        return {success: false, message: 'Invalid request', status: HttpStatus.BAD_REQUEST};
-    }
-  }
-
   // async handleCallback(data: CallbackGameDto) {
   //   console.log("_data", data);
-  
-  //   // Simulate saved callback data
+  //   // save callback
+  //   const callback = await this.saveCallbackLog(data);
+
   //   // const callback = {
   //   //   id: "2cb4a648-0d70-48ab-a2df-a5ab3f09c37f",
   //   //   roundId: "677040410000",
@@ -2156,7 +1917,7 @@ export class PragmaticService {
   //   //     token: "TWXANDFQIOEHDFOLTANVIJF7UBOMWFJAJJXDGMYI",
   //   //     userId: "214986"
   //   //   },
-  //   //   response: JSON.stringify({
+  //   //   response: {
   //   //     success: true,
   //   //     status: 200,
   //   //     message: "Deposit, successful",
@@ -2169,115 +1930,129 @@ export class PragmaticService {
   //   //       error: 0,
   //   //       description: "Successful"
   //   //     }
-  //   //   }),
+  //   //   },
   //   //   status: "0",
   //   //   createdAt: "2024-11-22 05:19:01.538256",
   //   //   updatedAt: "2024-11-22 05:19:02.000000"
-  //   // };
+  //   // }
 
-  //   //save callback
-  //   const callback = await this.saveCallbackLog(data);
-  
   //   console.log("callback-4", callback);
   //   let response;
   //   let body = {};
-  
-  //   // Check for existing callback response
+
   //   if (callback?.response != null) {
   //     console.log("Existing callback response found. Returning it.");
   //     return JSON.parse(callback.response);
   //   }
-  
-  //   // Parse the body based on content type
-  //   if (data.body) {
-  //     try {
-  //       body = new URLSearchParams(data.body); // Parse the URL-encoded string into an object
-  //     } catch (error) {
-  //       console.error('Error parsing body:', error);
-  //       response = {
-  //         success: false,
-  //         message: 'Invalid body format',
-  //         status: HttpStatus.BAD_REQUEST,
-  //         data: { error: 5, description: 'Error' }
-  //       };
-  
-  //       await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
-  //       return response;
-  //     }
-  //   }
-  
-  //   console.log("body", body);
-  
-  //   // Validate body format
-  //   if (body instanceof URLSearchParams) {
-  //     const parsedBody = Object.fromEntries(body.entries());
-  
-  //     if (!this.hashCheck(parsedBody)) {
-  //       response = {
-  //         success: false,
-  //         message: 'Invalid Hash Signature',
-  //         status: HttpStatus.BAD_REQUEST,
-  //         data: {
-  //           error: 5,
-  //           description: 'Error'
-  //         }
-  //       };
-  
-  //       await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
-  //       return response;
-  //     }
-  //   } else {
+
+  // // Parse the body based on content type
+  // if (data.body) {
+  //   try {
+  //     body = new URLSearchParams(data.body); // Parse the URL-encoded string into an object
+  //   } catch (error) {
+  //     console.error('Error parsing body:', error);
   //     response = {
   //       success: false,
   //       message: 'Invalid body format',
   //       status: HttpStatus.BAD_REQUEST,
   //       data: { error: 5, description: 'Error' }
   //     };
+
+  //     await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
+  //     return response;
+  //   }
+  // }1
+
+  // console.log("body", body);
+
+  // if(body instanceof URLSearchParams) {
+  //   const parsedBody = Object.fromEntries(body.entries());
+
+  //   if (this.hashCheck(parsedBody)) {
+  //     response = {
+  //       success: false,
+  //       message: 'Invalid Hash Signature',
+  //       status: HttpStatus.BAD_REQUEST,
+  //       data: {
+  //         error: 5,
+  //         description: 'Error'
+  //       }
+  //     };
   
   //     await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
   //     return response;
   //   }
-  
+
+  // } else {
+  //   response = {
+  //     success: false,
+  //     message: 'Invalid body format',
+  //     status: HttpStatus.BAD_REQUEST,
+  //     data: { error: 5, description: 'Error' }
+  //   };
+
+  //   await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
+  //   return response;
+  // }
+
   //   let player = null;
   //   let balanceType = 'main';
   //   const token = body.get("token");
-  
+
   //   console.log("token", token);
-  
-  //   // Get game session
-  //   const gameSession = await this.gameSessionRepo.findOne({ where: { session_id: token } });
+   
+  //   //get game session
+  //   const gameSession = await this.gameSessionRepo.findOne({where: {session_id: token}});
+
   //   console.log("gameSession", gameSession);
-  
-  //   if (gameSession?.balance_type === 'bonus') {
+    
+  //   if (gameSession.balance_type === 'bonus')
   //     balanceType = 'casino';
-  //   }
-  
+
   //   if (token) {
-  //     const res = await this.identityService.validateToken({ clientId: data.clientId, token });
-  
-  //     console.log("res", res);
-  
+  //     const res = await this.identityService.validateToken({clientId: data.clientId, token });
+
+  //     // const res = {
+  //     //   success: true,
+  //     //   message: "Success",
+  //     //   data: {
+  //     //     playerId: 'Famo',
+  //     //     clientId: 4,
+  //     //     playerNickname: 'Franklyn',
+  //     //     sessionId: '132',
+  //     //     balance: 1450.0,
+  //     //     casinoBalance: 0.0,
+  //     //     virtualBalance: 0.5,
+  //     //     group: null,
+  //     //     currency: 'NGN'
+  //     //   }
+        
+  //     // };
+
+  //     console.log("res", res)
+
   //     if (!res.success) {
-  //       response = {
+  //       const response =  {
   //         success: false,
   //         message: 'Invalid Session ID',
   //         status: HttpStatus.NOT_FOUND
   //       };
-  
-  //       await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
+
+  //       // update callback log response
+  //       await this.callbackLogRepository.update({ id: callback.id}, { response: JSON.stringify(response)});
+
   //       return response;
   //     }
-  
-  //     if (gameSession?.balance_type === 'bonus') {
+      
+  //     if (gameSession.balance_type === 'bonus')
   //       balanceType = 'casino';
-  //     }
-  
+
   //     player = res.data;
   //   }
-  
-  //   console.log("player", player);
-  
-  //   // Handle different callback actions
+
+  //   console.log("player", player)
+
+
   //   switch (data.action) {
   //     case 'Authenticate':
   //       console.log("using pragmatic-play authenticate");
@@ -2297,16 +2072,329 @@ export class PragmaticService {
   //     case 'PromoWin':
   //       return await this.promoWin(data.clientId, player, callback, body, balanceType);
   //     default:
-  //       response = {
-  //         success: false,
-  //         message: 'Invalid request',
-  //         status: HttpStatus.BAD_REQUEST
-  //       };
-  
-  //       await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
-  //       return response;
+  //       return {success: false, message: 'Invalid request', status: HttpStatus.BAD_REQUEST};
   //   }
   // }
+  
+
+  // async handleCallback(data: CallbackGameDto) {
+  //   console.log("_data", data);
+  
+  //   // Save callback log
+  //   const callback = await this.saveCallbackLog(data);
+  //   console.log("callback-4", callback);
+  
+  //   let response;
+  //   let body = {};
+  
+  //   // Check if a response already exists
+  //   if (callback?.response != null) {
+  //     console.log("Existing callback response found. Returning it.");
+  //     return JSON.parse(callback.response);
+  //   }
+  
+  //   // Parse the body
+  //   if (data.body) {
+  //     try {
+  //       body = new URLSearchParams(data.body); // Parse the URL-encoded string into an object
+  //     } catch (error) {
+  //       console.error('Error parsing body:', error);
+  //       response = {
+  //         success: false,
+  //         message: 'Invalid body format',
+  //         status: HttpStatus.BAD_REQUEST,
+  //         data: { error: 5, description: 'Error' },
+  //       };
+  
+  //       await this.callbackLogRepository.update(
+  //         { id: callback.id },
+  //         { response: JSON.stringify(response) }
+  //       );
+  //       return response;
+  //     }
+  //   }
+  
+  //   console.log("body", body);
+  
+  //   if (!(body instanceof URLSearchParams)) {
+  //     response = {
+  //       success: false,
+  //       message: 'Invalid body format',
+  //       status: HttpStatus.BAD_REQUEST,
+  //       data: { error: 5, description: 'Error' },
+  //     };
+  
+  //     await this.callbackLogRepository.update(
+  //       { id: callback.id },
+  //       { response: JSON.stringify(response) }
+  //     );
+  //     return response;
+  //   }
+  
+  //   const parsedBody = Object.fromEntries(body.entries());
+  
+  //   // Validate hash signature
+  //   if (this.hashCheck(parsedBody)) {
+  //     response = {
+  //       success: false,
+  //       message: 'Invalid Hash Signature',
+  //       status: HttpStatus.BAD_REQUEST,
+  //       data: {
+  //         error: 5,
+  //         description: 'Error',
+  //       },
+  //     };
+  
+  //     await this.callbackLogRepository.update(
+  //       { id: callback.id },
+  //       { response: JSON.stringify(response) }
+  //     );
+  //     return response;
+  //   }
+  
+  //   let player = null;
+  //   let balanceType = 'main';
+  //   let gameSession = null;
+  //   const userId = parseFloat(body.get("userId"))
+  
+  //   // Check if action is PromoWin
+  //   if (data.action === 'PromoWin') {
+  //     console.log("PromoWin action detected. Ignoring token validation.");
+  //     balanceType = 'main';
+  //     player = await this.identityService.getDetails({ clientId: data.clientId, userId  });
+  //   } else {
+  //     const token = body.get("token");
+  //     console.log("token", token);
+  
+  //     // Retrieve game session using token
+  //     if (token) {
+  //       gameSession = await this.gameSessionRepo.findOne({ where: { session_id: token } });
+  
+  //       if (!gameSession) {
+  //         response = {
+  //           success: false,
+  //           message: 'Invalid Session ID',
+  //           status: HttpStatus.NOT_FOUND,
+  //         };
+  
+  //         await this.callbackLogRepository.update(
+  //           { id: callback.id },
+  //           { response: JSON.stringify(response) }
+  //         );
+  //         return response;
+  //       }
+  
+  //       if (gameSession.balance_type === 'bonus') balanceType = 'casino';
+
+  //       const res = await this.identityService.validateToken({clientId: data.clientId, token });
+  
+  //       console.log("res", res);
+  
+  //       if (res.success) {
+  //         player = res.data;
+  //       } else {
+  //         response = {
+  //           success: false,
+  //           message: 'Invalid Session ID',
+  //           status: HttpStatus.NOT_FOUND,
+  //         };
+  
+  //         await this.callbackLogRepository.update(
+  //           { id: callback.id },
+  //           { response: JSON.stringify(response) }
+  //         );
+  //         return response;
+  //       }
+  //     }
+  //   }
+  
+  //   console.log("gameSession", gameSession);
+  //   console.log("player", player);
+  
+  //   switch (data.action) {
+  //     case 'Authenticate':
+  //       console.log("using pragmatic-play authenticate");
+  //       return await this.authenticate(data.clientId, body.get("token"), callback, balanceType);
+  //     case 'Balance':
+  //       return await this.getBalance(data.clientId, player, callback, balanceType);
+  //     case 'Bet':
+  //       return await this.bet(data.clientId, player, callback, body, balanceType);
+  //     case 'Result':
+  //       return await this.win(data.clientId, player, callback, body, balanceType);
+  //     case 'Refund':
+  //       return await this.refund(data.clientId, player, callback, body, balanceType);
+  //     case 'BonusWin':
+  //       return await this.bonusWin(data.clientId, player, callback, body, balanceType);
+  //     case 'JackpotWin':
+  //       return await this.jackpotWin(data.clientId, player, callback, body, balanceType);
+  //     case 'PromoWin':
+  //       return await this.promoWin(data.clientId, player, callback, body, balanceType);
+  //     default:
+  //       return {
+  //         success: false,
+  //         message: 'Invalid request',
+  //         status: HttpStatus.BAD_REQUEST,
+  //       };
+  //   }
+  // }
+
+  async handleCallback(data: CallbackGameDto) {
+    console.log("_data", data);
+  
+    // Save callback log
+    const callback = await this.saveCallbackLog(data);
+    console.log("callback-4", callback);
+  
+    let response;
+    let body = {};
+  
+    // Check if a response already exists
+    if (callback?.response != null) {
+      console.log("Existing callback response found. Returning it.");
+      return JSON.parse(callback.response);
+    }
+  
+    // Parse the body
+    if (data.body) {
+      try {
+        body = new URLSearchParams(data.body); // Parse the URL-encoded string into an object
+      } catch (error) {
+        console.error('Error parsing body:', error);
+        response = {
+          success: false,
+          message: 'Invalid body format',
+          status: HttpStatus.BAD_REQUEST,
+          data: { error: 5, description: 'Error' },
+        };
+  
+        await this.callbackLogRepository.update(
+          { id: callback.id },
+          { response: JSON.stringify(response) }
+        );
+        return response;
+      }
+    }
+  
+    console.log("body", body);
+  
+    if (!(body instanceof URLSearchParams)) {
+      response = {
+        success: false,
+        message: 'Invalid body format',
+        status: HttpStatus.BAD_REQUEST,
+        data: { error: 5, description: 'Error' },
+      };
+  
+      await this.callbackLogRepository.update(
+        { id: callback.id },
+        { response: JSON.stringify(response) }
+      );
+      return response;
+    }
+  
+    const parsedBody = Object.fromEntries(body.entries());
+  
+    // Validate hash signature
+    if (this.hashCheck(parsedBody)) {
+      response = {
+        success: false,
+        message: 'Invalid Hash Signature',
+        status: HttpStatus.BAD_REQUEST,
+        data: {
+          error: 5,
+          description: 'Error',
+        },
+      };
+  
+      await this.callbackLogRepository.update(
+        { id: callback.id },
+        { response: JSON.stringify(response) }
+      );
+      return response;
+    }
+  
+    let player = null;
+    let balanceType;
+    let gameSession;
+    const userId = parseFloat(body.get("userId"));
+  
+    // Add a helper function to resolve player info
+    async function resolvePlayer(data, body, gameSession, balanceType) {
+      if (data.action === 'PromoWin') {
+        console.log("PromoWin action detected. Ignoring token validation.");
+        const play = await this.identityService.getDetails({ clientId: data.clientId, userId });
+        console.log("play", play);
+        return play;
+      }
+      const token = body.get("token");
+      if (token) {
+        // Retrieve game session using token
+        gameSession = await this.gameSessionRepo.findOne({ where: { session_id: token } });
+        if (!gameSession) {
+          return null;
+        }
+  
+        if (gameSession.balance_type === 'bonus') balanceType = 'casino';
+  
+        const res = await this.identityService.validateToken({ clientId: data.clientId, token });
+        return res.success ? res.data : null;
+      }
+      return null;
+    }
+  
+    // Resolve player info (check if PromoWin or use token validation)
+    player = await resolvePlayer(data, body, gameSession, balanceType);
+  
+    // If player could not be resolved, return an error
+    if (!player) {
+      response = {
+        success: false,
+        message: 'Unable to resolve player information',
+        status: HttpStatus.BAD_REQUEST,
+      };
+      await this.callbackLogRepository.update(
+        { id: callback.id },
+        { response: JSON.stringify(response) }
+      );
+      return response;
+    }
+  
+    console.log("gameSession", gameSession);
+    console.log("player", player);
+  
+    // Proceed to handle the callback based on action
+    switch (data.action) {
+      case 'Authenticate':
+        console.log("using pragmatic-play authenticate");
+        return await this.authenticate(data.clientId, body.get("token"), callback, balanceType);
+      case 'Balance':
+        return await this.getBalance(data.clientId, player, callback, balanceType);
+      case 'Bet':
+        return await this.bet(data.clientId, player, callback, body, balanceType);
+      case 'Result':
+        return await this.win(data.clientId, player, callback, body, balanceType);
+      case 'Refund':
+        return await this.refund(data.clientId, player, callback, body, balanceType);
+      case 'BonusWin':
+        return await this.bonusWin(data.clientId, player, callback, body, balanceType);
+      case 'JackpotWin':
+        return await this.jackpotWin(data.clientId, player, callback, body, balanceType);
+      case 'PromoWin':
+        return await this.promoWin(data.clientId, player, callback, body, balanceType);
+      default:
+        response = {
+          success: false,
+          message: 'Invalid request',
+          status: HttpStatus.BAD_REQUEST,
+        };
+        await this.callbackLogRepository.update(
+          { id: callback.id },
+          { response: JSON.stringify(response) }
+        );
+        return response;
+    }
+  }
+  
   
 
   md5Algo = (hash) => {
@@ -2360,7 +2448,7 @@ export class PragmaticService {
           ? body.get('reference') 
           : action === 'BonusWin' 
           ? body.get('reference') 
-          : action === 'promoWin' 
+          : action === 'PromoWin' 
           ? body.get('reference') 
           : action === 'JackpotWin' 
           ? body.get('reference') 
@@ -2390,6 +2478,8 @@ export class PragmaticService {
       callback.transactionId = transactionId;
       callback.request_type = action;
       callback.payload = JSON.stringify(Object.fromEntries(body)); // Convert URLSearchParams back to JSON
+
+      console.log("saved-callback", callback)
 
       return await this.callbackLogRepository.save(callback);
 
