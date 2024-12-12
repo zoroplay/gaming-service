@@ -1271,12 +1271,12 @@ export class PragmaticService {
 
     if(player) {
         const creditResponse = await this.walletService.credit({
-          userId: player.id,
+          userId: player.playerId,
           clientId,
           amount: parseFloat(body.get('amount')),
           source: 'pragmatic-play',
           description: `Promo Win`,
-          username: player.username,
+          username: player.playerNickname,
           wallet: 'main',
           subject: 'Promo Win (Pragmatic-play)',
           channel: 'pragmatic-play',
@@ -1984,7 +1984,20 @@ export class PragmaticService {
             return response;
         }
 
-        player = getUser.data;
+        const res = await this.identityService.validateToken({ clientId: data.clientId, token: getUser.data.authCode });
+
+        if (!res.success) {
+          response = {
+              success: false,
+              message: 'Invalid Session ID',
+              status: HttpStatus.NOT_FOUND
+          };
+
+          await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
+          return response;
+        }
+
+        player = res.data;
     } else {
         // Handle other actions with token validation
         token = body.get("token");
