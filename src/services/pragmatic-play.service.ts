@@ -1271,12 +1271,12 @@ export class PragmaticService {
 
     if(player) {
         const creditResponse = await this.walletService.credit({
-          userId: player.playerId,
+          userId: player.id,
           clientId,
           amount: parseFloat(body.get('amount')),
           source: 'pragmatic-play',
           description: `Promo Win`,
-          username: player.playerNickname,
+          username: player.username,
           wallet: 'main',
           subject: 'Promo Win (Pragmatic-play)',
           channel: 'pragmatic-play',
