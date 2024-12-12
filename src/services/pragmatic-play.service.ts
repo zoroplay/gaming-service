@@ -2240,61 +2240,76 @@ export class PragmaticService {
 
   async handleCallback(data: CallbackGameDto) {
     console.log("_data", data);
-  
-    // Save callback log
+    // save callback
     const callback = await this.saveCallbackLog(data);
+
+    // const callback = {
+    //   id: "2cb4a648-0d70-48ab-a2df-a5ab3f09c37f",
+    //   roundId: "677040410000",
+    //   type: "Bet",
+    //   request: {
+    //     amount: "200.0",
+    //     gameId: "vs50kingkong",
+    //     hash: "92bc34b68d4a68bf110deaad3da2d3fc",
+    //     providerId: "PragmaticPlay",
+    //     reference: "67401445c5802149b2274bfd",
+    //     roundDetails: "spin",
+    //     roundId: "677040410000",
+    //     timestamp: "1732252741478",
+    //     token: "TWXANDFQIOEHDFOLTANVIJF7UBOMWFJAJJXDGMYI",
+    //     userId: "214986"
+    //   },
+    //   response: {
+    //     success: true,
+    //     status: 200,
+    //     message: "Deposit, successful",
+    //     data: {
+    //       cash: 15700.5,
+    //       transactionId: "MHYPI00XEF4MTAHO",
+    //       currency: "NGN",
+    //       bonus: 0,
+    //       usedPromo: 0,
+    //       error: 0,
+    //       description: "Successful"
+    //     }
+    //   },
+    //   status: "0",
+    //   createdAt: "2024-11-22 05:19:01.538256",
+    //   updatedAt: "2024-11-22 05:19:02.000000"
+    // }
+
     console.log("callback-4", callback);
-  
     let response;
     let body = {};
-  
-    // Check if a response already exists
+
     if (callback?.response != null) {
       console.log("Existing callback response found. Returning it.");
       return JSON.parse(callback.response);
     }
-  
-    // Parse the body
-    if (data.body) {
-      try {
-        body = new URLSearchParams(data.body); // Parse the URL-encoded string into an object
-      } catch (error) {
-        console.error('Error parsing body:', error);
-        response = {
-          success: false,
-          message: 'Invalid body format',
-          status: HttpStatus.BAD_REQUEST,
-          data: { error: 5, description: 'Error' },
-        };
-  
-        await this.callbackLogRepository.update(
-          { id: callback.id },
-          { response: JSON.stringify(response) }
-        );
-        return response;
-      }
-    }
-  
-    console.log("body", body);
-  
-    if (!(body instanceof URLSearchParams)) {
+
+  // Parse the body based on content type
+  if (data.body) {
+    try {
+      body = new URLSearchParams(data.body); // Parse the URL-encoded string into an object
+    } catch (error) {
+      console.error('Error parsing body:', error);
       response = {
         success: false,
         message: 'Invalid body format',
         status: HttpStatus.BAD_REQUEST,
-        data: { error: 5, description: 'Error' },
+        data: { error: 5, description: 'Error' }
       };
-  
-      await this.callbackLogRepository.update(
-        { id: callback.id },
-        { response: JSON.stringify(response) }
-      );
+
+      await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
       return response;
     }
-  
+  }1
+
+  console.log("body", body);
+
+  if(body instanceof URLSearchParams) {
     const parsedBody = Object.fromEntries(body.entries());
-  
-    // Validate hash signature
+
     if (this.hashCheck(parsedBody)) {
       response = {
         success: false,
@@ -2302,71 +2317,113 @@ export class PragmaticService {
         status: HttpStatus.BAD_REQUEST,
         data: {
           error: 5,
-          description: 'Error',
-        },
-      };
-  
-      await this.callbackLogRepository.update(
-        { id: callback.id },
-        { response: JSON.stringify(response) }
-      );
-      return response;
-    }
-  
-    let player = null;
-    let balanceType;
-    let gameSession;
-    const userId = parseFloat(body.get("userId"));
-  
-    // Add a helper function to resolve player info
-    async function resolvePlayer(data, body, gameSession, balanceType) {
-      if (data.action === 'PromoWin') {
-        console.log("PromoWin action detected. Ignoring token validation.");
-        const play = await this.identityService.getDetails({ clientId: data.clientId, userId });
-        console.log("play", play);
-        return play;
-      }
-      const token = body.get("token");
-      if (token) {
-        // Retrieve game session using token
-        gameSession = await this.gameSessionRepo.findOne({ where: { session_id: token } });
-        if (!gameSession) {
-          return null;
+          description: 'Error'
         }
-  
-        if (gameSession.balance_type === 'bonus') balanceType = 'casino';
-  
-        const res = await this.identityService.validateToken({ clientId: data.clientId, token });
-        return res.success ? res.data : null;
-      }
-      return null;
-    }
-  
-    // Resolve player info (check if PromoWin or use token validation)
-    player = await resolvePlayer(data, body, gameSession, balanceType);
-  
-    // If player could not be resolved, return an error
-    if (!player) {
-      response = {
-        success: false,
-        message: 'Unable to resolve player information',
-        status: HttpStatus.BAD_REQUEST,
       };
-      await this.callbackLogRepository.update(
-        { id: callback.id },
-        { response: JSON.stringify(response) }
-      );
+  
+      await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
       return response;
     }
-  
+
+  } else {
+    response = {
+      success: false,
+      message: 'Invalid body format',
+      status: HttpStatus.BAD_REQUEST,
+      data: { error: 5, description: 'Error' }
+    };
+
+    await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
+    return response;
+  }
+
+    let player = null;
+    let balanceType = 'main';
+    let token = body.get("token");
+
+    console.log("token", token);
+
+    if(data.action === 'PromoWin') {
+      console.log("Got to handle-callback promoWin")
+
+      const getUser = await this.identityService.getDetails({ clientId: data.clientId, userId: parseFloat(body.get("userId")) });
+
+      console.log("getUser", getUser);
+
+      if (!getUser.success) {
+        const response =  {
+          success: false,
+          message: 'Invalid Session ID',
+          status: HttpStatus.NOT_FOUND
+        };
+
+        // update callback log response
+        await this.callbackLogRepository.update({ id: callback.id}, { response: JSON.stringify(response)});
+
+        return response;
+      }
+
+      player = getUser.data;
+      token = 'ASDFGHJKL'
+
+    }
+   
+    //get game session
+    const gameSession = await this.gameSessionRepo.findOne({where: {session_id: token}});
+
     console.log("gameSession", gameSession);
-    console.log("player", player);
-  
-    // Proceed to handle the callback based on action
+    
+    if (gameSession.balance_type === 'bonus')
+      balanceType = 'casino';
+
+    if (token) {
+      const res = await this.identityService.validateToken({clientId: data.clientId, token });
+
+      // const res = {
+      //   success: true,
+      //   message: "Success",
+      //   data: {
+      //     playerId: 'Famo',
+      //     clientId: 4,
+      //     playerNickname: 'Franklyn',
+      //     sessionId: '132',
+      //     balance: 1450.0,
+      //     casinoBalance: 0.0,
+      //     virtualBalance: 0.5,
+      //     group: null,
+      //     currency: 'NGN'
+      //   }
+        
+      // };
+
+      console.log("res", res)
+
+      if (!res.success) {
+        const response =  {
+          success: false,
+          message: 'Invalid Session ID',
+          status: HttpStatus.NOT_FOUND
+        };
+
+        // update callback log response
+        await this.callbackLogRepository.update({ id: callback.id}, { response: JSON.stringify(response)});
+
+        return response;
+      }
+      
+      if (gameSession.balance_type === 'bonus')
+        balanceType = 'casino';
+
+      player = res.data;
+    }
+
+    console.log("player", player)
+
+
     switch (data.action) {
       case 'Authenticate':
         console.log("using pragmatic-play authenticate");
-        return await this.authenticate(data.clientId, body.get("token"), callback, balanceType);
+        return await this.authenticate(data.clientId, token, callback, balanceType);
       case 'Balance':
         return await this.getBalance(data.clientId, player, callback, balanceType);
       case 'Bet':
@@ -2382,16 +2439,7 @@ export class PragmaticService {
       case 'PromoWin':
         return await this.promoWin(data.clientId, player, callback, body, balanceType);
       default:
-        response = {
-          success: false,
-          message: 'Invalid request',
-          status: HttpStatus.BAD_REQUEST,
-        };
-        await this.callbackLogRepository.update(
-          { id: callback.id },
-          { response: JSON.stringify(response) }
-        );
-        return response;
+        return {success: false, message: 'Invalid request', status: HttpStatus.BAD_REQUEST};
     }
   }
   
