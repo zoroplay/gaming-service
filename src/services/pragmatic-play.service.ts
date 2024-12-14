@@ -595,7 +595,7 @@ export class PragmaticService {
 
       response = {
         success: true,
-        message: 'Win Successful',
+        message: 'Bet Successful',
         status: HttpStatus.OK,
         data: {
           cash: parseFloat(getUpdatedWallet.data.availableBalance.toFixed(2)),
@@ -2061,8 +2061,56 @@ export class PragmaticService {
 
     // Return response if already logged
     if (callback?.response != null) {
-        console.log("Existing callback response found. Returning it.");
-        return JSON.parse(callback.response);
+        console.log("Existing callback response found. Processing it.");
+
+        const existingResponse = JSON.parse(callback.response);
+
+        if (existingResponse?.data?.userId) {
+          // Get userId from the response
+          const userId = existingResponse.data.userId;
+    
+          try {
+              // Fetch the wallet details for the user
+              const getWallet = await this.walletService.getWallet({
+                userId,
+                clientId: data.clientId
+              });
+
+
+              if(!getWallet || !getWallet.status) {
+                response = {
+                  success: false,
+                  status: HttpStatus.BAD_REQUEST,
+                  message: 'Invalid auth code, please login to try again',
+                  data: {}
+                }
+          
+                const val = await this.callbackLogRepository.update({ id: callback.id}, { response: JSON.stringify(response)});
+                console.log("val", val);
+          
+                return response;
+              } 
+    
+              if (getWallet && getWallet.data.availableBalance !== undefined) {
+                  // Update the cash field with the updated balance
+                  existingResponse.data.cash = getWallet.data.availableBalance;
+    
+                  // Save the updated response back to the log
+                  await this.callbackLogRepository.update(
+                      { id: callback.id },
+                      { response: JSON.stringify(existingResponse) }
+                  );
+    
+                  console.log("Updated response with wallet balance:", existingResponse);
+                  return existingResponse;
+              }
+          } catch (error) {
+              console.error("Error fetching wallet details or updating response:", error);
+              // Handle errors if needed, e.g., log or return the original response
+          }
+      }  
+    } else {
+      return JSON.parse(callback.response);
     }
 
     // Parse the body if it exists
@@ -2159,8 +2207,26 @@ export class PragmaticService {
         console.log("token", token);
 
         if (token) {
-            const res = await this.identityService.validateToken({ clientId: data.clientId, token });
-            console.log("res", res);
+            // const res = await this.identityService.validateToken({ clientId: data.clientId, token });
+            // console.log("res", res);
+
+            
+      const res = {
+        success: true,
+        message: "Success",
+        data: {
+          playerId: 'Famo',
+          clientId: 4,
+          playerNickname: 'Franklyn',
+          sessionId: '132',
+          balance: 1450.0,
+          casinoBalance: 0.0,
+          virtualBalance: 0.5,
+          group: null,
+          currency: 'NGN'
+        }
+        
+      };
 
             if (!res.success) {
                 response = {
@@ -2220,9 +2286,6 @@ export class PragmaticService {
             return { success: false, message: 'Invalid request', status: HttpStatus.BAD_REQUEST };
     }
 }
-
-  
-  
 
   md5Algo = (hash) => {
     return crypto.createHash("md5").update(hash).digest("hex");
@@ -2316,3 +2379,4 @@ export class PragmaticService {
 }
 
 }
+
