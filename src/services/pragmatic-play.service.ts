@@ -2207,26 +2207,26 @@ export class PragmaticService {
         console.log("token", token);
 
         if (token) {
-            // const res = await this.identityService.validateToken({ clientId: data.clientId, token });
-            // console.log("res", res);
+            const res = await this.identityService.validateToken({ clientId: data.clientId, token });
+            console.log("res", res);
 
             
-      const res = {
-        success: true,
-        message: "Success",
-        data: {
-          playerId: 'Famo',
-          clientId: 4,
-          playerNickname: 'Franklyn',
-          sessionId: '132',
-          balance: 1450.0,
-          casinoBalance: 0.0,
-          virtualBalance: 0.5,
-          group: null,
-          currency: 'NGN'
-        }
+      // const res = {
+      //   success: true,
+      //   message: "Success",
+      //   data: {
+      //     playerId: 'Famo',
+      //     clientId: 4,
+      //     playerNickname: 'Franklyn',
+      //     sessionId: '132',
+      //     balance: 1450.0,
+      //     casinoBalance: 0.0,
+      //     virtualBalance: 0.5,
+      //     group: null,
+      //     currency: 'NGN'
+      //   }
         
-      };
+      // };
 
             if (!res.success) {
                 response = {
