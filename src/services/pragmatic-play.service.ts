@@ -2103,16 +2103,16 @@ export class PragmaticService {
     
                   console.log("Updated response with wallet balance:", existingResponse);
                   return existingResponse;
-              } 
+              }
           } catch (error) {
               console.error("Error fetching wallet details or updating response:", error);
               // Handle errors if needed, e.g., log or return the original response
           }
-      }  
-    } else {
-      return JSON.parse(callback.response);
-    }
-
+      }  else {
+        return JSON.parse(callback.response);
+      }
+  
+    } 
     // Parse the body if it exists
     if (data.body) {
         try {
