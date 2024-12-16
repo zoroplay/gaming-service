@@ -515,7 +515,7 @@ export class SmartSoftService {
     console.log(requestMethod, payload)
     console.log('encryption start');
 
-    // console.log(`${this.secretKey}|${requestMethod}|${payload}`);
+    console.log(`${this.secretKey}|${requestMethod}|${payload}`);
 
     const md5Hash = crypto
       .createHash('md5')
