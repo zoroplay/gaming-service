@@ -2063,11 +2063,17 @@ export class PragmaticService {
     if (callback?.response != null) {
         console.log("Existing callback response found. Processing it.");
 
+        const existingRequest = JSON.parse(callback.payload);
         const existingResponse = JSON.parse(callback.response);
 
-        if (existingResponse?.data?.userId) {
+        console.log("existingRequest", existingRequest);
+        console.log("existingResponse", existingResponse);
+
+        if (existingRequest?.userId) {
           // Get userId from the response
-          const userId = existingResponse.data.userId;
+
+          console.log("Got to the updated wallet block");
+          const userId = existingRequest.userId;
     
           try {
               // Fetch the wallet details for the user
@@ -2075,6 +2081,8 @@ export class PragmaticService {
                 userId,
                 clientId: data.clientId
               });
+
+              console.log("getWallet", getWallet);
 
 
               if(!getWallet || !getWallet.status) {
@@ -2215,11 +2223,11 @@ export class PragmaticService {
       //   success: true,
       //   message: "Success",
       //   data: {
-      //     playerId: 'Famo',
+      //     playerId: 214993,
       //     clientId: 4,
-      //     playerNickname: 'Franklyn',
+      //     playerNickname: 'pragmatic-play',
       //     sessionId: '132',
-      //     balance: 1450.0,
+      //     balance: 9996.25,
       //     casinoBalance: 0.0,
       //     virtualBalance: 0.5,
       //     group: null,
