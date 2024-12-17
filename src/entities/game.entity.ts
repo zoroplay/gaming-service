@@ -5,8 +5,10 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   ManyToOne,
+  ManyToMany
 } from 'typeorm';
 import { Provider } from './provider.entity';
+import { Category } from './category.entity';
 
 @Entity({ name: 'games' })
 export class Game {
@@ -46,10 +48,10 @@ export class Game {
   @ManyToOne(() => Provider, (provider) => provider.games)
   provider: Provider;
 
+
   @CreateDateColumn({ type: 'timestamp' })
   createdAt: Date;
 
   @UpdateDateColumn({ type: 'timestamp' })
   updatedAt: Date;
 }
-

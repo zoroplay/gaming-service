@@ -601,7 +601,7 @@ export class PragmaticService {
           cash: parseFloat(getUpdatedWallet.data.availableBalance.toFixed(2)),
           transactionId: place_bet.data.transactionId,
           currency: player.currency,
-          bonus: parseFloat(getUpdatedWallet.data.casinoBonusBalance.toFixed(2)) || 0.00,
+          bonus: balanceType === 'casino' ? parseFloat(getUpdatedWallet.data.casinoBonusBalance.toFixed(2)) : 0.00,
           usedPromo: balanceType === 'casino' ? parseFloat(body.get('amount')) : 0.00,
           error: 0,
           description: 'Successful',
