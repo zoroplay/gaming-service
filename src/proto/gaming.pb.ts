@@ -324,6 +324,8 @@ export interface SaveCategoryRequest {
   id?: number | undefined;
   name: string;
   imagePath?: string | undefined;
+  priority?: boolean | undefined;
+  status?: string | undefined;
 }
 
 export interface Category {

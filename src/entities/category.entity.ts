@@ -24,6 +24,12 @@ export class Category {
   @Column({type: 'varchar'})
   slug: string;
 
+  @Column({ default: 0 })
+  priority: boolean;
+
+  @Column({ default: 'active' })
+  status: string;
+
   @OneToMany(() => GameCategory, (game) => game.category)
   games: Game[];
 

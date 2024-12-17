@@ -239,6 +239,8 @@ async fetchGames({ categoryId, clientId, providerId }: FetchGamesRequest): Promi
     newCategory.client_id = createCategoryDto.clientId;
     newCategory.name = createCategoryDto.name;
     newCategory.slug = slugify(createCategoryDto.name);
+    newCategory.priority = createCategoryDto.priority;
+    newCategory.status = createCategoryDto.status;
   
     const savedCategory = await this.categoryRepository.save(newCategory);
     return savedCategory;
@@ -264,20 +266,27 @@ async fetchGames({ categoryId, clientId, providerId }: FetchGamesRequest): Promi
   }
 
   async updateCategory(createCategoryDto: SaveCategoryRequest): Promise<Category> {
-    const { id } = createCategoryDto
+    const { id } = createCategoryDto;
+    
+    // Find the category by ID
     const category = await this.categoryRepository.findOneBy({ id });
   
     if (!category) {
       throw new Error(`Category with ID ${createCategoryDto.id} not found`);
     }
   
+    // Update fields with provided values or retain existing ones
     category.client_id = createCategoryDto.clientId ?? category.client_id;
     category.name = createCategoryDto.name ?? category.name;
-    category.slug = slugify(createCategoryDto.name) ?? category.slug;
+    category.slug = createCategoryDto.name ? slugify(createCategoryDto.name) : category.slug;
+    category.priority = createCategoryDto.priority ?? category.priority;
+    category.status = createCategoryDto.status ?? category.status;
   
+    // Save the updated category
     const updatedCategory = await this.categoryRepository.save(category);
     return updatedCategory;
   }
+  
 
   async deleteCategory(request: FindOneCategoryDto) {
     const { id } = request;
