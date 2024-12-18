@@ -172,13 +172,13 @@ export class SmartSoftService {
 
       switch (data.action) {
         case 'ActivateSession':
-          console.log('SMARTSOFT: Activate Session', body.Token);
+          // console.log('SMARTSOFT: Activate Session', body.Token);
           return await this.activateSession(data.clientId, body.Token, callback, portal);
         case 'GetBalance':
-          console.log('GetBalance');
+          // console.log('GetBalance');
           return await this.getBalance(player, callback, balanceType, sessionId);
         case 'Deposit':
-          console.log('Deposit');
+          // console.log('Deposit');
           const gameName = body.TransactionInfo.GameName;
           
           const walletRes = await this.walletService.getWallet({
@@ -275,7 +275,7 @@ export class SmartSoftService {
 
           // check if transaction ID exist and return user balance
           if (callback.transactionId === body.TransactionId && callback.status === true) {
-            console.log('transaction completed')
+            // console.log('transaction completed')
             const creditRes = await this.walletService.getWallet({
               userId: player.id,
               clientId: player.clientId,
@@ -386,12 +386,12 @@ export class SmartSoftService {
           const reversePayload: RollbackCasinoBetRequest = {
             transactionId: body.TransactionId,
           };
-          console.log('Processing Rollback')
+          // console.log('Processing Rollback')
           // get callback log
           const callbackLog = await this.callbackLogRepository.findOne({where: {transactionId: reversePayload.transactionId }})
 
           if (!callbackLog) {
-            console.log('Callback log found')
+            // console.log('Callback log found')
 
             const response = {success: false, message: 'Transaction not found', status: HttpStatus.INTERNAL_SERVER_ERROR}
             await this.updateCallbackGameSession(callback, response, {session_id: sessionId}, {callback_id: callback.id})
@@ -402,7 +402,7 @@ export class SmartSoftService {
           const transactionPayload = JSON.parse(callbackLog.payload);
           // console.log(transactionPayload)
           // const transactionResponse = JSON.parse(callbackLog.response);
-          console.log('update ticket')
+          // console.log('update ticket')
           const transaction = await this.rollbackTransaction(reversePayload);
 
           if (transaction.status === HttpStatus.CREATED) {
@@ -428,7 +428,7 @@ export class SmartSoftService {
           }
 
           if (!transaction.success)  {
-            console.log('ticket update not successful')
+            // console.log('ticket update not successful')
             const response = {
               success: false,
               message: 'Unable to complete request', 
@@ -457,7 +457,7 @@ export class SmartSoftService {
               channel: body.TransactionInfo.GameName,
             });
 
-            console.log('credit wallet respons', rollbackWalletRes)
+            // console.log('credit wallet respons', rollbackWalletRes)
 
             const response = {
               success: true,
@@ -485,7 +485,7 @@ export class SmartSoftService {
               subject: 'Win Rollback (Casino)',
               channel: body.TransactionInfo.GameName,
             });
-            console.log('debit wallet respons', rollbackWalletRes)
+            // console.log('debit wallet respons', rollbackWalletRes)
             
             const response = {
               success: true,
@@ -505,17 +505,17 @@ export class SmartSoftService {
           return {success: false, message: 'Invalid request', status: HttpStatus.BAD_REQUEST};
       }
     } catch (e) {
-      console.log('smart soft error', e.message)
+      // console.log('smart soft error', e.message)
       return {success: false, message: 'Invalid request', status: HttpStatus.BAD_REQUEST};
     }
   }
 
   // support
   generateMd5(requestMethod: string, payload: string) {
-    console.log(requestMethod, payload)
-    console.log('encryption start');
+    // console.log(requestMethod, payload)
+    // console.log('encryption start');
 
-    console.log(`${this.secretKey}|${requestMethod}|${payload}`);
+    // console.log(`${this.secretKey}|${requestMethod}|${payload}`);
 
     const md5Hash = crypto
       .createHash('md5')
@@ -525,7 +525,7 @@ export class SmartSoftService {
       .digest('hex');
 
     // console.log('encryption hash');
-    console.log(md5Hash);
+    // console.log(md5Hash);
     // console.log('encryption ends');
     return md5Hash;
   }
@@ -535,7 +535,7 @@ export class SmartSoftService {
   // Activate Player Session
   async activateSession(clientId, token, callback, portal) {
     const res = await this.identityService.xpressLogin({clientId, token});
-    console.log('identity response', res);
+    // console.log('identity response', res);
     if (!res.status) {
       const response = {
         success: false,
@@ -655,7 +655,7 @@ export class SmartSoftService {
   // @Timeout(10000)
   async loadGames() {
     try {
-      console.log('fetching smart soft games')
+      // console.log('fetching smart soft games')
 
       const workbook = new Excel.Workbook();
         const content = await workbook.xlsx.readFile(`smart-soft-games.xlsx`);
