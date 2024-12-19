@@ -21,6 +21,7 @@ import {
   CallbackGameDto,
   SaveCategoryRequest,
   FindOneCategoryDto,
+  AddGameToCategoriesDto,
 } from 'src/proto/gaming.pb';
 import { Observable } from 'rxjs';
 import { GrpcMethod } from '@nestjs/microservices';
@@ -90,7 +91,17 @@ export class GamesController {
   }
 
 
+  @GrpcMethod(GAMING_SERVICE_NAME, 'addGameToCategories')
+  addGameToCategories(payload: AddGameToCategoriesDto): Promise<any> {
+    console.log('addGameToCategories');
+    return this.gamesService.addGameToCategories(payload);
+  }
 
+  @GrpcMethod(GAMING_SERVICE_NAME, 'removeGameToCategories')
+  removeGameCategories(payload: AddGameToCategoriesDto): Promise<any> {
+    console.log('removeGameToCategories');
+    return this.gamesService.removeGameCategories(payload);
+  }
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'saveCategory')
   createCategories(payload: SaveCategoryRequest): Promise<any> {
