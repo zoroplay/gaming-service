@@ -8,6 +8,7 @@ import { GameKey } from 'src/entities/game-key.entity';
 import { GameCategory } from 'src/entities/game.category.entity';
 import { IdentityService } from 'src/identity/identity.service';
 import {
+  AddGameToCategoriesDto,
   CallbackGameDto,
   Categories,
   CommonResponse,
@@ -32,9 +33,21 @@ import {
 import { EntityToProtoService } from 'src/services/entity-to-proto.service';
 import { EvoPlayService } from 'src/services/evo-play.service';
 import { PragmaticService } from 'src/services/pragmatic-play.service';
-import { FindManyOptions, ILike, Repository } from 'typeorm';
+import { FindManyOptions, ILike, In, Repository } from 'typeorm';
 import { Game as GameEntity } from '../entities/game.entity';
 import { Provider as ProviderEntity } from '../entities/provider.entity';
+// import { IsInt, IsArray, ArrayNotEmpty } from 'class-validator';
+
+
+
+// export class AddGameToCategoriesDto {
+//   @IsInt()
+//   gameId: number;
+
+//   @IsArray()
+//   @ArrayNotEmpty()
+//   categories: number[]; // Array of category IDs
+// }
 
 
 @Injectable()
@@ -44,6 +57,8 @@ export class GamesService {
     private gameRepository: Repository<GameEntity>,
     @InjectRepository(Category)
     private categoryRepository: Repository<Category>,
+    @InjectRepository(GameCategory)
+    private gameCategoryRepository: Repository<GameCategory>,
     @InjectRepository(ProviderEntity)
     private providerRepository: Repository<ProviderEntity>,
     @InjectRepository(GameKey)
@@ -244,6 +259,60 @@ async fetchGames({ categoryId, clientId, providerId }: FetchGamesRequest): Promi
   
     const savedCategory = await this.categoryRepository.save(newCategory);
     return savedCategory;
+  }
+
+  async addGameToCategories(dto: AddGameToCategoriesDto) {
+    console.log("got to this part");
+    const game = await this.gameRepository.findOne({ where: { id: dto.gameId } });
+    if (!game) {
+      throw new NotFoundException('Game not found');
+    }
+
+    console.log("game", game);
+
+    const categories = await this.categoryRepository.find({
+      where: { id: In(dto.categories) },
+    });
+
+    console.log("categories", categories);
+    
+    if (categories.length !== dto.categories.length) {
+      throw new NotFoundException('Some categories not found');
+    }
+
+    const gameCategories = categories.map((category) => {
+      const gameCategory = new GameCategory();
+      gameCategory.game = game;
+      gameCategory.category = category;
+      return gameCategory;
+    });
+
+    console.log("gameCategories", gameCategories);
+
+    const val = await this.gameCategoryRepository.save(gameCategories);
+    return val[0];
+  }
+
+  async removeGameCategories(dto: AddGameToCategoriesDto) {
+    const game = await this.gameRepository.findOne({ where: { id: dto.gameId } });
+    if (!game) {
+      throw new NotFoundException('Game not found');
+    }
+  
+    const categories = await this.categoryRepository.find({
+      where: { id: In(dto.categories) },
+    });
+  
+    if (categories.length !== dto.categories.length) {
+      throw new NotFoundException('Some categories not found');
+    }
+  
+    await this.gameCategoryRepository.delete({
+      game,
+      category: In(categories.map((category) => category.id)),
+    });
+  
+    return { message: 'Categories removed successfully' };
   }
 
   async fetchCategories(): Promise<Categories> {
