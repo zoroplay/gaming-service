@@ -13,12 +13,15 @@ import {
   Categories,
   CommonResponse,
   CreateGameDto,
+  CreatePromotionDto,
   CreateProviderDto,
   FetchGamesRequest,
   FindOneCategoryDto,
+  FindOnePromotionDto,
   Game,
   Games,
   PaginationDto,
+  Promotions,
   SaveCategoryRequest,
   StartGameDto,
   SyncGameDto,
@@ -36,18 +39,9 @@ import { PragmaticService } from 'src/services/pragmatic-play.service';
 import { FindManyOptions, ILike, In, Repository } from 'typeorm';
 import { Game as GameEntity } from '../entities/game.entity';
 import { Provider as ProviderEntity } from '../entities/provider.entity';
-// import { IsInt, IsArray, ArrayNotEmpty } from 'class-validator';
+import { Promotion } from 'src/entities/promotion.entity';
+// import { Timestamp } from 'google-protobuf/google/protobuf/timestamp_pb';
 
-
-
-// export class AddGameToCategoriesDto {
-//   @IsInt()
-//   gameId: number;
-
-//   @IsArray()
-//   @ArrayNotEmpty()
-//   categories: number[]; // Array of category IDs
-// }
 
 
 @Injectable()
@@ -61,6 +55,8 @@ export class GamesService {
     private gameCategoryRepository: Repository<GameCategory>,
     @InjectRepository(ProviderEntity)
     private providerRepository: Repository<ProviderEntity>,
+    @InjectRepository(Promotion)
+    private promotionRepository: Repository<Promotion>,
     @InjectRepository(GameKey)
     private gameKeyRepository: Repository<GameKey>,
     private readonly entityToProtoService: EntityToProtoService,
@@ -767,5 +763,104 @@ async fetchGames({ categoryId, clientId, providerId }: FetchGamesRequest): Promi
     console.log(headers);
     throw new Error('Method not implemented.');
   }
+
+  async createPromotion(createPromotionDto: CreatePromotionDto): Promise<Promotion> {
+    const newPromotion: Promotion = new Promotion();
+    newPromotion.clientId = createPromotionDto.clientId;
+    newPromotion.title = createPromotionDto.title;
+    newPromotion.imageUrl = createPromotionDto.imageUrl;
+    newPromotion.content = createPromotionDto.content;
+  
+    // Convert Timestamp to Date
+    newPromotion.startDate = createPromotionDto.startDate
+      ? new Date(createPromotionDto.startDate.seconds * 1000)
+      : null;
+  
+    newPromotion.endDate = createPromotionDto.endDate
+      ? new Date(createPromotionDto.endDate.seconds * 1000)
+      : null;
+  
+    const savedPromotion = await this.categoryRepository.save(newPromotion);
+    return savedPromotion;
+  }
+
+  async findOnePromotion(request: FindOnePromotionDto): Promise<Promotion> {
+    const { id } = request;
+    console.log("id", id);
+    const promotion = await this.promotionRepository.findOne({
+      where: { id }
+    });
+  
+    if (!promotion) {
+      throw new Error(`Category with ID ${id} not found`);
+    }
+    return promotion;
+  }
+
+  // async fetchPromotions(): Promise<Promotions> {
+  //   const promotions = await this.promotionRepository.find();
+  
+  //   // Transform entity data to match Protobuf structure
+  //   const protoPromotions: ProtoPromotion[] = promotions.map((promotion) => ({
+  //     clientId: promotion.clientId,
+  //     title: promotion.title,
+  //     imageUrl: promotion.imageUrl,
+  //     status: promotion.status,
+  //     content: promotion.content,
+  //     startDate: toTimestamp(promotion.startDate),
+  //     endDate: toTimestamp(promotion.endDate),
+  //     type: promotion.type,
+  //   }));
+  
+  //   return { data: protoPromotions };
+  // }
+
+  async updatePromotion(updatePromotionDto: CreatePromotionDto): Promise<Promotion> {
+    const { id } = updatePromotionDto;
+  
+    // Find the promotion by ID
+    const promotion = await this.promotionRepository.findOneBy({ id });
+  
+    if (!promotion) {
+      throw new Error(`Promotion with ID ${updatePromotionDto.id} not found`);
+    }
+  
+    // Update fields with provided values or retain existing ones
+    promotion.clientId = updatePromotionDto.clientId ?? promotion.clientId;
+    promotion.title = updatePromotionDto.title ?? promotion.title;
+    promotion.imageUrl = updatePromotionDto.imageUrl ?? promotion.imageUrl;
+    promotion.content = updatePromotionDto.content ?? promotion.content;
+    promotion.type = updatePromotionDto.type ?? promotion.type;
+    promotion.startDate = updatePromotionDto.startDate
+      ? new Date(updatePromotionDto.startDate.seconds * 1000)
+      : promotion.startDate;
+    promotion.endDate = updatePromotionDto.endDate
+      ? new Date(updatePromotionDto.endDate.seconds * 1000)
+      : promotion.endDate;
+  
+    // Save the updated promotion
+    const updatedPromotion = await this.promotionRepository.save(promotion);
+    return updatedPromotion;
+  }
+
+  async deletePromotion(request: FindOnePromotionDto) {
+    const { id } = request;
+    console.log('Deleting promotion with ID:', id);
+  
+    const promotion = await this.promotionRepository.findOneBy({ id });
+    if (!promotion) {
+      throw new Error(`Promotion with ID ${id} not found`);
+    }
+  
+    await this.promotionRepository.remove(promotion);
+    
+  }
+
+  // function toTimestamp(date: Date | null): Timestamp | undefined {
+  //   if (!date) return undefined;
+  //   const timestamp = new Timestamp();
+  //   timestamp.fromDate(date);
+  //   return timestamp;
+  // }
 
 }

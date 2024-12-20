@@ -22,6 +22,8 @@ import {
   SaveCategoryRequest,
   FindOneCategoryDto,
   AddGameToCategoriesDto,
+  CreatePromotionDto,
+  FindOnePromotionDto,
 } from 'src/proto/gaming.pb';
 import { Observable } from 'rxjs';
 import { GrpcMethod } from '@nestjs/microservices';
@@ -198,5 +200,35 @@ export class GamesController {
       console.error('handleCallback error');
       console.error(error.message);
     }
+  }
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'createPromotion')
+  createPromotion(payload: CreatePromotionDto): Promise<any> {
+    console.log('fetch gameNames');
+    return this.gamesService.createPromotion(payload);
+  }
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'updatePromotion')
+  updatePromotion(payload: CreatePromotionDto): Promise<any> {
+    console.log('fetch gameNames');
+    return this.gamesService.updatePromotion(payload);
+  }
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'findOnePromotion')
+  findOnePromotion(payload: FindOnePromotionDto): Promise<any> {
+    console.log('fetch category', payload);
+    return this.gamesService.findOnePromotion(payload);
+  }
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'deletePromotion')
+  async deletePromotion(payload: FindOnePromotionDto): Promise<void> {
+    console.log('Payload received by gRPC server for deletion:', payload);
+    const { id } = payload;
+
+    if (!id) {
+      throw new Error('Invalid payload: Missing `id` property.');
+    }
+
+    return this.gamesService.deletePromotion(payload);
   }
 }

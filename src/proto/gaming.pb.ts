@@ -325,7 +325,7 @@ export interface SaveCategoryRequest {
   id?: number | undefined;
   name: string;
   imagePath?: string | undefined;
-  priority?: boolean | undefined;
+  priority?: number | undefined;
   status?: string | undefined;
 }
 
@@ -333,6 +333,8 @@ export interface Category {
   id: number;
   slug: string;
   name: string;
+  priority?: number | undefined;
+  status?: string | undefined;
 }
 
 export interface Categories {
@@ -353,8 +355,10 @@ export interface MetaData {
 }
 
 export interface Promotion {
+  clientId: number;
   title: string;
   imageUrl: string;
+  status: string;
   content: string;
   startDate: Timestamp | undefined;
   endDate: Timestamp | undefined;
@@ -362,6 +366,8 @@ export interface Promotion {
 }
 
 export interface CreatePromotionDto {
+  clientId: number;
+  id?: number | undefined;
   title: string;
   imageUrl: string;
   content: string;

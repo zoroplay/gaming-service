@@ -25,7 +25,7 @@ export class Category {
   slug: string;
 
   @Column({ default: 0 })
-  priority: boolean;
+  priority: number;
 
   @Column({ default: 'active' })
   status: string;
@@ -39,3 +39,4 @@ export class Category {
   @UpdateDateColumn({ type: 'timestamp' })
   updated_at: Date;
 }
+
