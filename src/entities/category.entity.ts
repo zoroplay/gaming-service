@@ -30,7 +30,7 @@ export class Category {
   @Column({ default: 'active' })
   status: string;
 
-  @OneToMany(() => GameCategory, (game) => game.category)
+  @OneToMany(() => Game, (game) => game.categories)
   games: Game[];
 
   @CreateDateColumn({ type: 'timestamp' })

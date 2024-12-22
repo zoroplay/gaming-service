@@ -231,4 +231,9 @@ export class GamesController {
 
     return this.gamesService.deletePromotion(payload);
   }
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'getGames')
+  async getGames() {
+    return this.gamesService.getAllGamesWithCategories();
+  }
 }

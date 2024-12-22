@@ -863,4 +863,36 @@ async fetchGames({ categoryId, clientId, providerId }: FetchGamesRequest): Promi
   //   return timestamp;
   // }
 
+
+  async getAllGamesWithCategories() {
+    const games = await this.gameRepository.find({
+      relations: ['provider', 'categories'], // Ensure the 'categories' relation exists in the Game entity
+    });
+  
+    const response = {
+      data: games.map((game) => ({
+        id: game.id,
+        status: game.status,
+        provider_id: game.provider?.id || null,
+        provider_name: game.provider?.name || null,
+        game_id: game.gameId,
+        game_name: game.title,
+        image: game.imagePath,
+        description: game.description,
+        category: game.categories.map((category) => ({
+          id: category.id,
+          category_id: category.id, // Map correctly if `category_id` exists in DB
+          name: category.name,
+          status: category.status,
+          priority: category.priority,
+        })),
+      })),
+    };
+  
+    console.log('Response:', response) // Log the response in a readable format
+    return response;
+  }
+  
+  
+
 }

@@ -19,6 +19,7 @@ export class EntityToProtoService {
       provider: entity.provider as any,
       createdAt: entity.createdAt as any,
       updatedAt: entity.updatedAt as any,
+      category: []
     };
     return proto;
   }
