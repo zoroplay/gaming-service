@@ -5,7 +5,8 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   ManyToOne,
-  ManyToMany
+  ManyToMany,
+  JoinTable
 } from 'typeorm';
 import { Provider } from './provider.entity';
 import { Category } from './category.entity';
@@ -45,9 +46,12 @@ export class Game {
   @Column({ type: 'text', nullable: true })
   game_category_m: string;
 
+  @ManyToMany(() => Category, (category) => category.games)
+  @JoinTable()
+  categories: Category[];
+
   @ManyToOne(() => Provider, (provider) => provider.games)
   provider: Provider;
-
 
   @CreateDateColumn({ type: 'timestamp' })
   createdAt: Date;

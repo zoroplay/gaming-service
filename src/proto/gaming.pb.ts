@@ -125,6 +125,28 @@ export interface Game {
   provider: Provider | undefined;
   createdAt: string;
   updatedAt: string;
+  category: Category[];
+}
+
+export interface IGame {
+  id: number;
+  gameId: string;
+  title: string;
+  description: string;
+  url: string;
+  imagePath: string;
+  bannerPath: string;
+  status: boolean;
+  type: string;
+  provider: Provider | undefined;
+  createdAt: string;
+  updatedAt: string;
+  /** Fixed the category type to be a repeated string */
+  category: string[];
+}
+
+export interface GamingServiceResponse {
+  games: IGame[];
 }
 
 export interface Provider {
@@ -447,6 +469,8 @@ export interface GamingServiceClient {
 
   findAllProviders(request: Empty): Observable<CommonResponse>;
 
+  getGames(request: Empty): Observable<GamingServiceResponse>;
+
   createPromotion(request: CreatePromotionDto): Observable<Promotion>;
 
   findPromotions(request: Empty): Observable<Promotions>;
@@ -521,6 +545,8 @@ export interface GamingServiceController {
 
   findAllProviders(request: Empty): Promise<CommonResponse> | Observable<CommonResponse> | CommonResponse;
 
+  getGames(request: Empty): Promise<GamingServiceResponse> | Observable<GamingServiceResponse> | GamingServiceResponse;
+
   createPromotion(request: CreatePromotionDto): Promise<Promotion> | Observable<Promotion> | Promotion;
 
   findPromotions(request: Empty): Promise<Promotions> | Observable<Promotions> | Promotions;
@@ -574,6 +600,7 @@ export function GamingServiceControllerMethods() {
       "findOneProvider",
       "removeProvider",
       "findAllProviders",
+      "getGames",
       "createPromotion",
       "findPromotions",
       "findOnePromotion",
