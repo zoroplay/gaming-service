@@ -5,9 +5,6 @@ export class Promotion {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
-  clientId: number; 
-
   @Column({ type: 'varchar' })
   title: string;
 
@@ -17,21 +14,21 @@ export class Promotion {
   @Column({ type: 'text' })
   content: string;
 
-  @Column({ type: 'timestamp', nullable: true })
-  startDate: Date | null;
+  @Column({ type: 'text', nullable: true })
+  startDate: string | null;
 
-  @Column({ type: 'timestamp', nullable: true })
-  endDate: Date | null;
+  @Column({ type: 'text', nullable: true })
+  endDate: string | null;
 
-  @Column({ type: 'varchar' })
+  @Column({ type: 'varchar', nullable: true })
   type: string;
 
   @Column({ default: 'active' })
   status: string;
 
-  @CreateDateColumn({ type: 'timestamp' })
+  @CreateDateColumn({ type: 'timestamp', nullable: true })
   created_at: Date;
 
-  @UpdateDateColumn({ type: 'timestamp' })
+  @UpdateDateColumn({ type: 'timestamp', nullable: true })
   updated_at: Date;
 }

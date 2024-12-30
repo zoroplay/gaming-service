@@ -203,9 +203,10 @@ export class GamesController {
   }
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'createPromotion')
-  createPromotion(payload: CreatePromotionDto): Promise<any> {
-    console.log('fetch gameNames');
-    return this.gamesService.createPromotion(payload);
+  async createPromotion(payload: CreatePromotionDto): Promise<any> {
+    console.log('fetch promotions', payload);
+    const newPromo = await this.gamesService.createPromotion(payload);
+    return newPromo;
   }
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'updatePromotion')
@@ -214,14 +215,20 @@ export class GamesController {
     return this.gamesService.updatePromotion(payload);
   }
 
+  @GrpcMethod(GAMING_SERVICE_NAME, 'findPromotions')
+  fetchPromotions(): Promise<any> {
+    console.log('find Promotions');
+    return this.gamesService.fetchPromotions();
+  }
+
   @GrpcMethod(GAMING_SERVICE_NAME, 'findOnePromotion')
   findOnePromotion(payload: FindOnePromotionDto): Promise<any> {
     console.log('fetch category', payload);
     return this.gamesService.findOnePromotion(payload);
   }
 
-  @GrpcMethod(GAMING_SERVICE_NAME, 'deletePromotion')
-  async deletePromotion(payload: FindOnePromotionDto): Promise<void> {
+  @GrpcMethod(GAMING_SERVICE_NAME, 'removePromotion')
+  async removePromotion(payload: FindOnePromotionDto): Promise<void> {
     console.log('Payload received by gRPC server for deletion:', payload);
     const { id } = payload;
 
@@ -229,11 +236,11 @@ export class GamesController {
       throw new Error('Invalid payload: Missing `id` property.');
     }
 
-    return this.gamesService.deletePromotion(payload);
+    return this.gamesService.removePromotion(payload);
   }
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'getGames')
   async getGames() {
-    return this.gamesService.getAllGamesWithCategories();
+    return this.gamesService.getGamesWithCategories();
   }
 }

@@ -30,8 +30,11 @@ export class Category {
   @Column({ default: 'active' })
   status: string;
 
-  @OneToMany(() => Game, (game) => game.categories)
-  games: Game[];
+  // @OneToMany(() => Game, (game) => game.categories)
+  // games: Game[];
+
+  @OneToMany(() => GameCategory, (gameCategory) => gameCategory.category)
+  gameCategories: GameCategory[];
 
   @CreateDateColumn({ type: 'timestamp' })
   created_at: Date;

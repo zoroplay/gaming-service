@@ -15,12 +15,20 @@ export class GameCategory {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => Category, (category) => category.games)
-  category: Category;
+  // @ManyToOne(() => Category, (category) => category.games)
+  // category: Category;
 
-  @ManyToOne(() => Game)
+  // @ManyToOne(() => Game)
+  // @JoinColumn()
+  // game: Game;
+
+  @ManyToOne(() => Game, (game) => game.gameCategories)
   @JoinColumn()
   game: Game;
+
+  @ManyToOne(() => Category, (category) => category.gameCategories)
+  @JoinColumn()
+  category: Category;
 
   @CreateDateColumn({ type: 'timestamp' })
   created_at: Date;
