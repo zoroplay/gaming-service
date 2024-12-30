@@ -3,7 +3,6 @@ import { GrpcMethod, GrpcStreamMethod } from "@nestjs/microservices";
 import { wrappers } from "protobufjs";
 import { Observable } from "rxjs";
 import { Struct } from "./google/protobuf/struct.pb";
-import { Timestamp } from "./google/protobuf/timestamp.pb";
 
 export const protobufPackage = "gaming";
 
@@ -287,6 +286,13 @@ export interface CallbackResponse {
   data: { [key: string]: any } | undefined;
 }
 
+export interface CommonResponseArray {
+  status?: number | undefined;
+  success?: boolean | undefined;
+  message: string;
+  data: { [key: string]: any }[];
+}
+
 export interface XpressRequest {
   clientId: number;
   action: string;
@@ -376,25 +382,36 @@ export interface MetaData {
   prevPage: number;
 }
 
-export interface Promotion {
-  clientId: number;
+export interface Promotion1 {
+  /** int32 clientId = 1; */
   title: string;
   imageUrl: string;
   status: string;
   content: string;
-  startDate: Timestamp | undefined;
-  endDate: Timestamp | undefined;
+  startDate: string;
+  endDate: string;
   type: string;
 }
 
+export interface Promotion {
+  id: number;
+  title: string;
+  imageUrl: string;
+  content: string;
+  type: string;
+  startDate: string;
+  endDate: string;
+  status: string;
+}
+
 export interface CreatePromotionDto {
-  clientId: number;
+  /** int32 clientId = 1; */
   id?: number | undefined;
   title: string;
   imageUrl: string;
   content: string;
-  startDate: Timestamp | undefined;
-  endDate: Timestamp | undefined;
+  startDate: string;
+  endDate: string;
   type: string;
 }
 
@@ -469,7 +486,7 @@ export interface GamingServiceClient {
 
   findAllProviders(request: Empty): Observable<CommonResponse>;
 
-  getGames(request: Empty): Observable<GamingServiceResponse>;
+  getGames(request: Empty): Observable<CommonResponseArray>;
 
   createPromotion(request: CreatePromotionDto): Observable<Promotion>;
 
@@ -545,7 +562,7 @@ export interface GamingServiceController {
 
   findAllProviders(request: Empty): Promise<CommonResponse> | Observable<CommonResponse> | CommonResponse;
 
-  getGames(request: Empty): Promise<GamingServiceResponse> | Observable<GamingServiceResponse> | GamingServiceResponse;
+  getGames(request: Empty): Promise<CommonResponseArray> | Observable<CommonResponseArray> | CommonResponseArray;
 
   createPromotion(request: CreatePromotionDto): Promise<Promotion> | Observable<Promotion> | Promotion;
 

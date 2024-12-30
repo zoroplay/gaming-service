@@ -12,6 +12,7 @@ import {
   CallbackGameDto,
   Categories,
   CommonResponse,
+  CommonResponseArray,
   CreateGameDto,
   CreatePromotionDto,
   CreateProviderDto,
@@ -20,7 +21,10 @@ import {
   FindOnePromotionDto,
   Game,
   Games,
+  GamingServiceResponse,
+  IGame,
   PaginationDto,
+  Promotion,
   Promotions,
   SaveCategoryRequest,
   StartGameDto,
@@ -39,8 +43,9 @@ import { PragmaticService } from 'src/services/pragmatic-play.service';
 import { FindManyOptions, ILike, In, Repository } from 'typeorm';
 import { Game as GameEntity } from '../entities/game.entity';
 import { Provider as ProviderEntity } from '../entities/provider.entity';
-import { Promotion } from 'src/entities/promotion.entity';
+import { Promotion as PromotionEntity } from 'src/entities/promotion.entity';
 // import { Timestamp } from 'google-protobuf/google/protobuf/timestamp_pb';
+// import { Struct } from 'google-protobuf/google/protobuf/struct_pb';
 
 
 
@@ -55,8 +60,8 @@ export class GamesService {
     private gameCategoryRepository: Repository<GameCategory>,
     @InjectRepository(ProviderEntity)
     private providerRepository: Repository<ProviderEntity>,
-    @InjectRepository(Promotion)
-    private promotionRepository: Repository<Promotion>,
+    @InjectRepository(PromotionEntity)
+    private promotionRepository: Repository<PromotionEntity>,
     @InjectRepository(GameKey)
     private gameKeyRepository: Repository<GameKey>,
     private readonly entityToProtoService: EntityToProtoService,
@@ -765,22 +770,18 @@ async fetchGames({ categoryId, clientId, providerId }: FetchGamesRequest): Promi
   }
 
   async createPromotion(createPromotionDto: CreatePromotionDto): Promise<Promotion> {
-    const newPromotion: Promotion = new Promotion();
-    newPromotion.clientId = createPromotionDto.clientId;
+    console.log("createPromotionDto", createPromotionDto);
+    const newPromotion: Promotion = new PromotionEntity();
+    
     newPromotion.title = createPromotionDto.title;
     newPromotion.imageUrl = createPromotionDto.imageUrl;
     newPromotion.content = createPromotionDto.content;
+    newPromotion.type = createPromotionDto.type;
+    newPromotion.endDate = createPromotionDto.endDate;
+    newPromotion.startDate = createPromotionDto.startDate;
   
-    // Convert Timestamp to Date
-    newPromotion.startDate = createPromotionDto.startDate
-      ? new Date(createPromotionDto.startDate.seconds * 1000)
-      : null;
-  
-    newPromotion.endDate = createPromotionDto.endDate
-      ? new Date(createPromotionDto.endDate.seconds * 1000)
-      : null;
-  
-    const savedPromotion = await this.categoryRepository.save(newPromotion);
+    const savedPromotion = await this.promotionRepository.save(newPromotion);
+    console.log("savedPromotion", savedPromotion);
     return savedPromotion;
   }
 
@@ -797,23 +798,12 @@ async fetchGames({ categoryId, clientId, providerId }: FetchGamesRequest): Promi
     return promotion;
   }
 
-  // async fetchPromotions(): Promise<Promotions> {
-  //   const promotions = await this.promotionRepository.find();
-  
-  //   // Transform entity data to match Protobuf structure
-  //   const protoPromotions: ProtoPromotion[] = promotions.map((promotion) => ({
-  //     clientId: promotion.clientId,
-  //     title: promotion.title,
-  //     imageUrl: promotion.imageUrl,
-  //     status: promotion.status,
-  //     content: promotion.content,
-  //     startDate: toTimestamp(promotion.startDate),
-  //     endDate: toTimestamp(promotion.endDate),
-  //     type: promotion.type,
-  //   }));
-  
-  //   return { data: protoPromotions };
-  // }
+
+  async fetchPromotions(): Promise<Promotions> {
+    const promotions = await this.promotionRepository.find();
+    console.log("promotions", promotions);
+    return { data: promotions };
+  }
 
   async updatePromotion(updatePromotionDto: CreatePromotionDto): Promise<Promotion> {
     const { id } = updatePromotionDto;
@@ -826,24 +816,21 @@ async fetchGames({ categoryId, clientId, providerId }: FetchGamesRequest): Promi
     }
   
     // Update fields with provided values or retain existing ones
-    promotion.clientId = updatePromotionDto.clientId ?? promotion.clientId;
+    // promotion.clientId = updatePromotionDto.clientId ?? promotion.clientId;
     promotion.title = updatePromotionDto.title ?? promotion.title;
     promotion.imageUrl = updatePromotionDto.imageUrl ?? promotion.imageUrl;
     promotion.content = updatePromotionDto.content ?? promotion.content;
     promotion.type = updatePromotionDto.type ?? promotion.type;
-    promotion.startDate = updatePromotionDto.startDate
-      ? new Date(updatePromotionDto.startDate.seconds * 1000)
-      : promotion.startDate;
-    promotion.endDate = updatePromotionDto.endDate
-      ? new Date(updatePromotionDto.endDate.seconds * 1000)
-      : promotion.endDate;
+    promotion.startDate = updatePromotionDto.startDate;
+    promotion.endDate = updatePromotionDto.endDate;
+     
   
     // Save the updated promotion
     const updatedPromotion = await this.promotionRepository.save(promotion);
     return updatedPromotion;
   }
 
-  async deletePromotion(request: FindOnePromotionDto) {
+  async removePromotion(request: FindOnePromotionDto) {
     const { id } = request;
     console.log('Deleting promotion with ID:', id);
   
@@ -856,21 +843,14 @@ async fetchGames({ categoryId, clientId, providerId }: FetchGamesRequest): Promi
     
   }
 
-  // function toTimestamp(date: Date | null): Timestamp | undefined {
-  //   if (!date) return undefined;
-  //   const timestamp = new Timestamp();
-  //   timestamp.fromDate(date);
-  //   return timestamp;
-  // }
-
-
   async getAllGamesWithCategories() {
+
     const games = await this.gameRepository.find({
       relations: ['provider', 'categories'], // Ensure the 'categories' relation exists in the Game entity
     });
   
     const response = {
-      data: games.map((game) => ({
+      games: games.map((game) => ({
         id: game.id,
         status: game.status,
         provider_id: game.provider?.id || null,
@@ -879,18 +859,113 @@ async fetchGames({ categoryId, clientId, providerId }: FetchGamesRequest): Promi
         game_name: game.title,
         image: game.imagePath,
         description: game.description,
-        category: game.categories.map((category) => ({
-          id: category.id,
-          category_id: category.id, // Map correctly if `category_id` exists in DB
-          name: category.name,
-          status: category.status,
-          priority: category.priority,
-        })),
+        category: []
+        // category: game.categories.map((category) => ({
+        //   id: category.id,
+        //   category_id: category.id, // Map correctly if `category_id` exists in DB
+        //   name: category.name,
+        //   status: category.status,
+        //   priority: category.priority,
+        // })),
       })),
     };
   
     console.log('Response:', response) // Log the response in a readable format
     return response;
+  }
+
+
+
+  // async getGameCategories(
+  //   page = 1,
+  //   perPage = 50,
+  // ): Promise<any> {
+  //   const skip = (page - 1) * perPage;
+
+  //   // Fetch games with their related categories
+  //   const [games, total] = await this.gameRepository
+  //     .createQueryBuilder('game')
+  //     .leftJoinAndSelect('game.provider', 'provider')
+  //     .leftJoinAndSelect('game.categories', 'gameCategory')
+  //     .leftJoinAndSelect('gameCategory.category', 'category')
+  //     .take(perPage)
+  //     .skip(skip)
+  //     .getManyAndCount();
+
+  //     console.log("games", games);
+
+  //   // Transform games with categories into the required response structure
+  //   const data = games.map((game) => ({
+  //     id: game.id,
+  //     status: game.status,
+  //     provider_id: game.provider?.id || 0,
+  //     provider_name: game.provider?.name || '',
+  //     game_id: game.gameId,
+  //     game_name: game.title,
+  //     image: game.imagePath,
+  //     description: game.description || '',
+  //     // priority: game.priority || 0,
+  //     // category: game.categories.map((gc) => ({
+  //     //   id: gc.id,
+  //     //   category_id: gc.category.id,
+  //     //   name: gc.category.name,
+  //     // })),
+  //   }));
+
+  //   // Return paginated response
+  //   return {
+  //     total,
+  //     per_page: perPage,
+  //     current_page: page,
+  //     last_page: Math.ceil(total / perPage),
+  //     from: skip + 1,
+  //     to: skip + data.length,
+  //     data,
+  //   };
+  // }
+
+  async getGamesWithCategories(
+  ): Promise<CommonResponseArray> {
+    const [games] = await this.gameRepository
+      .createQueryBuilder('game')
+      .leftJoinAndSelect('game.gameCategories', 'gameCategory')
+      .leftJoinAndSelect('gameCategory.category', 'category')
+      .leftJoinAndSelect('game.provider', 'provider')
+      .getManyAndCount();
+
+    console.log("games", games);
+
+    const gameData = games.map((game) => ({
+      id: game.id,
+      status: game.status,
+      provider_id: game.provider ? game.provider.id : 0,
+      provider_name: game.provider ? game.provider.name : '',
+      game_id: game.gameId,
+      game_name: game.title,
+      image: game.imagePath,
+      description: game.description,
+      priority: game.priority,
+      category: game.gameCategories.map((gc) => ({
+        id: gc.category.id,
+        name: gc.category.name
+      }))
+    }))
+
+    // const gameDatas = {
+    //   total,
+    //   per_page: perPage,
+    //   current_page: page,
+    //   last_page: Math.ceil(total / perPage),
+    //   from: skip + 1,
+    //   to: skip + gameData.length,
+    // }
+
+    return {
+      status: 200,
+      success: true,
+      message: 'Games retrieved successfully',
+      data: gameData,
+    };
   }
   
   
