@@ -123,20 +123,37 @@ export class QtechService {
       }
   
       let provider = await this.providerRepository.findOne({
-        where: { name: 'QTech-Games' },
+        where: { name: 'QTech Games' },
       });
-  
+      
       console.log('provider', provider);
-  
+      
       if (!provider) {
-        const newProvider: ProviderEntity = new ProviderEntity();
-        newProvider.name = 'QTech-Games';
-        newProvider.slug = 'qtech-games';
-        newProvider.description = 'QTech Games';
-        newProvider.imagePath = `${this.QTECH_IMAGE_URL}`;
-        provider = await this.providerRepository.save(newProvider);
+        try {
+          const newProvider: ProviderEntity = new ProviderEntity();
+          newProvider.name = 'QTech Games';
+          newProvider.slug = 'qtech-games';
+          newProvider.description = 'QTech Games';
+          newProvider.imagePath = `${this.QTECH_IMAGE_URL}`;
+          provider = await this.providerRepository.save(newProvider);
+          console.log('New provider created:', provider);
+        } catch (error) {
+          // Handle duplicate entry error gracefully
+          if (error.code === 'ER_DUP_ENTRY') {
+            console.log('Duplicate provider found. Fetching existing provider...');
+            provider = await this.providerRepository.findOne({
+              where: { slug: 'qtech-games' },
+            });
+          } else {
+            console.error("Provider ERROR", error)
+            throw error; // Rethrow other errors
+          }
+        }
       }
-  
+      
+      if (!provider) {
+        throw new Error('Failed to fetch or create provider');
+      }
       const savedGames = await Promise.all(
         gamesResponse.items.map(async (game: any) => {
           const logoImage = game.images.find((img: any) => img.type === 'logo-square')?.url || '';
