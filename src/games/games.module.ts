@@ -25,6 +25,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { PragmaticService } from 'src/services/pragmatic-play.service';
 import { CasinoGame } from 'src/entities/casino-game.entity';
 import { Promotion } from 'src/entities/promotion.entity';
+import { QtechService } from 'src/services/qtech.service';
 
 @Module({
   imports: [
@@ -33,7 +34,17 @@ import { Promotion } from 'src/entities/promotion.entity';
       max: 1000,
       isGlobal: true,
     }),
-    TypeOrmModule.forFeature([GameSession, CallbackLog, Category, Game, Promotion, GameCategory, GameKey, Provider, CasinoGame]),
+    TypeOrmModule.forFeature([
+      GameSession,
+      CallbackLog,
+      Category,
+      Game,
+      Promotion,
+      GameCategory,
+      GameKey,
+      Provider,
+      CasinoGame,
+    ]),
     HttpModule,
     IdentityModule,
     WalletModule,
@@ -50,7 +61,8 @@ import { Promotion } from 'src/entities/promotion.entity';
     SmartSoftService,
     EvoPlayService,
     VirtualService,
-    PragmaticService
+    PragmaticService,
+    QtechService,
   ],
 })
 export class GamesModule {}
