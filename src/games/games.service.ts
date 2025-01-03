@@ -44,6 +44,7 @@ import { FindManyOptions, ILike, In, Repository } from 'typeorm';
 import { Game as GameEntity } from '../entities/game.entity';
 import { Provider as ProviderEntity } from '../entities/provider.entity';
 import { Promotion as PromotionEntity } from 'src/entities/promotion.entity';
+import { QtechService } from 'src/services/qtech.service';
 // import { Timestamp } from 'google-protobuf/google/protobuf/timestamp_pb';
 // import { Struct } from 'google-protobuf/google/protobuf/struct_pb';
 
@@ -72,6 +73,7 @@ export class GamesService {
     private readonly evoPlayService: EvoPlayService,
     private readonly pragmaticPlayService: PragmaticService,
     private readonly identityService: IdentityService,
+    private readonly qtechService: QtechService,
   ) {}
 
   async createProvider(
@@ -511,6 +513,10 @@ async fetchGames({ categoryId, clientId, providerId }: FetchGamesRequest): Promi
         case 'pragmatic-play':
           console.log('pragmatic syncing here');
           return await this.pragmaticPlayService.syncGames();
+          break;
+          case 'qtech-games':
+          console.log('QTech Games syncing here');
+          return await this.qtechService.syncGames();
           break;
       default:
         throw new NotFoundException(

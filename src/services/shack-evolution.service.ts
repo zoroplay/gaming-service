@@ -13,10 +13,7 @@ import {
   CreditCasinoBetRequest,
   RollbackCasinoBetRequest,
 } from 'src/proto/betting.pb';
-import {
-  Game as GameEntity,
-  Provider as ProviderEntity,
-} from '../entities';
+import { Game as GameEntity, Provider as ProviderEntity } from '../entities';
 import { WalletService } from 'src/wallet/wallet.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -43,7 +40,7 @@ export class ShackEvolutionService {
     private readonly httpClient: HttpService,
     private readonly walletService: WalletService,
     private readonly betService: BetService,
-    private readonly identityService: IdentityService
+    private readonly identityService: IdentityService,
   ) {
     this.baseUrl = this.configService.get<string>('SHACK_BASE_URL');
     this.publicKey = this.configService.get<string>('SHACK_PUBLIC_KEY');
@@ -203,9 +200,13 @@ export class ShackEvolutionService {
         message: 'Invalid Signature',
       };
     }
-    const res = await this.identityService.validateXpressSession({clientId: resp.clientId, sessionId: body.token});
+    const res = await this.identityService.validateXpressSession({
+      clientId: resp.clientId,
+      sessionId: body.token,
+    });
 
-    if (!res.success) return {success: false, message: 'Invalid player token'}
+    if (!res.success)
+      return { success: false, message: 'Invalid player token' };
     const player: any = res.data;
 
     const game = await this.gameRepository.findOne({
@@ -213,7 +214,7 @@ export class ShackEvolutionService {
         title: resp.body['gameType'],
       },
     });
-    
+
     if (body.type) {
       switch (body.type) {
         case 'debit':
@@ -256,13 +257,16 @@ export class ShackEvolutionService {
   // Webhook Section
   // Activate Player Session
   async activateSession(data) {
-    const res = await this.identityService.xpressLogin({clientId: data.clientId, token: data.body.token});
+    const res = await this.identityService.xpressLogin({
+      clientId: data.clientId,
+      token: data.body.token,
+    });
 
     if (!res.status) {
       return {
         success: false,
-        message: 'Player not found'
-      }
+        message: 'Player not found',
+      };
     }
     return {
       success: true,
