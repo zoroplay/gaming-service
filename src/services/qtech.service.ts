@@ -156,9 +156,13 @@ export class QtechService {
       }
       const savedGames = await Promise.all(
         gamesResponse.items.map(async (game: any) => {
-          const logoImage = game.images.find((img: any) => img.type === 'logo-square')?.url || '';
-          const bannerImage = game.images.find((img: any) => img.type === 'banner')?.url || '';
-  
+          const imagePath = Array.isArray(game.images)
+  ? game.images.find((img: any) => img.type === 'logo-square')?.url || ''
+  : '';
+
+const bannerPath = Array.isArray(game.images)
+  ? game.images.find((img: any) => img.type === 'banner')?.url || ''
+  : '';
           const gameData = {
             gameId: game.id,
             title: game.name,
@@ -166,8 +170,8 @@ export class QtechService {
             type: 'Slots', 
             provider: provider,
             status: true,
-            imagePath: logoImage,
-            bannerPath: bannerImage,
+            imagePath: imagePath,
+  bannerPath: bannerPath,
           };
   
           const gameExist = await this.gameRepository.findOne({
