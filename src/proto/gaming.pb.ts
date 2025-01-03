@@ -435,8 +435,38 @@ export interface GameCategory {
   categoryName: string;
 }
 
+export interface Tournament {
+  id: number;
+  title: string;
+  imageUrl: string;
+  content: string;
+  type: string;
+  startDate: string;
+  endDate: string;
+  status: string;
+}
+
 export interface AddGameToCategoriesResponse {
   gameCategories: GameCategory[];
+}
+
+export interface CreateTournamentDto {
+  /** int32 clientId = 1; */
+  id?: number | undefined;
+  title: string;
+  imageUrl: string;
+  content: string;
+  startDate: string;
+  endDate: string;
+  type: string;
+}
+
+export interface Tournaments {
+  data: Tournament[];
+}
+
+export interface FindOneTournamentDto {
+  id: number;
 }
 
 export const GAMING_PACKAGE_NAME = "gaming";
@@ -475,6 +505,16 @@ export interface GamingServiceClient {
   deleteCategory(request: FindOneCategoryDto): Observable<Empty>;
 
   registerBonus(request: Empty): Observable<CommonResponse>;
+
+  findOneTournament(request: FindOneTournamentDto): Observable<Tournament>;
+
+  findAllTournaments(request: Empty): Observable<Tournaments>;
+
+  updateTournament(request: CreateTournamentDto): Observable<Tournament>;
+
+  deleteTournament(request: FindOneTournamentDto): Observable<Empty>;
+
+  createTournament(request: CreateTournamentDto): Observable<Tournament>;
 
   createProvider(request: CreateProviderDto): Observable<CommonResponse>;
 
@@ -552,6 +592,16 @@ export interface GamingServiceController {
 
   registerBonus(request: Empty): Promise<CommonResponse> | Observable<CommonResponse> | CommonResponse;
 
+  findOneTournament(request: FindOneTournamentDto): Promise<Tournament> | Observable<Tournament> | Tournament;
+
+  findAllTournaments(request: Empty): Promise<Tournaments> | Observable<Tournaments> | Tournaments;
+
+  updateTournament(request: CreateTournamentDto): Promise<Tournament> | Observable<Tournament> | Tournament;
+
+  deleteTournament(request: FindOneTournamentDto): Promise<Empty> | Observable<Empty> | Empty;
+
+  createTournament(request: CreateTournamentDto): Promise<Tournament> | Observable<Tournament> | Tournament;
+
   createProvider(request: CreateProviderDto): Promise<CommonResponse> | Observable<CommonResponse> | CommonResponse;
 
   updateProvider(request: CreateProviderDto): Promise<CommonResponse> | Observable<CommonResponse> | CommonResponse;
@@ -612,6 +662,11 @@ export function GamingServiceControllerMethods() {
       "updateCategory",
       "deleteCategory",
       "registerBonus",
+      "findOneTournament",
+      "findAllTournaments",
+      "updateTournament",
+      "deleteTournament",
+      "createTournament",
       "createProvider",
       "updateProvider",
       "findOneProvider",
