@@ -115,65 +115,66 @@ export class QtechService {
 
   public async syncGames() {
     try {
-      const games: any = await this.getCasinoGames();
-      console.log('games', games);
-
-      if (!games || games.length === 0) {
+      const gamesResponse: any = await this.getCasinoGames();
+      console.log('gamesResponse', gamesResponse);
+  
+      if (!gamesResponse || !gamesResponse.items || gamesResponse.items.length === 0) {
         throw new Error('No games available for processing');
       }
-
+  
       let provider = await this.providerRepository.findOne({
-        where: { name: 'QTech Games' },
+        where: { name: 'QTech-Games' },
       });
-
+  
       console.log('provider', provider);
-
+  
       if (!provider) {
         const newProvider: ProviderEntity = new ProviderEntity();
-        newProvider.name = 'QTech Games';
+        newProvider.name = 'QTech-Games';
         newProvider.slug = 'qtech-games';
         newProvider.description = 'QTech Games';
         newProvider.imagePath = `${this.QTECH_IMAGE_URL}`;
         provider = await this.providerRepository.save(newProvider);
       }
-
+  
       const savedGames = await Promise.all(
-        Object.keys(games).map(async (key) => {
-          if (Object.prototype.hasOwnProperty.call(games, key)) {
-            const gameData = {
-              gameId: games[key].gameID,
-              title: games[key].gameName,
-              description: games[key].typeDescription,
-              type: 'Slots',
-              provider: provider,
-              status: true,
-              imagePath: `${this.QTECH_IMAGE_URL}/${games[key].gameID}.png`,
-              bannerPath: `${this.QTECH_IMAGE_URL}/${games[key].gameID}.png`,
-            };
-
-            const gameExist = await this.gameRepository.findOne({
-              where: {
-                title: gameData.title,
-              },
-              relations: {
-                provider: true,
-              },
-            });
-
-            if (gameExist) {
-              console.log('updated game');
-              this.gameRepository.merge(gameExist, gameData);
-              return this.gameRepository.save(gameExist);
-            } else {
-              console.log('added game');
-              return this.gameRepository.save(
-                this.gameRepository.create(gameData),
-              );
-            }
+        gamesResponse.items.map(async (game: any) => {
+          const logoImage = game.images.find((img: any) => img.type === 'logo-square')?.url || '';
+          const bannerImage = game.images.find((img: any) => img.type === 'banner')?.url || '';
+  
+          const gameData = {
+            gameId: game.id,
+            title: game.name,
+           description: game.description || `${game.name} by ${game.provider?.name || 'Unknown Provider'}`,
+            type: 'Slots', 
+            provider: provider,
+            status: true,
+            imagePath: logoImage,
+            bannerPath: bannerImage,
+          };
+  
+          const gameExist = await this.gameRepository.findOne({
+            where: {
+              title: gameData.title,
+            },
+            relations: {
+              provider: true,
+            },
+          });
+  
+          if (gameExist) {
+            console.log('updated game');
+            this.gameRepository.merge(gameExist, gameData);
+            return this.gameRepository.save(gameExist);
+          } else {
+            console.log('added game');
+            return this.gameRepository.save(
+              this.gameRepository.create(gameData),
+            );
           }
         }),
       );
-
+  
       return {
         games: savedGames,
       };
@@ -181,6 +182,7 @@ export class QtechService {
       console.log('Error saving games:', error.message);
     }
   }
+  
 
   async launchGame(
     playerId: string,
