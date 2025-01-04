@@ -16,9 +16,11 @@ import {
   CreateGameDto,
   CreatePromotionDto,
   CreateProviderDto,
+  CreateTournamentDto,
   FetchGamesRequest,
   FindOneCategoryDto,
   FindOnePromotionDto,
+  FindOneTournamentDto,
   Game,
   Games,
   GamingServiceResponse,
@@ -29,6 +31,7 @@ import {
   SaveCategoryRequest,
   StartGameDto,
   SyncGameDto,
+  Tournaments,
   UpdateGameDto
 } from 'src/proto/gaming.pb';
 import {
@@ -44,6 +47,7 @@ import { FindManyOptions, ILike, In, Repository } from 'typeorm';
 import { Game as GameEntity } from '../entities/game.entity';
 import { Provider as ProviderEntity } from '../entities/provider.entity';
 import { Promotion as PromotionEntity } from 'src/entities/promotion.entity';
+import { Tournament, Tournament as TournamentEntity } from 'src/entities/tournament.entity';
 import { QtechService } from 'src/services/qtech.service';
 // import { Timestamp } from 'google-protobuf/google/protobuf/timestamp_pb';
 // import { Struct } from 'google-protobuf/google/protobuf/struct_pb';
@@ -63,6 +67,8 @@ export class GamesService {
     private providerRepository: Repository<ProviderEntity>,
     @InjectRepository(PromotionEntity)
     private promotionRepository: Repository<PromotionEntity>,
+    @InjectRepository(TournamentEntity)
+    private tournamenRepository: Repository<TournamentEntity>,
     @InjectRepository(GameKey)
     private gameKeyRepository: Repository<GameKey>,
     private readonly entityToProtoService: EntityToProtoService,
@@ -785,6 +791,7 @@ async fetchGames({ categoryId, clientId, providerId }: FetchGamesRequest): Promi
     newPromotion.type = createPromotionDto.type;
     newPromotion.endDate = createPromotionDto.endDate;
     newPromotion.startDate = createPromotionDto.startDate;
+    newPromotion.targetUrl = createPromotionDto.targetUrl;
   
     const savedPromotion = await this.promotionRepository.save(newPromotion);
     console.log("savedPromotion", savedPromotion);
@@ -827,6 +834,7 @@ async fetchGames({ categoryId, clientId, providerId }: FetchGamesRequest): Promi
     promotion.imageUrl = updatePromotionDto.imageUrl ?? promotion.imageUrl;
     promotion.content = updatePromotionDto.content ?? promotion.content;
     promotion.type = updatePromotionDto.type ?? promotion.type;
+    promotion.targetUrl = updatePromotionDto.targetUrl ?? promotion.targetUrl;
     promotion.startDate = updatePromotionDto.startDate;
     promotion.endDate = updatePromotionDto.endDate;
      
@@ -881,55 +889,6 @@ async fetchGames({ categoryId, clientId, providerId }: FetchGamesRequest): Promi
   }
 
 
-
-  // async getGameCategories(
-  //   page = 1,
-  //   perPage = 50,
-  // ): Promise<any> {
-  //   const skip = (page - 1) * perPage;
-
-  //   // Fetch games with their related categories
-  //   const [games, total] = await this.gameRepository
-  //     .createQueryBuilder('game')
-  //     .leftJoinAndSelect('game.provider', 'provider')
-  //     .leftJoinAndSelect('game.categories', 'gameCategory')
-  //     .leftJoinAndSelect('gameCategory.category', 'category')
-  //     .take(perPage)
-  //     .skip(skip)
-  //     .getManyAndCount();
-
-  //     console.log("games", games);
-
-  //   // Transform games with categories into the required response structure
-  //   const data = games.map((game) => ({
-  //     id: game.id,
-  //     status: game.status,
-  //     provider_id: game.provider?.id || 0,
-  //     provider_name: game.provider?.name || '',
-  //     game_id: game.gameId,
-  //     game_name: game.title,
-  //     image: game.imagePath,
-  //     description: game.description || '',
-  //     // priority: game.priority || 0,
-  //     // category: game.categories.map((gc) => ({
-  //     //   id: gc.id,
-  //     //   category_id: gc.category.id,
-  //     //   name: gc.category.name,
-  //     // })),
-  //   }));
-
-  //   // Return paginated response
-  //   return {
-  //     total,
-  //     per_page: perPage,
-  //     current_page: page,
-  //     last_page: Math.ceil(total / perPage),
-  //     from: skip + 1,
-  //     to: skip + data.length,
-  //     data,
-  //   };
-  // }
-
   async getGamesWithCategories(
   ): Promise<CommonResponseArray> {
     const [games] = await this.gameRepository
@@ -974,6 +933,82 @@ async fetchGames({ categoryId, clientId, providerId }: FetchGamesRequest): Promi
     };
   }
   
+
+
+
+  async createTournament(createTournamentDto: CreateTournamentDto): Promise<Tournament> {
+    console.log("createTournamentDto", createTournamentDto);
+    const newTournament: Tournament = new TournamentEntity();
+    
+    newTournament.title = createTournamentDto.title;
+    newTournament.imageUrl = createTournamentDto.imageUrl;
+    newTournament.content = createTournamentDto.content;
+    newTournament.type = createTournamentDto.type;
+    newTournament.endDate = createTournamentDto.endDate;
+    newTournament.startDate = createTournamentDto.startDate;
+  
+    const savedTournament = await this.tournamenRepository.save(newTournament);
+    console.log("savedTournament", savedTournament);
+    return savedTournament;
+  }
+
+  async findOneTournament(request: FindOneTournamentDto): Promise<Tournament> {
+    const { id } = request;
+    console.log("id", id);
+    const tournament = await this.tournamenRepository.findOne({
+      where: { id }
+    });
+  
+    if (!tournament) {
+      throw new Error(`tournament with ID ${id} not found`);
+    }
+    return tournament;
+  }
+
+
+  async fetchTournaments(): Promise<Tournaments> {
+    const tournaments = await this.tournamenRepository.find();
+    console.log("tournaments", tournaments);
+    return { data: tournaments };
+  }
+
+  async updateTournament(updateTournamentDto: CreateTournamentDto): Promise<Tournament> {
+    const { id } = updateTournamentDto;
+  
+    // Find the promotion by ID
+    const tournament = await this.tournamenRepository.findOneBy({ id });
+  
+    if (!tournament) {
+      throw new Error(`Promotion with ID ${updateTournamentDto.id} not found`);
+    }
+  
+    // Update fields with provided values or retain existing ones
+    // promotion.clientId = updatePromotionDto.clientId ?? promotion.clientId;
+    tournament.title = updateTournamentDto.title ?? tournament.title;
+    tournament.imageUrl = updateTournamentDto.imageUrl ?? tournament.imageUrl;
+    tournament.content = updateTournamentDto.content ?? tournament.content;
+    tournament.type = updateTournamentDto.type ?? tournament.type;
+    tournament.startDate = updateTournamentDto.startDate;
+    tournament.endDate = updateTournamentDto.endDate;
+     
+  
+    // Save the updated promotion
+    const updatedTournament = await this.tournamenRepository.save(tournament);
+    return updatedTournament;
+  }
+
+  async removeTournament(request: FindOneTournamentDto) {
+    const { id } = request;
+    console.log('Deleting promotion with ID:', id);
+  
+    const tournament = await this.tournamenRepository.findOneBy({ id });
+    if (!tournament) {
+      throw new Error(`Promotion with ID ${id} not found`);
+    }
+  
+    await this.tournamenRepository.remove(tournament);
+    
+  }
   
 
 }

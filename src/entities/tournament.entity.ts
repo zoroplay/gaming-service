@@ -1,7 +1,7 @@
 import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 
-@Entity({ name: 'promotions' })
-export class Promotion {
+@Entity({ name: 'tournaments' })
+export class Tournament {
   @PrimaryGeneratedColumn()
   id: number;
 
@@ -22,9 +22,6 @@ export class Promotion {
 
   @Column({ type: 'varchar', nullable: true })
   type: string;
-
-  @Column({ type: 'text', nullable: true })
-  targetUrl: string;
 
   @Column({ default: 'active' })
   status: string;

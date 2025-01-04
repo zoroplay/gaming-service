@@ -24,6 +24,8 @@ import {
   AddGameToCategoriesDto,
   CreatePromotionDto,
   FindOnePromotionDto,
+  FindOneTournamentDto,
+  CreateTournamentDto,
 } from 'src/proto/gaming.pb';
 import { Observable } from 'rxjs';
 import { GrpcMethod } from '@nestjs/microservices';
@@ -242,5 +244,42 @@ export class GamesController {
   @GrpcMethod(GAMING_SERVICE_NAME, 'getGames')
   async getGames() {
     return this.gamesService.getGamesWithCategories();
+  }
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'createTournament')
+  async createTournament(payload: CreateTournamentDto): Promise<any> {
+    console.log('tournament', payload);
+    const newPromo = await this.gamesService.createTournament(payload);
+    return newPromo;
+  }
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'updateTournament')
+  updateTournament(payload: CreateTournamentDto): Promise<any> {
+    console.log('tournament');
+    return this.gamesService.updateTournament(payload);
+  }
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'findAllTournaments')
+  fetchTournaments(): Promise<any> {
+    console.log('find Promotions');
+    return this.gamesService.fetchTournaments();
+  }
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'findOneTournament')
+  findOneTournament(payload: FindOneTournamentDto): Promise<any> {
+    console.log('fetch tournament', payload);
+    return this.gamesService.findOneTournament(payload);
+  }
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'deleteTournament')
+  async removeTournament(payload: FindOneTournamentDto): Promise<void> {
+    console.log('Payload received by gRPC server for deletion:', payload);
+    const { id } = payload;
+
+    if (!id) {
+      throw new Error('Invalid payload: Missing `id` property.');
+    }
+
+    return this.gamesService.removeTournament(payload);
   }
 }
