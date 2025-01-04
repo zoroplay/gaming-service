@@ -402,6 +402,7 @@ export interface Promotion {
   startDate: string;
   endDate: string;
   status: string;
+  targetUrl?: string | undefined;
 }
 
 export interface CreatePromotionDto {
@@ -413,6 +414,7 @@ export interface CreatePromotionDto {
   startDate: string;
   endDate: string;
   type: string;
+  targetUrl?: string | undefined;
 }
 
 export interface Promotions {
