@@ -31,8 +31,7 @@ import {
   SaveCategoryRequest,
   StartGameDto,
   SyncGameDto,
-  Tournaments,
-  UpdateGameDto
+  UpdateGameDto,
 } from 'src/proto/gaming.pb';
 import {
   C2GamingService,
@@ -51,8 +50,6 @@ import { Tournament, Tournament as TournamentEntity } from 'src/entities/tournam
 import { QtechService } from 'src/services/qtech.service';
 // import { Timestamp } from 'google-protobuf/google/protobuf/timestamp_pb';
 // import { Struct } from 'google-protobuf/google/protobuf/struct_pb';
-
-
 
 @Injectable()
 export class GamesService {
@@ -173,54 +170,59 @@ export class GamesService {
     console.log(final);
     return final;
   }
-// Make sure to import the interface
+  // Make sure to import the interface
 
-async fetchGames({ categoryId, clientId, providerId }: FetchGamesRequest): Promise<Games> {
-  // Build the base query to filter games by status
-  const query = this.gameRepository
-    .createQueryBuilder('games')
-    .where('games.status = :status', { status: 1 });
+  async fetchGames({
+    categoryId,
+    clientId,
+    providerId,
+  }: FetchGamesRequest): Promise<Games> {
+    // Build the base query to filter games by status
+    const query = this.gameRepository
+      .createQueryBuilder('games')
+      .where('games.status = :status', { status: 1 });
 
-  if (categoryId && categoryId !== 1) {
-    query
-      .leftJoin(GameCategory, 'gamecat', 'gamecat.gameId = games.id')
-      .andWhere('gamecat.categoryId = :category', { category: categoryId });
+    if (categoryId && categoryId !== 1) {
+      query
+        .leftJoin(GameCategory, 'gamecat', 'gamecat.gameId = games.id')
+        .andWhere('gamecat.categoryId = :category', { category: categoryId });
+    }
+
+    if (providerId) {
+      query.andWhere('games.providerId = :providerId', { providerId });
+    }
+
+    // Fetch the games based on the query
+    const games = await query.getMany();
+
+    // Convert TypeORM entities to proto-generated types
+    const protoResponse: Game[] = games.map((entity: GameEntity) =>
+      this.entityToProtoService.entityToProto(entity),
+    );
+
+    // Return the games and totalGames, ensuring that it matches the Games interface
+    const final: Games = {
+      games: protoResponse,
+    };
+
+    return final;
   }
-
-  if (providerId) {
-    query.andWhere('games.providerId = :providerId', { providerId });
-  }
-
-  // Fetch the games based on the query
-  const games = await query.getMany();
-
-  // Convert TypeORM entities to proto-generated types
-  const protoResponse: Game[] = games.map((entity: GameEntity) =>
-    this.entityToProtoService.entityToProto(entity),
-  );
-
-  // Return the games and totalGames, ensuring that it matches the Games interface
-  const final: Games = {
-    games: protoResponse,
-  };
-
-  return final;
-}
-
 
   async fetchGamesByName(searchGamesDto: FetchGamesRequest): Promise<Games> {
     const { gameName } = searchGamesDto;
-  
+
     const query = this.gameRepository.createQueryBuilder('games');
-  
+
     if (gameName) {
       // Use LIKE to allow partial match (wildcard search) on gameName
-      query.andWhere('games.title LIKE :gameName', { gameName: `%${gameName}%` });
+      query.andWhere('games.title LIKE :gameName', {
+        gameName: `%${gameName}%`,
+      });
     }
-  
+
     const games = await query.getMany();
-     // Convert TypeORM entities to proto-generated types
-     const protoResponse: Game[] = games.map((entity: GameEntity) =>
+    // Convert TypeORM entities to proto-generated types
+    const protoResponse: Game[] = games.map((entity: GameEntity) =>
       this.entityToProtoService.entityToProto(entity),
     );
 
@@ -258,33 +260,37 @@ async fetchGames({ categoryId, clientId, providerId }: FetchGamesRequest): Promi
     return await this.providerRepository.findOneBy({ id });
   }
 
-  async saveCategory(createCategoryDto: SaveCategoryRequest): Promise<Category> {
+  async saveCategory(
+    createCategoryDto: SaveCategoryRequest,
+  ): Promise<Category> {
     const newCategory: Category = new Category();
     newCategory.client_id = createCategoryDto.clientId;
     newCategory.name = createCategoryDto.name;
     newCategory.slug = slugify(createCategoryDto.name);
     newCategory.priority = createCategoryDto.priority;
     newCategory.status = createCategoryDto.status;
-  
+
     const savedCategory = await this.categoryRepository.save(newCategory);
     return savedCategory;
   }
 
   async addGameToCategories(dto: AddGameToCategoriesDto) {
-    console.log("got to this part");
-    const game = await this.gameRepository.findOne({ where: { id: dto.gameId } });
+    console.log('got to this part');
+    const game = await this.gameRepository.findOne({
+      where: { id: dto.gameId },
+    });
     if (!game) {
       throw new NotFoundException('Game not found');
     }
 
-    console.log("game", game);
+    console.log('game', game);
 
     const categories = await this.categoryRepository.find({
       where: { id: In(dto.categories) },
     });
 
-    console.log("categories", categories);
-    
+    console.log('categories', categories);
+
     if (categories.length !== dto.categories.length) {
       throw new NotFoundException('Some categories not found');
     }
@@ -296,31 +302,33 @@ async fetchGames({ categoryId, clientId, providerId }: FetchGamesRequest): Promi
       return gameCategory;
     });
 
-    console.log("gameCategories", gameCategories);
+    console.log('gameCategories', gameCategories);
 
     const val = await this.gameCategoryRepository.save(gameCategories);
     return val[0];
   }
 
   async removeGameCategories(dto: AddGameToCategoriesDto) {
-    const game = await this.gameRepository.findOne({ where: { id: dto.gameId } });
+    const game = await this.gameRepository.findOne({
+      where: { id: dto.gameId },
+    });
     if (!game) {
       throw new NotFoundException('Game not found');
     }
-  
+
     const categories = await this.categoryRepository.find({
       where: { id: In(dto.categories) },
     });
-  
+
     if (categories.length !== dto.categories.length) {
       throw new NotFoundException('Some categories not found');
     }
-  
+
     await this.gameCategoryRepository.delete({
       game,
       category: In(categories.map((category) => category.id)),
     });
-  
+
     return { message: 'Categories removed successfully' };
   }
 
@@ -331,54 +339,56 @@ async fetchGames({ categoryId, clientId, providerId }: FetchGamesRequest): Promi
 
   async findOneCategory(request: FindOneCategoryDto): Promise<Category> {
     const { id } = request;
-    console.log("id", id);
+    console.log('id', id);
     const category = await this.categoryRepository.findOne({
       where: { id },
       relations: ['games'], // Eager load related games if needed
     });
-  
+
     if (!category) {
       throw new Error(`Category with ID ${id} not found`);
     }
     return category;
   }
 
-  async updateCategory(createCategoryDto: SaveCategoryRequest): Promise<Category> {
+  async updateCategory(
+    createCategoryDto: SaveCategoryRequest,
+  ): Promise<Category> {
     const { id } = createCategoryDto;
-    
+
     // Find the category by ID
     const category = await this.categoryRepository.findOneBy({ id });
-  
+
     if (!category) {
       throw new Error(`Category with ID ${createCategoryDto.id} not found`);
     }
-  
+
     // Update fields with provided values or retain existing ones
     category.client_id = createCategoryDto.clientId ?? category.client_id;
     category.name = createCategoryDto.name ?? category.name;
-    category.slug = createCategoryDto.name ? slugify(createCategoryDto.name) : category.slug;
+    category.slug = createCategoryDto.name
+      ? slugify(createCategoryDto.name)
+      : category.slug;
     category.priority = createCategoryDto.priority ?? category.priority;
     category.status = createCategoryDto.status ?? category.status;
-  
+
     // Save the updated category
     const updatedCategory = await this.categoryRepository.save(category);
     return updatedCategory;
   }
-  
 
   async deleteCategory(request: FindOneCategoryDto) {
     const { id } = request;
     console.log('Deleting category with ID:', id);
-  
+
     const category = await this.categoryRepository.findOneBy({ id });
     if (!category) {
       throw new Error(`Category with ID ${id} not found`);
     }
-  
+
     await this.categoryRepository.remove(category);
-    
   }
-  
+
   async findOne(id: number): Promise<GameEntity | null> {
     return await this.gameRepository.findOneBy({ id });
   }
@@ -434,7 +444,7 @@ async fetchGames({ categoryId, clientId, providerId }: FetchGamesRequest): Promi
   }
 
   async start(startGameDto: StartGameDto): Promise<any> {
-    console.log("startGameDto", startGameDto);
+    console.log('startGameDto', startGameDto);
 
     const game: GameEntity = await this.gameRepository.findOne({
       where: {
@@ -445,14 +455,14 @@ async fetchGames({ categoryId, clientId, providerId }: FetchGamesRequest): Promi
       },
     });
 
-    console.log("game", game);
+    console.log('game', game);
 
     switch (game.provider.slug) {
       case 'shack-evolution':
-        // return await this.smartSoftService.constructGameUrl(
-        //   startGameDto,
-        //   game,
-        // );
+      // return await this.smartSoftService.constructGameUrl(
+      //   startGameDto,
+      //   game,
+      // );
       case 'c27':
         return await this.c2GamingService.startGameSession(startGameDto, game);
       case 'tada-games':
@@ -461,17 +471,12 @@ async fetchGames({ categoryId, clientId, providerId }: FetchGamesRequest): Promi
           game,
         );
       case 'evo-play':
-        console.log("using evo-play");
-        return await this.evoPlayService.constructGameUrl(
-          startGameDto,
-          game,
-        );
+        console.log('using evo-play');
+        return await this.evoPlayService.constructGameUrl(startGameDto, game);
 
       case 'pragmatic-play':
-        console.log("using pragmatic-play");
-        return await this.pragmaticPlayService.constructGameUrl(
-          startGameDto
-        );
+        console.log('using pragmatic-play');
+        return await this.pragmaticPlayService.constructGameUrl(startGameDto);
 
       case 'evolution':
         // return await this.smartSoftService.constructGameUrl(
@@ -480,20 +485,32 @@ async fetchGames({ categoryId, clientId, providerId }: FetchGamesRequest): Promi
         // );
         break;
       case 'smart-soft':
-        console.log("using smart-soft");
+        console.log('using smart-soft');
         const privateKeyQuery = await this.gameKeyRepository.findOne({
           where: {
-              client_id: startGameDto.clientId,
-              option: 'SMART_SOFT_PORTAL',
-              provider: 'smart-soft'
-          }
+            client_id: startGameDto.clientId,
+            option: 'SMART_SOFT_PORTAL',
+            provider: 'smart-soft',
+          },
         });
-        
+
         return await this.smartSoftService.constructGameUrl(
           startGameDto,
           game,
-          privateKeyQuery.value
+          privateKeyQuery.value,
         );
+
+      case 'qtech-games':
+        console.log('using qtech-games');
+        // const privateKeyQuery = await this.gameKeyRepository.findOne({
+        //   where: {
+        //       client_id: startGameDto.clientId,
+        //       option: 'SMART_SOFT_PORTAL',
+        //       provider: 'smart-soft'
+        //   }
+        // });
+
+        return await this.qtechService.launchGames(startGameDto);
         break;
       default:
         throw new NotFoundException('Unknown provider');
@@ -516,14 +533,14 @@ async fetchGames({ categoryId, clientId, providerId }: FetchGamesRequest): Promi
         console.log('syncing here');
         return await this.evoPlayService.syncGames();
         break;
-        case 'pragmatic-play':
-          console.log('pragmatic syncing here');
-          return await this.pragmaticPlayService.syncGames();
-          break;
-          case 'qtech-games':
-          console.log('QTech Games syncing here');
-          return await this.qtechService.syncGames();
-          break;
+      case 'pragmatic-play':
+        console.log('pragmatic syncing here');
+        return await this.pragmaticPlayService.syncGames();
+        break;
+      case 'qtech-games':
+        console.log('QTech Games syncing here');
+        return await this.qtechService.syncGames();
+        break;
       default:
         throw new NotFoundException(
           'Specified provider does not support sync feature',
@@ -742,7 +759,7 @@ async fetchGames({ categoryId, clientId, providerId }: FetchGamesRequest): Promi
   }
 
   async handleGamesCallback(_data: CallbackGameDto): Promise<any> {
-    console.log("_data", _data);
+    console.log('_data', _data);
     switch (_data.provider) {
       case 'shack-evolution':
         return await this.handleC2Games(_data.body, _data.header);
@@ -753,18 +770,21 @@ async fetchGames({ categoryId, clientId, providerId }: FetchGamesRequest): Promi
       case 'smart-soft':
         const privateKeyQuery = await this.gameKeyRepository.findOne({
           where: {
-              client_id: _data.clientId,
-              option: 'SMART_SOFT_PORTAL',
-              provider: 'smart-soft'
-          }
+            client_id: _data.clientId,
+            option: 'SMART_SOFT_PORTAL',
+            provider: 'smart-soft',
+          },
         });
-        return await this.smartSoftService.handleCallback(_data, privateKeyQuery.value);
+        return await this.smartSoftService.handleCallback(
+          _data,
+          privateKeyQuery.value,
+        );
       case 'evolution':
         return await this.handleC2Games(_data.body, _data.header);
       case 'evo-play':
         return await this.evoPlayService.handleCallback(_data);
       case 'pragmatic-play':
-        console.log("using pragmatic-play");
+        console.log('using pragmatic-play');
         return await this.pragmaticPlayService.handleCallback(_data);
       default:
         throw new NotFoundException('Unknown provider');
@@ -781,53 +801,55 @@ async fetchGames({ categoryId, clientId, providerId }: FetchGamesRequest): Promi
     throw new Error('Method not implemented.');
   }
 
-  async createPromotion(createPromotionDto: CreatePromotionDto): Promise<Promotion> {
-    console.log("createPromotionDto", createPromotionDto);
+  async createPromotion(
+    createPromotionDto: CreatePromotionDto,
+  ): Promise<Promotion> {
+    console.log('createPromotionDto', createPromotionDto);
     const newPromotion: Promotion = new PromotionEntity();
-    
+
     newPromotion.title = createPromotionDto.title;
     newPromotion.imageUrl = createPromotionDto.imageUrl;
     newPromotion.content = createPromotionDto.content;
     newPromotion.type = createPromotionDto.type;
     newPromotion.endDate = createPromotionDto.endDate;
     newPromotion.startDate = createPromotionDto.startDate;
-    newPromotion.targetUrl = createPromotionDto.targetUrl;
-  
+
     const savedPromotion = await this.promotionRepository.save(newPromotion);
-    console.log("savedPromotion", savedPromotion);
+    console.log('savedPromotion', savedPromotion);
     return savedPromotion;
   }
 
   async findOnePromotion(request: FindOnePromotionDto): Promise<Promotion> {
     const { id } = request;
-    console.log("id", id);
+    console.log('id', id);
     const promotion = await this.promotionRepository.findOne({
-      where: { id }
+      where: { id },
     });
-  
+
     if (!promotion) {
       throw new Error(`Category with ID ${id} not found`);
     }
     return promotion;
   }
 
-
   async fetchPromotions(): Promise<Promotions> {
     const promotions = await this.promotionRepository.find();
-    console.log("promotions", promotions);
+    console.log('promotions', promotions);
     return { data: promotions };
   }
 
-  async updatePromotion(updatePromotionDto: CreatePromotionDto): Promise<Promotion> {
+  async updatePromotion(
+    updatePromotionDto: CreatePromotionDto,
+  ): Promise<Promotion> {
     const { id } = updatePromotionDto;
-  
+
     // Find the promotion by ID
     const promotion = await this.promotionRepository.findOneBy({ id });
-  
+
     if (!promotion) {
       throw new Error(`Promotion with ID ${updatePromotionDto.id} not found`);
     }
-  
+
     // Update fields with provided values or retain existing ones
     // promotion.clientId = updatePromotionDto.clientId ?? promotion.clientId;
     promotion.title = updatePromotionDto.title ?? promotion.title;
@@ -837,8 +859,7 @@ async fetchGames({ categoryId, clientId, providerId }: FetchGamesRequest): Promi
     promotion.targetUrl = updatePromotionDto.targetUrl ?? promotion.targetUrl;
     promotion.startDate = updatePromotionDto.startDate;
     promotion.endDate = updatePromotionDto.endDate;
-     
-  
+
     // Save the updated promotion
     const updatedPromotion = await this.promotionRepository.save(promotion);
     return updatedPromotion;
@@ -847,22 +868,20 @@ async fetchGames({ categoryId, clientId, providerId }: FetchGamesRequest): Promi
   async removePromotion(request: FindOnePromotionDto) {
     const { id } = request;
     console.log('Deleting promotion with ID:', id);
-  
+
     const promotion = await this.promotionRepository.findOneBy({ id });
     if (!promotion) {
       throw new Error(`Promotion with ID ${id} not found`);
     }
-  
+
     await this.promotionRepository.remove(promotion);
-    
   }
 
   async getAllGamesWithCategories() {
-
     const games = await this.gameRepository.find({
       relations: ['provider', 'categories'], // Ensure the 'categories' relation exists in the Game entity
     });
-  
+
     const response = {
       games: games.map((game) => ({
         id: game.id,
@@ -873,7 +892,7 @@ async fetchGames({ categoryId, clientId, providerId }: FetchGamesRequest): Promi
         game_name: game.title,
         image: game.imagePath,
         description: game.description,
-        category: []
+        category: [],
         // category: game.categories.map((category) => ({
         //   id: category.id,
         //   category_id: category.id, // Map correctly if `category_id` exists in DB
@@ -883,14 +902,60 @@ async fetchGames({ categoryId, clientId, providerId }: FetchGamesRequest): Promi
         // })),
       })),
     };
-  
-    console.log('Response:', response) // Log the response in a readable format
+
+    console.log('Response:', response); // Log the response in a readable format
     return response;
   }
 
+  // async getGameCategories(
+  //   page = 1,
+  //   perPage = 50,
+  // ): Promise<any> {
+  //   const skip = (page - 1) * perPage;
 
-  async getGamesWithCategories(
-  ): Promise<CommonResponseArray> {
+  //   // Fetch games with their related categories
+  //   const [games, total] = await this.gameRepository
+  //     .createQueryBuilder('game')
+  //     .leftJoinAndSelect('game.provider', 'provider')
+  //     .leftJoinAndSelect('game.categories', 'gameCategory')
+  //     .leftJoinAndSelect('gameCategory.category', 'category')
+  //     .take(perPage)
+  //     .skip(skip)
+  //     .getManyAndCount();
+
+  //     console.log("games", games);
+
+  //   // Transform games with categories into the required response structure
+  //   const data = games.map((game) => ({
+  //     id: game.id,
+  //     status: game.status,
+  //     provider_id: game.provider?.id || 0,
+  //     provider_name: game.provider?.name || '',
+  //     game_id: game.gameId,
+  //     game_name: game.title,
+  //     image: game.imagePath,
+  //     description: game.description || '',
+  //     // priority: game.priority || 0,
+  //     // category: game.categories.map((gc) => ({
+  //     //   id: gc.id,
+  //     //   category_id: gc.category.id,
+  //     //   name: gc.category.name,
+  //     // })),
+  //   }));
+
+  //   // Return paginated response
+  //   return {
+  //     total,
+  //     per_page: perPage,
+  //     current_page: page,
+  //     last_page: Math.ceil(total / perPage),
+  //     from: skip + 1,
+  //     to: skip + data.length,
+  //     data,
+  //   };
+  // }
+
+  async getGamesWithCategories(): Promise<CommonResponseArray> {
     const [games] = await this.gameRepository
       .createQueryBuilder('game')
       .leftJoinAndSelect('game.gameCategories', 'gameCategory')
@@ -898,7 +963,7 @@ async fetchGames({ categoryId, clientId, providerId }: FetchGamesRequest): Promi
       .leftJoinAndSelect('game.provider', 'provider')
       .getManyAndCount();
 
-    console.log("games", games);
+    console.log('games', games);
 
     const gameData = games.map((game) => ({
       id: game.id,
@@ -912,9 +977,9 @@ async fetchGames({ categoryId, clientId, providerId }: FetchGamesRequest): Promi
       priority: game.priority,
       category: game.gameCategories.map((gc) => ({
         id: gc.category.id,
-        name: gc.category.name
-      }))
-    }))
+        name: gc.category.name,
+      })),
+    }));
 
     // const gameDatas = {
     //   total,
@@ -932,83 +997,4 @@ async fetchGames({ categoryId, clientId, providerId }: FetchGamesRequest): Promi
       data: gameData,
     };
   }
-  
-
-
-
-  async createTournament(createTournamentDto: CreateTournamentDto): Promise<Tournament> {
-    console.log("createTournamentDto", createTournamentDto);
-    const newTournament: Tournament = new TournamentEntity();
-    
-    newTournament.title = createTournamentDto.title;
-    newTournament.imageUrl = createTournamentDto.imageUrl;
-    newTournament.content = createTournamentDto.content;
-    newTournament.type = createTournamentDto.type;
-    newTournament.endDate = createTournamentDto.endDate;
-    newTournament.startDate = createTournamentDto.startDate;
-  
-    const savedTournament = await this.tournamenRepository.save(newTournament);
-    console.log("savedTournament", savedTournament);
-    return savedTournament;
-  }
-
-  async findOneTournament(request: FindOneTournamentDto): Promise<Tournament> {
-    const { id } = request;
-    console.log("id", id);
-    const tournament = await this.tournamenRepository.findOne({
-      where: { id }
-    });
-  
-    if (!tournament) {
-      throw new Error(`tournament with ID ${id} not found`);
-    }
-    return tournament;
-  }
-
-
-  async fetchTournaments(): Promise<Tournaments> {
-    const tournaments = await this.tournamenRepository.find();
-    console.log("tournaments", tournaments);
-    return { data: tournaments };
-  }
-
-  async updateTournament(updateTournamentDto: CreateTournamentDto): Promise<Tournament> {
-    const { id } = updateTournamentDto;
-  
-    // Find the promotion by ID
-    const tournament = await this.tournamenRepository.findOneBy({ id });
-  
-    if (!tournament) {
-      throw new Error(`Promotion with ID ${updateTournamentDto.id} not found`);
-    }
-  
-    // Update fields with provided values or retain existing ones
-    // promotion.clientId = updatePromotionDto.clientId ?? promotion.clientId;
-    tournament.title = updateTournamentDto.title ?? tournament.title;
-    tournament.imageUrl = updateTournamentDto.imageUrl ?? tournament.imageUrl;
-    tournament.content = updateTournamentDto.content ?? tournament.content;
-    tournament.type = updateTournamentDto.type ?? tournament.type;
-    tournament.startDate = updateTournamentDto.startDate;
-    tournament.endDate = updateTournamentDto.endDate;
-     
-  
-    // Save the updated promotion
-    const updatedTournament = await this.tournamenRepository.save(tournament);
-    return updatedTournament;
-  }
-
-  async removeTournament(request: FindOneTournamentDto) {
-    const { id } = request;
-    console.log('Deleting promotion with ID:', id);
-  
-    const tournament = await this.tournamenRepository.findOneBy({ id });
-    if (!tournament) {
-      throw new Error(`Promotion with ID ${id} not found`);
-    }
-  
-    await this.tournamenRepository.remove(tournament);
-    
-  }
-  
-
 }
