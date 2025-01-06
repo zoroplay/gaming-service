@@ -255,8 +255,6 @@ export class EvoPlayService {
 
       url += `&denomination=${newData.denomination}&currency=${newData.currency}&return_url_info=${newData.return_url_info}&callback_version=${newData.callback_version}`
 
-      // console.log("url", url);
-
       const response: AxiosResponse = await this.httpClient.axiosRef.get(
         url,
         this.requestConfig,
@@ -274,6 +272,7 @@ export class EvoPlayService {
       if(response.data.error) {
         return {success: false, message: response.data.error.message}
       } else {
+         console.log("url", response.data.data.link);
         return {url: response.data.data.link}
       }
     } catch (e) {
