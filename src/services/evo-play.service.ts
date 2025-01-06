@@ -161,6 +161,28 @@ export class EvoPlayService {
     };
   }
 
+  //get games 
+  async getGameInfo() {
+    try {
+      const signature = this.getSignature(
+        this.project,
+        this.version,
+        {},
+        this.token,
+      );
+      // $url = $this->project_id."*".$this->version."*".$this->token;
+      const url = `Game/getList?project=${this.project}&version=${this.version}&signature=${signature}`;
+      const response: AxiosResponse = await this.httpClient.axiosRef.get(
+        url,
+        this.requestConfig,
+      );
+      // console.log(response.data.data);
+      return response.data.data;
+    } catch (e) {
+      console.error(e.message);
+    }
+  }
+
   // start game here
   async constructGameUrl(data, game: GameEntity) {
     try {
@@ -186,8 +208,12 @@ export class EvoPlayService {
           ...newData.settings, 
           extra_bonuses: {
             bonus_spins: {
-              spins_count: data.spins_count,
-              bet_in_money: data.bonusAmount
+              spins_count: 5,
+              bet_in_money: 500
+            },
+            freespins_on_start: {
+              freespins_count: 5,
+              bet_in_money: 500
             }
           },
           extra_bonuses_settings: {
@@ -228,6 +254,8 @@ export class EvoPlayService {
         url += `&settings[extra_bonuses][freespins_on_start][freespins_count]=${data.spins_count}&settings[extra_bonuses][freespins_on_start][bet_in_money]=${data.bonusAmount}&settings[extra_bonuses_settings][registration_id]=${data.bonusID}`;
 
       url += `&denomination=${newData.denomination}&currency=${newData.currency}&return_url_info=${newData.return_url_info}&callback_version=${newData.callback_version}`
+
+      // console.log("url", url);
 
       const response: AxiosResponse = await this.httpClient.axiosRef.get(
         url,

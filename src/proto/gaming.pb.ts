@@ -105,6 +105,8 @@ export interface StartGameDto {
   balanceType?: string | undefined;
   bonusId?: number | undefined;
   language?: string | undefined;
+  isBonus?: boolean | undefined;
+  bonusType?: string | undefined;
 }
 
 export interface StartGameResponse {
