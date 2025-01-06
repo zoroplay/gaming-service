@@ -67,3 +67,12 @@ export class Game {
   @UpdateDateColumn({ type: 'timestamp' })
   updatedAt: Date;
 }
+
+
+
+// Game/getURL?project=5555&version=2&signature=98f6b8021f16bcc4c3bc0805cd802a18&token=FE6RHKUBOQSZLFKEBQV4I1ZBMUFBD5Z3KSBZCAGU&game=229&settings[user_id]=214986&settings[exit_url]=https://example.com&settings[https]=1&settings[extra_bonuses][bonus_spins][spins_count]=undefined&settings[extra_bonuses][bonus_spins][bet_in_money]=undefined&settings[extra_bonuses_settings][registration_id]=undefined&denomination=1&currency=NGN&return_url_info=1&callback_version=2
+
+// settings[extra_bonuses][bonus_spins][spins_count],
+// settings[extra_bonuses][bonus_spins][bet_in_money] and
+// settings[extra_bonuses][freespins_on_start][freespins_count],
+// settings[extra_bonuses][freespins_on_start][bet_in_money].
