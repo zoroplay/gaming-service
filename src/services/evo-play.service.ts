@@ -208,13 +208,13 @@ export class EvoPlayService {
           ...newData.settings, 
           extra_bonuses: {
             bonus_spins: {
-              spins_count: data.bonus_spins,
-              bet_in_money: data.bonusAmount
+              spins_count: 5,
+              bet_in_money: 500
             },
-            // freespins_on_start: {
-            //   freespins_count: 5,
-            //   bet_in_money: 500
-            // }
+            freespins_on_start: {
+              freespins_count: 5,
+              bet_in_money: 500
+            }
           },
           extra_bonuses_settings: {
             registration_id: data.bonusID
@@ -259,6 +259,9 @@ export class EvoPlayService {
         url,
         this.requestConfig,
       );
+
+      console.log("url", url);
+      console.log("response", response);
 
       const gameSession = new GameSession();
       gameSession.balance_type = balanceType;
