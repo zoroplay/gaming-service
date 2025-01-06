@@ -248,7 +248,7 @@ export class EvoPlayService {
       let url = `Game/getURL?project=${this.project}&version=${this.version}&signature=${signature}&token=${newData.token}&game=${newData.game}&settings[user_id]=${newData.settings.user_id}&settings[exit_url]=${newData.settings.exit_url}&settings[https]=${newData.settings.https}`;
       
       if (data.isBonus)
-        url += `&settings[extra_bonuses][bonus_spins][spins_count]=${data.spins_count}&settings[extra_bonuses][bonus_spins][bet_in_money]=${data.bonusAmount}&settings[extra_bonuses_settings][registration_id]=${data.bonusID}`;
+        url += `&settings[extra_bonuses][bonus_spins][spins_count]=${newData.settings.extra_bonuses.bonus_spins.spins_count}&settings[extra_bonuses][bonus_spins][bet_in_money]=${newData.settings.extra_bonuses.bonus_spins.bet_in_money}&settings[extra_bonuses_settings][registration_id]=${newData.settings.extra_bonuses.bonus_spins.spins_count}`;
 
       if (data.isBonus && data.bonusType === 'featured_trigger')
         url += `&settings[extra_bonuses][freespins_on_start][freespins_count]=${data.spins_count}&settings[extra_bonuses][freespins_on_start][bet_in_money]=${data.bonusAmount}&settings[extra_bonuses_settings][registration_id]=${data.bonusID}`;
