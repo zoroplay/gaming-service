@@ -75,7 +75,7 @@ export class QtechService {
 
       return data.access_token;
     } catch (e) {
-      return new RpcException(e.messag || 'Something went wrong');
+      return new RpcException(e.message || 'Something went wrong');
     }
   }
 
@@ -119,7 +119,6 @@ export class QtechService {
     try {
       // Fetch games from the gRPC service
       const gamesResponse: any = await this.getCasinoGames();
-     
 
       // Validate response
       if (
@@ -127,7 +126,7 @@ export class QtechService {
         !gamesResponse.games ||
         gamesResponse.games.length === 0
       ) {
-        throw new Error('No games available for processing');
+        return new RpcException('No games available for processing');
       }
 
       const savedGames = await Promise.all(
@@ -159,12 +158,11 @@ export class QtechService {
                 imagePath: providerData.imagePath || `${this.QTECH_IMAGE_URL}`,
               });
               provider = await this.providerRepository.save(newProvider);
-             
             }
 
             // Validate provider existence
             if (!provider) {
-              throw new Error(
+              throw new RpcException(
                 `Failed to fetch or create provider for game: ${game.title}`,
               );
             }
@@ -193,12 +191,12 @@ export class QtechService {
 
             if (existingGame) {
               // Update the existing game
-              console.log('Updating existing game:', gameData.title);
+
               this.gameRepository.merge(existingGame, gameData);
               return await this.gameRepository.save(existingGame);
             } else {
               // Create a new game
-              console.log('Adding new game:', gameData.title);
+
               return await this.gameRepository.save(
                 this.gameRepository.create(gameData),
               );
