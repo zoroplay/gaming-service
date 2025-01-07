@@ -135,7 +135,16 @@ export class QtechService {
             where: { name: game.provider?.name },
           });
 
-          if (!provider) {
+          if (provider) {
+            // Update provider details if necessary
+            this.providerRepository.merge(provider, {
+              description: `Games provided by ${game.provider?.name || 'Unknown Provider'}`,
+              imagePath: `${this.QTECH_IMAGE_URL}`,
+            });
+            provider = await this.providerRepository.save(provider);
+            console.log('Updated provider:', provider);
+          } else {
+            // Create a new provider
             const newProvider: ProviderEntity = new ProviderEntity();
             newProvider.name = game.provider?.name || 'Unknown Provider';
             newProvider.slug = (game.provider?.name || 'Unknown Provider')
@@ -181,20 +190,18 @@ export class QtechService {
 
           // Check if the game already exists
           const gameExist = await this.gameRepository.findOne({
-            where: {
-              title: gameData.title,
-            },
-            relations: {
-              provider: true,
-            },
+            where: { gameId: gameData.gameId },
+            relations: { provider: true },
           });
 
           if (gameExist) {
-            console.log('Updated game');
+            // Update game details if necessary
             this.gameRepository.merge(gameExist, gameData);
+            console.log('Updated game:', gameExist.title);
             return this.gameRepository.save(gameExist);
           } else {
-            console.log('Added game');
+            // Create a new game
+            console.log('Added game:', gameData.title);
             return this.gameRepository.save(
               this.gameRepository.create(gameData),
             );
