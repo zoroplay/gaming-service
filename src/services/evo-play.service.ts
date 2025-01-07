@@ -217,7 +217,7 @@ export class EvoPlayService {
             }
           },
           extra_bonuses_settings: {
-            registration_id: 5
+            registration_id: 'test_registration'
           }
         }
       }
