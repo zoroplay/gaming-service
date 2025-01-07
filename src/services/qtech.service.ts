@@ -114,12 +114,12 @@ export class QtechService {
       throw new RpcException(e.response?.data?.message || 'Get Games failed');
     }
   }
-
   public async syncGames() {
     try {
       const gamesResponse: any = await this.getCasinoGames();
       console.log('gamesResponse', gamesResponse);
-
+  
+      // Validate response
       if (
         !gamesResponse ||
         !gamesResponse.items ||
@@ -127,97 +127,109 @@ export class QtechService {
       ) {
         throw new Error('No games available for processing');
       }
-
+  
       const savedGames = await Promise.all(
         gamesResponse.items.map(async (game: any) => {
-          // Check or create the game's provider
-          let provider = await this.providerRepository.findOne({
-            where: { name: game.provider?.name },
-          });
-
-          if (provider) {
-            // Update provider details if necessary
-            this.providerRepository.merge(provider, {
-              description: `Games provided by ${game.provider?.name || 'Unknown Provider'}`,
-              imagePath: `${this.QTECH_IMAGE_URL}`,
+          try {
+            // Fetch or create the game's provider
+            let provider = await this.providerRepository.findOne({
+              where: { name: game.provider?.name },
             });
-            provider = await this.providerRepository.save(provider);
-            console.log('Updated provider:', provider);
-          } else {
-            // Create a new provider
-            const newProvider: ProviderEntity = new ProviderEntity();
-            newProvider.name = game.provider?.name || 'Unknown Provider';
-            newProvider.slug = (game.provider?.name || 'Unknown Provider')
-              .toLowerCase()
-              .replace(/\s+/g, '-');
-            newProvider.description = `Games provided by ${game.provider?.name || 'Unknown Provider'}`;
-            newProvider.imagePath = `${this.QTECH_IMAGE_URL}`;
-            provider = await this.providerRepository.save(newProvider);
-            console.log('New provider created:', provider);
-          }
-
-          if (!provider) {
-            throw new Error(
-              `Failed to fetch or create provider for game: ${game.name}`,
-            );
-          }
-
-          // Extract category for game type
-          const gameType = game.category?.split('/')?.[1] || 'Unknown Type';
-
-          // Prepare game data
-          const imagePath = Array.isArray(game.images)
-            ? game.images.find((img: any) => img.type === 'logo-square')?.url ||
-              ''
-            : '';
-
-          const bannerPath = Array.isArray(game.images)
-            ? game.images.find((img: any) => img.type === 'banner')?.url || ''
-            : '';
-
-          const gameData = {
-            gameId: game.id,
-            title: game.name,
-            description:
-              game.description ||
-              `${game.name} by ${game.provider?.name || 'Unknown Provider'}`,
-            type: gameType,
-            provider: provider,
-            status: true,
-            imagePath: imagePath,
-            bannerPath: bannerPath,
-          };
-
-          // Check if the game already exists
-          const gameExist = await this.gameRepository.findOne({
-            where: { gameId: gameData.gameId },
-            relations: { provider: true },
-          });
-
-          if (gameExist) {
-            // Update game details if necessary
-            this.gameRepository.merge(gameExist, gameData);
-            console.log('Updated game:', gameExist.title);
-            return this.gameRepository.save(gameExist);
-          } else {
-            // Create a new game
-            console.log('Added game:', gameData.title);
-            return this.gameRepository.save(
-              this.gameRepository.create(gameData),
-            );
+  
+            if (provider) {
+              // Update provider details if needed
+              this.providerRepository.merge(provider, {
+                description: `Games provided by ${game.provider?.name || 'Unknown Provider'}`,
+                imagePath: `${this.QTECH_IMAGE_URL}`,
+              });
+              provider = await this.providerRepository.save(provider);
+              console.log('Updated provider:', provider);
+            } else {
+              // Create new provider
+              const newProvider: ProviderEntity = new ProviderEntity();
+              newProvider.name = game.provider?.name || 'Unknown Provider';
+              newProvider.slug = (game.provider?.name || 'Unknown Provider')
+                .toLowerCase()
+                .replace(/\s+/g, '-');
+              newProvider.description = `Games provided by ${game.provider?.name || 'Unknown Provider'}`;
+              newProvider.imagePath = `${this.QTECH_IMAGE_URL}`;
+              provider = await this.providerRepository.save(newProvider);
+              console.log('New provider created:', provider);
+            }
+  
+            // Validate provider
+            if (!provider) {
+              throw new Error(
+                `Failed to fetch or create provider for game: ${game.name}`,
+              );
+            }
+  
+            // Extract game category and images
+            const gameType = game.category?.split('/')?.[1] || 'Unknown Type';
+  
+            const imagePath = Array.isArray(game.images)
+              ? game.images.find((img: any) => img.type === 'logo-square')?.url || ''
+              : '';
+  
+            const bannerPath = Array.isArray(game.images)
+              ? game.images.find((img: any) => img.type === 'banner')?.url || ''
+              : '';
+  
+            const gameData = {
+              gameId: game.id,
+              title: game.name,
+              description:
+                game.description ||
+                `${game.name} by ${game.provider?.name || 'Unknown Provider'}`,
+              type: gameType,
+              provider: provider,
+              status: true,
+              imagePath: imagePath,
+              bannerPath: bannerPath,
+            };
+  
+            // Check if the game already exists
+            // eslint-disable-next-line prefer-const
+            let existingGame = await this.gameRepository.findOne({
+              where: {
+                gameId: gameData.gameId,
+              },
+              relations: {
+                provider: true,
+              },
+            });
+  
+            if (existingGame) {
+              console.log('Updating existing game:', gameData.title);
+              this.gameRepository.merge(existingGame, gameData);
+              return await this.gameRepository.save(existingGame);
+            } else {
+              console.log('Adding new game:', gameData.title);
+              return await this.gameRepository.save(
+                this.gameRepository.create(gameData),
+              );
+            }
+          } catch (error) {
+            console.error(`Error processing game: ${game.name}`, error.message);
+            // Returning null for failed game processing to avoid breaking the loop
+            return null;
           }
         }),
       );
-
+  
+      // Filter out null responses (games that failed to save)
+      const successfullySavedGames = savedGames.filter((game) => game !== null);
+  
       return {
         message: 'Games synchronized successfully',
-        games: savedGames,
+        games: successfullySavedGames,
       };
     } catch (error) {
-      console.log('Error saving games:', error.message);
+      console.error('Error saving games:', error.message);
       throw new Error(`Error synchronizing games: ${error.message}`);
     }
   }
+  
 
   // public async syncGames() {
   //   try {
