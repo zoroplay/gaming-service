@@ -119,7 +119,7 @@ export class QtechService {
     try {
       // Fetch games from the gRPC service
       const gamesResponse: any = await this.getCasinoGames();
-      console.log('Get Games response:', gamesResponse);
+     
 
       // Validate response
       if (
