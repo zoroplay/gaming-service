@@ -245,6 +245,7 @@ export class EvoPlayService {
       );
       console.log("signature", signature);
       console.log("newData", newData);
+      
       // $url = $this->project_id."*".$this->version."*".$this->token;
       let url = `Game/getURL?project=${this.project}&version=${this.version}&signature=${signature}&token=${newData.token}&game=${newData.game}&settings[user_id]=${newData.settings.user_id}&settings[exit_url]=${newData.settings.exit_url}&settings[https]=${newData.settings.https}`;
       
