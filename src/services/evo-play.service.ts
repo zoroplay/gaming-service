@@ -273,6 +273,7 @@ export class EvoPlayService {
       console.log("game-session created", gameSession)
 
       if(response.data.error) {
+        console.log("errorLink");
         return {success: false, message: response.data.error.message}
       } else {
         const responseLink = response.data.data.link;
