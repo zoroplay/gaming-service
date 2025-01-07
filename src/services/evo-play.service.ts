@@ -300,6 +300,7 @@ export class EvoPlayService {
         for (const key of Object.keys(arg)) {
           result.push(compact(arg[key]));
         }
+        console.log("result", result)
         return result.join(':');
       } else {
         return '' + arg;
@@ -316,7 +317,7 @@ export class EvoPlayService {
     parts.push(compact(integrationKey));
 
     const str = parts.join('*')
-    // console.log(str)
+    console.log('str', str);
     const md5Hash = crypto
       .createHash('md5')
       .update(str)
