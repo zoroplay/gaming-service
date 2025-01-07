@@ -126,7 +126,12 @@ export class QtechService {
         !gamesResponse.games ||
         gamesResponse.games.length === 0
       ) {
-        return new RpcException('No games available for processing');
+        console.warn('No games available for processing');
+        return {
+          success: false,
+          message: 'No games available for processing',
+          games: [],
+        };
       }
 
       const savedGames = await Promise.all(
@@ -162,9 +167,12 @@ export class QtechService {
 
             // Validate provider existence
             if (!provider) {
-              throw new RpcException(
-                `Failed to fetch or create provider for game: ${game.title}`,
-              );
+              console.warn('No games available for processing');
+              return {
+                success: false,
+                message: `Failed to fetch or create provider for game: ${game.title}`,
+                games: [],
+              };
             }
 
             // Prepare game data
