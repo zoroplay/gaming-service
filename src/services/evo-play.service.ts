@@ -275,8 +275,9 @@ export class EvoPlayService {
       if(response.data.error) {
         return {success: false, message: response.data.error.message}
       } else {
-         console.log("url", response.data.data.link);
-        return {url: response.data.data.link}
+        const responseLink = response.data.data.link;
+        console.log("responseLink", responseLink);
+        return {url: responseLink};
       }
     } catch (e) {
       console.error(e.message);
