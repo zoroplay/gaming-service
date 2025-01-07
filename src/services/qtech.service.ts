@@ -159,7 +159,7 @@ export class QtechService {
                 imagePath: providerData.imagePath || `${this.QTECH_IMAGE_URL}`,
               });
               provider = await this.providerRepository.save(newProvider);
-              console.log('New provider created:', provider.name);
+             
             }
 
             // Validate provider existence

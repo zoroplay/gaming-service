@@ -542,7 +542,6 @@ export class GamesService {
         return await this.pragmaticPlayService.syncGames();
         break;
       case 'qtech-games':
-        console.log('QTech Games syncing here');
         return await this.qtechService.syncGames();
         break;
       default:
