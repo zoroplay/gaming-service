@@ -187,6 +187,8 @@ export class EvoPlayService {
   async constructGameUrl(data, game: GameEntity) {
     try {
       let balanceType = data.balanceType;
+      const version = this.version;
+      console.log('version', version);
 
       // this.token = data.authCode;
       const newData: any = {
@@ -211,10 +213,6 @@ export class EvoPlayService {
               spins_count: 5,
               bet_in_money: 500
             },
-            freespins_on_start: {
-              freespins_count: 5,
-              bet_in_money: 500
-            }
           },
           extra_bonuses_settings: {
             registration_id: 'test_registration'
@@ -247,7 +245,8 @@ export class EvoPlayService {
       console.log("newData", newData);
 
       // $url = $this->project_id."*".$this->version."*".$this->token;
-      let url = `Game/getURL?project=${this.project}&version=${this.version}&signature=${signature}&token=${newData.token}&game=${newData.game}&settings[user_id]=${newData.settings.user_id}&settings[exit_url]=${newData.settings.exit_url}&settings[https]=${newData.settings.https}`;
+      // let url = `Game/getURL?project=${this.project}&version=${this.version}&signature=${signature}&token=${newData.token}&game=${newData.game}&settings[user_id]=${newData.settings.user_id}&settings[exit_url]=${newData.settings.exit_url}&settings[https]=${newData.settings.https}`;
+      let url = `Game/getURL?project=${this.project}&version=1&signature=${signature}&token=${newData.token}&game=${newData.game}&settings[user_id]=${newData.settings.user_id}&settings[exit_url]=${newData.settings.exit_url}&settings[https]=${newData.settings.https}`;
       
       if (data.isBonus)
         url += `&settings[extra_bonuses][bonus_spins][spins_count]=${newData.settings.extra_bonuses.bonus_spins.spins_count}&settings[extra_bonuses][bonus_spins][bet_in_money]=${newData.settings.extra_bonuses.bonus_spins.bet_in_money}&settings[extra_bonuses_settings][registration_id]=${newData.settings.extra_bonuses_settings.registration_id}`;
@@ -1098,3 +1097,6 @@ export class EvoPlayService {
   }
   
 }
+
+
+
