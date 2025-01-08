@@ -153,6 +153,7 @@ export class QtechService {
               // Create new provider if not found
               const newProvider = this.providerRepository.create({
                 name: providerName,
+                parentProvider: 'qtech-games',
                 slug: providerName.toLowerCase().replace(/\s+/g, '-'),
                 description: `Games provided by ${providerName}`,
                 imagePath: providerData.imagePath || `${this.QTECH_IMAGE_URL}`,
@@ -409,7 +410,7 @@ export class QtechService {
 
       // Prepare the payload
       const requestBody = {
-        userId,
+        playerId: userId,
         walletSessionId,
         currency: 'NGN',
         country: 'NG',
