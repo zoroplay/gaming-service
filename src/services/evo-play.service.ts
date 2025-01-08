@@ -246,7 +246,7 @@ export class EvoPlayService {
 
       const signature = this.getSignature(
         this.project,
-        this.project,
+        this.version,
         newData,
         this.token,
       );
