@@ -126,9 +126,17 @@ export class QtechService {
         !gamesResponse.games ||
         gamesResponse.games.length === 0
       ) {
-        return new RpcException('No games available for processing');
+        console.warn('No games available for processing');
+        return {
+          success: false,
+          message: 'No games available for processing',
+          games: [],
+        };
       }
 
+      console.log('Games retrieved:', gamesResponse.games);
+
+      // Process and save each game
       const savedGames = await Promise.all(
         gamesResponse.games.map(async (game: any) => {
           try {
@@ -136,21 +144,13 @@ export class QtechService {
             const providerData = game.provider || {};
             const providerName = providerData.name || 'Unknown Provider';
 
-            // Check if the provider already exists
+            // Check or create the provider
             let provider = await this.providerRepository.findOne({
               where: { name: providerName },
             });
 
-            if (provider) {
-              // Update existing provider
-              this.providerRepository.merge(provider, {
-                description: `Games provided by ${providerName}`,
-                imagePath: providerData.imagePath || `${this.QTECH_IMAGE_URL}`,
-              });
-              provider = await this.providerRepository.save(provider);
-              console.log('Updated provider:', provider.name);
-            } else {
-              // Create a new provider
+            if (!provider) {
+              // Create new provider if not found
               const newProvider = this.providerRepository.create({
                 name: providerName,
                 slug: providerName.toLowerCase().replace(/\s+/g, '-'),
@@ -158,13 +158,15 @@ export class QtechService {
                 imagePath: providerData.imagePath || `${this.QTECH_IMAGE_URL}`,
               });
               provider = await this.providerRepository.save(newProvider);
-            }
-
-            // Validate provider existence
-            if (!provider) {
-              throw new RpcException(
-                `Failed to fetch or create provider for game: ${game.title}`,
-              );
+              console.log('Created new provider:', provider.name);
+            } else {
+              // Update existing provider
+              this.providerRepository.merge(provider, {
+                description: `Games provided by ${providerName}`,
+                imagePath: providerData.imagePath || `${this.QTECH_IMAGE_URL}`,
+              });
+              provider = await this.providerRepository.save(provider);
+              console.log('Updated provider:', provider.name);
             }
 
             // Prepare game data
@@ -183,20 +185,16 @@ export class QtechService {
               updatedAt: game.updatedAt || new Date().toISOString(),
             };
 
-            // Check if the game already exists
+            // Check or create the game
             const existingGame = await this.gameRepository.findOne({
               where: { gameId: gameData.gameId },
               relations: { provider: true },
             });
 
             if (existingGame) {
-              // Update the existing game
-
               this.gameRepository.merge(existingGame, gameData);
               return await this.gameRepository.save(existingGame);
             } else {
-              // Create a new game
-
               return await this.gameRepository.save(
                 this.gameRepository.create(gameData),
               );
@@ -215,12 +213,17 @@ export class QtechService {
       const successfullySavedGames = savedGames.filter((game) => game !== null);
 
       return {
+        success: true,
         message: 'Games synchronized successfully',
         games: successfullySavedGames,
       };
     } catch (error) {
       console.error('Error saving games:', error.message);
-      throw new Error(`Error synchronizing games: ${error.message}`);
+      return {
+        success: false,
+        message: `Error synchronizing games: ${error.message}`,
+        games: [],
+      };
     }
   }
 
