@@ -337,15 +337,16 @@ export class QtechService {
         demo,
         balanceType,
         isMobile,
+        homeUrl,
       } = payload;
 
       // Convert gameId to string if necessary
-      const covGameId = gameId.toString();
+      //const covGameId = gameId.toString();
       const playerId = clientId.toString();
 
       // Fetch game details from the repository
       const gameExist = await this.gameRepository.findOne({
-        where: { gameId: covGameId },
+        where: { id: gameId },
         relations: { provider: true },
       });
       console.log('Game retrieved from DB:', gameExist);
@@ -366,7 +367,7 @@ export class QtechService {
       console.log('Selected mode:', mode, 'Selected device:', device);
 
       // Define the return URL
-      const returnUrl = 'https://your-operator-site.com/games';
+      const returnUrl = homeUrl;
 
       // Prepare the game session
       const gameSession = new GameSession();
@@ -393,7 +394,7 @@ export class QtechService {
       }
 
       // Prepare the API request URL
-      const requestUrl = `${this.QTECH_BASEURL}/v1/games/${covGameId}/launch-url`;
+      const requestUrl = `${this.QTECH_BASEURL}/v1/games/${gameExist.gameId}/launch-url`;
 
       // Set up headers
       const headers = {
@@ -411,13 +412,14 @@ export class QtechService {
         device,
         returnUrl,
       };
-
+      console.log('Response Body:', requestBody);
       // Make the API request
       const { data } = await this.httpService
         .post(requestUrl, requestBody, { headers })
         .toPromise();
 
       console.log('Response data:', data);
+      console.log('Response data:', data.returnUrl);
 
       // Return the game URL
       return { url: data.gameURL };
