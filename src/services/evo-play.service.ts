@@ -192,7 +192,7 @@ export class EvoPlayService {
       const secretKey = this.secretKey;
       const token = this.token;
       const version = this.version;
-      
+
       console.log('baseUrl', baseUrl);
       console.log('project', project);
       console.log('secretKey', secretKey);
@@ -246,7 +246,7 @@ export class EvoPlayService {
 
       const signature = this.getSignature(
         this.project,
-        1,
+        this.project,
         newData,
         this.token,
       );
@@ -348,7 +348,7 @@ export class EvoPlayService {
     
     const hash = this.getSignature(
       this.project,
-      this.version,
+      2,
       body,
       this.token
     );
