@@ -187,7 +187,16 @@ export class EvoPlayService {
   async constructGameUrl(data, game: GameEntity) {
     try {
       let balanceType = data.balanceType;
+      const baseUrl = this.baseUrl;
+      const project = this.project;
+      const secretKey = this.secretKey;
+      const token = this.token;
       const version = this.version;
+      
+      console.log('baseUrl', baseUrl);
+      console.log('project', project);
+      console.log('secretKey', secretKey);
+      console.log('token', token);
       console.log('version', version);
 
       // this.token = data.authCode;
@@ -237,7 +246,7 @@ export class EvoPlayService {
 
       const signature = this.getSignature(
         this.project,
-        this.version,
+        1,
         newData,
         this.token,
       );
