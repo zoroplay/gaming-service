@@ -332,7 +332,7 @@ export class QtechService {
       const {
         gameId,
         language,
-        clientId,
+        userId,
         authCode,
         demo,
         balanceType,
@@ -342,13 +342,14 @@ export class QtechService {
 
       // Convert gameId to string if necessary
       //const covGameId = gameId.toString();
-      const playerId = clientId.toString();
+      // const playerId = clientId.toString();
 
       // Fetch game details from the repository
       const gameExist = await this.gameRepository.findOne({
         where: { id: gameId },
         relations: { provider: true },
       });
+
       console.log('Game retrieved from DB:', gameExist);
 
       if (!gameExist) {
@@ -359,6 +360,8 @@ export class QtechService {
       // Determine mode and device
       const mode = demo ? 'demo' : 'real';
       const device = isMobile ? 'mobile' : 'desktop';
+
+      console.log('mode', 'device', mode, device);
 
       // Construct the wallet session ID (if applicable)
       const walletSessionId = authCode || `session_${Date.now()}`;
@@ -396,33 +399,37 @@ export class QtechService {
       // Prepare the API request URL
       const requestUrl = `${this.QTECH_BASEURL}/v1/games/${gameExist.gameId}/launch-url`;
 
+      console.log('requestUrl:', requestUrl);
+
       // Set up headers
       const headers = {
         Authorization: `Bearer ${await this.getAccessToken()}`,
-        'Wallet-Session': walletSessionId,
+        // 'Wallet-Session': walletSessionId,
       };
 
       // Prepare the payload
       const requestBody = {
-        playerId,
+        userId,
+        walletSessionId,
         currency: 'NGN',
-        country: 'EN',
-        lang: language || 'en_US',
+        country: 'NG',
+        lang: 'en_US',
         mode,
         device,
         returnUrl,
       };
-      console.log('Response Body:', requestBody);
+
+      console.log('requestBody:', requestBody);
       // Make the API request
       const { data } = await this.httpService
         .post(requestUrl, requestBody, { headers })
         .toPromise();
 
       console.log('Response data:', data);
-      console.log('Response data:', data.returnUrl);
+      console.log('Response returnUrl:', data.returnUrl);
 
       // Return the game URL
-      return { url: data.gameURL };
+      return { url: data.url };
     } catch (error) {
       console.error('Error in launchGames:', error.message);
       throw new RpcException(
