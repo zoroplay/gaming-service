@@ -281,9 +281,7 @@ export class QtechService {
         throw new Error('Auth token is missing');
       }
 
-          // Save the Wallet-Session for future use
-  
-
+      // Save the Wallet-Session for future use
 
       try {
         await this.gameSessionRepo.save(gameSession);
@@ -359,23 +357,20 @@ export class QtechService {
         throw new NotFoundException('Game not found');
       }
 
-   
       // Retrieve the Wallet-Session from the database
-    const session = await this.gameSessionRepo.findOne({
-      where: {  game_id: gameId },
-    });
+      const session = await this.gameSessionRepo.findOne({
+        where: { game_id: gameId },
+      });
 
-    if (!session) {
-      return {
-        success: false,
-        message: 'Session not found',
-        data: {},
-      };
-    }
+      if (!session) {
+        return {
+          success: false,
+          message: 'Session not found',
+          data: {},
+        };
+      }
 
-
-
-    const walletSessionId = session.session_id;
+      const walletSessionId = session.session_id;
 
       // Log game session details
       console.log('Game session created:', walletSessionId);
@@ -422,7 +417,7 @@ export class QtechService {
   async getBalance(clientId, userId, gameId?): Promise<any> {
     try {
       console.log('Got to balance method');
-  
+
       // Validate input parameters
       if (!userId || !clientId) {
         return {
@@ -432,13 +427,14 @@ export class QtechService {
           data: {},
         };
       }
-  
+
       // Fetch the wallet balance using wallet service
       const wallet = await this.walletService.getWallet({ userId, clientId });
-  
+
       // Parse the wallet response
-      const walletData = typeof wallet === 'string' ? JSON.parse(wallet) : wallet;
-  
+      const walletData =
+        typeof wallet === 'string' ? JSON.parse(wallet) : wallet;
+
       if (!walletData?.success) {
         return {
           success: false,
@@ -447,7 +443,7 @@ export class QtechService {
           data: {},
         };
       }
-  
+
       // Fetch game details if gameId is provided
       let gameExist;
       if (gameId) {
@@ -455,7 +451,7 @@ export class QtechService {
           where: { id: gameId },
           relations: { provider: true },
         });
-  
+
         if (!gameExist) {
           return {
             success: false,
@@ -465,12 +461,12 @@ export class QtechService {
           };
         }
       }
-  
+
       // Fetch session information
       const session = await this.gameSessionRepo.findOne({
         where: { game_id: gameId },
       });
-  
+
       if (!session) {
         return {
           success: false,
@@ -478,9 +474,9 @@ export class QtechService {
           data: {},
         };
       }
-  
+
       const walletSessionId = session.session_id;
-  
+
       // Validate session ID
       if (!walletSessionId) {
         return {
@@ -489,25 +485,25 @@ export class QtechService {
           data: {},
         };
       }
-  
+
       // External API call to fetch the balance
       const url = `${this.OPERATOR_URL}/accounts/${userId}/balance`;
       const headers = {
         'Pass-Key': this.QTECH_PASS_KEY,
         'Wallet-Session': walletSessionId,
       };
-  
+
       const params: Record<string, string> = {};
       if (gameId) {
         params.gameId = gameId;
       }
-  
+
       const externalBalanceResponse = await this.httpService
         .get(url, { headers, params })
         .toPromise();
-  
+
       const externalBalanceData = externalBalanceResponse?.data;
-  
+
       // Construct the response
       return {
         success: true,
@@ -529,7 +525,6 @@ export class QtechService {
       );
     }
   }
-  
 
   async authenticate(clientId, token, callback, walletType) {
     console.log('Got to authenticate method');
@@ -671,8 +666,6 @@ export class QtechService {
 
       console.log('getWallet', getWallet);
 
-     
-
       if (!getWallet || !getWallet.status) {
         response = {
           success: false,
@@ -714,6 +707,33 @@ export class QtechService {
         return response;
       }
 
+       // Retrieve the Wallet-Session from the database
+       const session = await this.gameSessionRepo.findOne({
+        where: { game_id: gameExist.gameId },
+      });
+
+      if (!session) {
+        return {
+          success: false,
+          message: 'Session not found',
+          data: {},
+        };
+      }
+
+      const walletSessionId = session.session_id;
+
+      // Log game session details
+      console.log('Game session created:', walletSessionId);
+
+      if (!walletSessionId) {
+        console.error('Session ID is missing or invalid');
+        return {
+          success: false,
+          message: 'Session ID is missing',
+          data: {},
+        };
+      }
+
       const placeBetPayload: PlaceCasinoBetRequest = {
         userId: player.playerId,
         clientId,
@@ -735,8 +755,6 @@ export class QtechService {
 
       console.log('place_bet', place_bet);
 
-     
-
       if (!place_bet.success) {
         response = {
           success: false,
@@ -752,9 +770,6 @@ export class QtechService {
 
         return response;
       }
-
-
-
 
       const debit = await this.walletService.debit({
         userId: player.playerId,
@@ -816,33 +831,25 @@ export class QtechService {
 
       const headers = {
         'Pass-Key': this.QTECH_PASSWORD,
-        'Wallet-Session': this.launchGames.data.wallet, // this should come from the lunchUrl fun
+        'Wallet-Session': walletSessionId, 
       };
 
-     const  payload = {
-      txnType,
-      txnId,
-      playerId,
-      roundId,
-      amount,
-      currency,
-      gameId
-      created
-      completed,
-      "jpContributions": [
-{
-"id" : "BPG-royal",
-"amount": 0.0001,
-"balance" : 2069
-}
-]
+      const payload = {
+        playerId: player.playerId,
+        transactionId: body.get('reference'),
+        roundId: body.get('roundId'),
+        gameId: body.get('gameId'),
+        amount: parseFloat(body.get('amount')),
+        currency: player.currency,
+        type: 'bet',
+        status: 'success',
+        description: `Casino Bet: (${gameExist.title}:${body.get('reference')})`,
+      };
 
-
-      }
-
-      const { data } = await this.httpService.post(url, payload, { headers }).toPromise();
+      const { data } = await this.httpService
+        .post(url, payload, { headers })
+        .toPromise();
       console.log(' response:', data);
-
 
       await this.callbackLogRepository.update(
         { id: callback.id },
@@ -869,8 +876,8 @@ export class QtechService {
   }
 
   async placeBet(data: PlaceCasinoBetRequest) {
-      return firstValueFrom(this.betService.placeCasinoBet(data));
-    }
+    return firstValueFrom(this.betService.placeCasinoBet(data));
+  }
 
   // async handleCallback(data: CallbackGameDto) {
   //   console.log('_data', data);
