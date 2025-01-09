@@ -419,6 +419,19 @@ export interface CreatePromotionDto {
   targetUrl?: string | undefined;
 }
 
+export interface FileChunk {
+  data: Uint8Array;
+}
+
+export interface CreatePromotionRequest {
+  /** Metadata for the promotion */
+  metadata?:
+    | CreatePromotionDto
+    | undefined;
+  /** Binary chunks of the file */
+  fileChunk?: FileChunk | undefined;
+}
+
 export interface Promotions {
   data: Promotion[];
 }
@@ -532,7 +545,7 @@ export interface GamingServiceClient {
 
   getGames(request: Empty): Observable<CommonResponseArray>;
 
-  createPromotion(request: CreatePromotionDto): Observable<Promotion>;
+  createPromotion(request: Observable<CreatePromotionRequest>): Observable<Promotion>;
 
   findPromotions(request: Empty): Observable<Promotions>;
 
@@ -618,7 +631,7 @@ export interface GamingServiceController {
 
   getGames(request: Empty): Promise<CommonResponseArray> | Observable<CommonResponseArray> | CommonResponseArray;
 
-  createPromotion(request: CreatePromotionDto): Promise<Promotion> | Observable<Promotion> | Promotion;
+  createPromotion(request: Observable<CreatePromotionRequest>): Promise<Promotion> | Observable<Promotion> | Promotion;
 
   findPromotions(request: Empty): Promise<Promotions> | Observable<Promotions> | Promotions;
 
@@ -677,7 +690,6 @@ export function GamingServiceControllerMethods() {
       "removeProvider",
       "findAllProviders",
       "getGames",
-      "createPromotion",
       "findPromotions",
       "findOnePromotion",
       "updatePromotion",
@@ -695,7 +707,7 @@ export function GamingServiceControllerMethods() {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
       GrpcMethod("GamingService", method)(constructor.prototype[method], method, descriptor);
     }
-    const grpcStreamMethods: string[] = ["queryGames"];
+    const grpcStreamMethods: string[] = ["createPromotion", "queryGames"];
     for (const method of grpcStreamMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
       GrpcStreamMethod("GamingService", method)(constructor.prototype[method], method, descriptor);

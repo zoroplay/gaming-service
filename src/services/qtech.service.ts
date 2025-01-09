@@ -16,6 +16,8 @@ import {
   Provider as ProviderEntity,
 } from '../entities';
 import { CallbackGameDto, StartGameDto } from 'src/proto/gaming.pb';
+import { PlaceCasinoBetRequest } from 'src/proto/betting.pb';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class QtechService {
@@ -24,6 +26,7 @@ export class QtechService {
   private readonly QTECH_USERNAME: string;
   private readonly QTECH_IMAGE_URL: string;
   private readonly QTECH_PASS_KEY: string;
+  private readonly OPERATOR_URL: string;
 
   constructor(
     @InjectRepository(ProviderEntity)
@@ -47,6 +50,7 @@ export class QtechService {
     this.QTECH_USERNAME = this.configService.get<string>('QTECH_USERNAME');
     this.QTECH_IMAGE_URL = this.configService.get<string>('QTECH_IMAGE_URL');
     this.QTECH_PASS_KEY = this.configService.get<string>('QTECH_PASS_KEY');
+    this.OPERATOR_URL = this.configService.get<string>('OPERATOR_URL');
   }
 
   // Get Casino Games
@@ -141,8 +145,8 @@ export class QtechService {
         gamesResponse.games.map(async (game: any) => {
           try {
             // Extract provider details
-            const providerData = game.provider || {};
-            const providerName = providerData.name || 'Unknown Provider';
+            const providerData = game.provider;
+            const providerName = providerData.name;
 
             // Check or create the provider
             let provider = await this.providerRepository.findOne({
@@ -176,11 +180,11 @@ export class QtechService {
               title: game.title,
               description:
                 game.description || `Enjoy ${game.title} by ${providerName}`,
-              url: game.url || '',
-              imagePath: game.imagePath || '',
-              bannerPath: game.bannerPath || '',
+              url: game.url,
+              imagePath: game.imagePath,
+              bannerPath: game.bannerPath,
               status: game.status ?? true,
-              type: game.type || 'Unknown Type',
+              type: game.type || 'Slots',
               provider: provider,
               createdAt: game.createdAt || new Date().toISOString(),
               updatedAt: game.updatedAt || new Date().toISOString(),
@@ -205,7 +209,7 @@ export class QtechService {
               `Error processing game: ${game.title}`,
               error.message,
             );
-            return null; // Continue processing other games
+            return null;
           }
         }),
       );
@@ -228,122 +232,10 @@ export class QtechService {
     }
   }
 
-  // public async syncGames() {
-  //   try {
-  //     const gamesResponse: any = await this.getCasinoGames();
-  //     console.log('gamesResponse', gamesResponse);
-
-  //     if (
-  //       !gamesResponse ||
-  //       !gamesResponse.items ||
-  //       gamesResponse.items.length === 0
-  //     ) {
-  //       throw new Error('No games available for processing');
-  //     }
-
-  //     let provider = await this.providerRepository.findOne({
-  //       where: { name: 'QTech Games' },
-  //     });
-
-  //     console.log('provider', provider);
-
-  //     if (!provider) {
-  //       try {
-  //         const newProvider: ProviderEntity = new ProviderEntity();
-  //         newProvider.name = 'QTech Games';
-  //         newProvider.slug = 'qtech-games';
-  //         newProvider.description = 'QTech Games';
-  //         newProvider.imagePath = `${this.QTECH_IMAGE_URL}`;
-  //         provider = await this.providerRepository.save(newProvider);
-  //         console.log('New provider created:', provider);
-  //       } catch (error) {
-  //         // Handle duplicate entry error gracefully
-  //         if (error.code === 'ER_DUP_ENTRY') {
-  //           console.log(
-  //             'Duplicate provider found. Fetching existing provider...',
-  //           );
-  //           provider = await this.providerRepository.findOne({
-  //             where: { slug: 'qtech-games' },
-  //           });
-  //         } else {
-  //           console.error('Provider ERROR', error);
-  //           throw error; // Rethrow other errors
-  //         }
-  //       }
-  //     }
-
-  //     if (!provider) {
-  //       throw new Error('Failed to fetch or create provider');
-  //     }
-  //     const savedGames = await Promise.all(
-  //       gamesResponse.items.map(async (game: any) => {
-  //         const imagePath = Array.isArray(game.images)
-  //           ? game.images.find((img: any) => img.type === 'logo-square')?.url ||
-  //             ''
-  //           : '';
-
-  //         const bannerPath = Array.isArray(game.images)
-  //           ? game.images.find((img: any) => img.type === 'banner')?.url || ''
-  //           : '';
-  //         const gameData = {
-  //           gameId: game.id,
-  //           title: game.name,
-  //           description:
-  //             game.description ||
-  //             `${game.name} by ${game.provider?.name || 'Unknown Provider'}`,
-  //           type: 'Slots',
-  //           provider: provider,
-  //           status: true,
-  //           imagePath: imagePath,
-  //           bannerPath: bannerPath,
-  //         };
-
-  //         const gameExist = await this.gameRepository.findOne({
-  //           where: {
-  //             title: gameData.title,
-  //           },
-  //           relations: {
-  //             provider: true,
-  //           },
-  //         });
-
-  //         if (gameExist) {
-  //           console.log('updated game');
-  //           this.gameRepository.merge(gameExist, gameData);
-  //           return this.gameRepository.save(gameExist);
-  //         } else {
-  //           console.log('added game');
-  //           return this.gameRepository.save(
-  //             this.gameRepository.create(gameData),
-  //           );
-  //         }
-  //       }),
-  //     );
-
-  //     return {
-  //       games: savedGames,
-  //     };
-  //   } catch (error) {
-  //     console.log('Error saving games:', error.message);
-  //   }
-  // }
-
   async launchGames(payload: StartGameDto): Promise<any> {
     try {
-      const {
-        gameId,
-        language,
-        userId,
-        authCode,
-        demo,
-        balanceType,
-        isMobile,
-        homeUrl,
-      } = payload;
-
-      // Convert gameId to string if necessary
-      //const covGameId = gameId.toString();
-      // const playerId = clientId.toString();
+      const { gameId, userId, authCode, demo, balanceType, isMobile, homeUrl } =
+        payload;
 
       // Fetch game details from the repository
       const gameExist = await this.gameRepository.findOne({
@@ -388,6 +280,8 @@ export class QtechService {
         console.error('Auth token is missing or invalid');
         throw new Error('Auth token is missing');
       }
+
+      // Save the Wallet-Session for future use
 
       try {
         await this.gameSessionRepo.save(gameSession);
@@ -438,130 +332,196 @@ export class QtechService {
       );
     }
   }
-  async getBalance(clientId, player, callback: any, walletType): Promise<any> {
+
+  async verifySession(userId, gameId): Promise<any> {
     try {
-      console.log('Got to balance method');
-
-      let response;
-
-      if (player) {
-        // Fetch balance from wallet service using Player UserID and ClientID
-        const wallet = await this.walletService.getWallet({
-          userId: player.playerId,
-          clientId,
-          wallet: walletType,
-        });
-
-        const dataObject =
-          typeof wallet === 'string' ? JSON.parse(wallet) : wallet;
-
-        console.log('Wallet Service Data Object:', dataObject);
-
-        if (dataObject.success) {
-          response = {
-            success: true,
-            status: HttpStatus.OK,
-            message: 'Balance retrieved successfully',
-            data: {
-              cash: parseFloat(dataObject.data.availableBalance.toFixed(2)),
-              bonus: parseFloat(dataObject.data.casinoBonusBalance.toFixed(2)),
-              currency: player.currency,
-              error: 0,
-              description: 'Success',
-            },
-          };
-        } else {
-          response = {
-            success: false,
-            status: HttpStatus.INTERNAL_SERVER_ERROR,
-            message: 'Could not retrieve balance from wallet service',
-            data: {},
-          };
-        }
-
-        // Fetch balance from external wallet API
-        const url = `https://wallet.operator.com/accounts/${player.playerId}/balance`;
-        const headers = {
-          'Pass-Key': this.QTECH_PASS_KEY,
-          'Wallet-Session': callback.walletSession || '',
-        };
-
-        // Add optional query parameter
-        const params: any = {};
-        if (callback.gameId) {
-          params.gameId = callback.gameId;
-        }
-
-        try {
-          const { data } = await this.httpService
-            .get(url, { headers, params })
-            .toPromise();
-          console.log('External API Balance Response:', data);
-
-          response.data.externalBalance = {
-            balance: parseFloat(data.balance.toFixed(2)),
-            currency: data.currency,
-          };
-        } catch (apiError) {
-          console.error(
-            'Error fetching balance from external API:',
-            apiError.message,
-          );
-          response.data.externalBalance = {
-            error: true,
-            description: 'Failed to retrieve external balance',
-          };
-        }
-      } else {
-        response = {
+      // Validate required parameters
+      if (!userId || !gameId) {
+        console.error('Missing required parameters: playerId or gameId');
+        return {
           success: false,
-          status: HttpStatus.NOT_FOUND,
-          message: 'Player not found',
+          message: 'Missing required parameters',
           data: {},
         };
       }
 
-      // Update callback log response
-      await this.callbackLogRepository.update(
-        { id: callback.id },
-        { response: JSON.stringify(response) },
-      );
+      const gameExist = await this.gameRepository.findOne({
+        where: { id: gameId },
+        relations: { provider: true },
+      });
 
-      return response;
-    } catch (e) {
-      console.error('Error in getBalance:', e.message);
-      throw new RpcException(e.response?.data?.message || 'Get Balance failed');
-    }
-  }
+      console.log('Game retrieved from DB:', gameExist);
 
-  async verifySession(
-    playerId: string,
-    gameId: string,
-    walletSessionId: string,
-  ): Promise<any> {
-    try {
-      // Construct the URL with the required path and query parameters
-      const url = `${this.QTECH_BASEURL}/accounts/${playerId}/session?gameId=${gameId}`;
+      if (!gameExist) {
+        console.error(`Game with ID ${gameId} not found`);
+        throw new NotFoundException('Game not found');
+      }
 
-      // Set the required headers
+      // Retrieve the Wallet-Session from the database
+      const session = await this.gameSessionRepo.findOne({
+        where: { game_id: gameId },
+      });
+
+      if (!session) {
+        return {
+          success: false,
+          message: 'Session not found',
+          data: {},
+        };
+      }
+
+      const walletSessionId = session.session_id;
+
+      // Log game session details
+      console.log('Game session created:', walletSessionId);
+
+      if (!walletSessionId) {
+        console.error('Session ID is missing or invalid');
+        return {
+          success: false,
+          message: 'Session ID is missing',
+          data: {},
+        };
+      }
+
+      const playerId = userId;
+
+      // Construct the URL
+      const url = `${this.OPERATOR_URL}/accounts/${playerId}/session?gameId=${gameId}`;
+
       const headers = {
-        'Pass-Key': this.QTECH_PASSWORD, // Shared secret pass-key
-        'Wallet-Session': walletSessionId, // Player session token
+        'Pass-Key': this.QTECH_PASSWORD,
+        'Wallet-Session': walletSessionId,
       };
 
       // Make the GET request
       const { data } = await this.httpService.get(url, { headers }).toPromise();
       console.log('Verify Session response:', data);
 
-      // Return the response data
-      return data;
+      return {
+        success: true,
+        message: 'Session verified successfully',
+        data,
+      };
     } catch (e) {
-      // Log the error for debugging
       console.error('Error in verifySession:', e.message);
 
-      // Throw a meaningful exception with the error message or a default message
+      return {
+        success: false,
+        message: 'Session verification failed',
+        data: {},
+      };
+    }
+  }
+
+  async getBalance(clientId, userId, gameId?): Promise<any> {
+    try {
+      console.log('Got to balance method');
+
+      // Validate input parameters
+      if (!userId || !clientId) {
+        return {
+          success: false,
+          status: HttpStatus.BAD_REQUEST,
+          message: 'ClientId or UserId is missing',
+          data: {},
+        };
+      }
+
+      // Fetch the wallet balance using wallet service
+      const wallet = await this.walletService.getWallet({ userId, clientId });
+
+      // Parse the wallet response
+      const walletData =
+        typeof wallet === 'string' ? JSON.parse(wallet) : wallet;
+
+      if (!walletData?.success) {
+        return {
+          success: false,
+          status: HttpStatus.INTERNAL_SERVER_ERROR,
+          message: 'Could not retrieve balance from wallet service',
+          data: {},
+        };
+      }
+
+      // Fetch game details if gameId is provided
+      let gameExist;
+      if (gameId) {
+        gameExist = await this.gameRepository.findOne({
+          where: { id: gameId },
+          relations: { provider: true },
+        });
+
+        if (!gameExist) {
+          return {
+            success: false,
+            status: HttpStatus.NOT_FOUND,
+            message: 'Game not found',
+            data: {},
+          };
+        }
+      }
+
+      // Fetch session information
+      const session = await this.gameSessionRepo.findOne({
+        where: { game_id: gameId },
+      });
+
+      if (!session) {
+        return {
+          success: false,
+          message: 'Session not found',
+          data: {},
+        };
+      }
+
+      const walletSessionId = session.session_id;
+
+      // Validate session ID
+      if (!walletSessionId) {
+        return {
+          success: false,
+          message: 'Session ID is missing',
+          data: {},
+        };
+      }
+
+      // External API call to fetch the balance
+      const url = `${this.OPERATOR_URL}/accounts/${userId}/balance`;
+      const headers = {
+        'Pass-Key': this.QTECH_PASS_KEY,
+        'Wallet-Session': walletSessionId,
+      };
+
+      const params: Record<string, string> = {};
+      if (gameId) {
+        params.gameId = gameId;
+      }
+
+      const externalBalanceResponse = await this.httpService
+        .get(url, { headers, params })
+        .toPromise();
+
+      const externalBalanceData = externalBalanceResponse?.data;
+
+      // Construct the response
+      return {
+        success: true,
+        status: HttpStatus.OK,
+        message: 'Balance retrieved successfully',
+        data: {
+          cash: parseFloat(walletData.data.availableBalance.toFixed(2)),
+          currency: walletData.data.currency || 'NGN',
+          externalBalance: {
+            balance: parseFloat(externalBalanceData?.balance.toFixed(2)),
+            currency: externalBalanceData?.currency || 'NGN',
+          },
+        },
+      };
+    } catch (error) {
+      console.error('Error in getBalance:', error.message);
       throw new RpcException(
-        e.response?.data?.message || 'Verify Session failed',
+        error.response?.data?.message || 'Get Balance failed',
       );
     }
   }
@@ -668,6 +628,255 @@ export class QtechService {
     } catch (e) {
       console.log('Error saving callback log', e.message);
     }
+  }
+
+  async bet(clientId, player, callback, body, balanceType) {
+    console.log('Got to bet method');
+    console.log('bet-callback', callback);
+    console.log('player', player, body, balanceType);
+    let response: any;
+
+    if (player) {
+      const gameExist = await this.gameRepository.findOne({
+        where: { gameId: body.get('gameId') },
+        relations: { provider: true },
+      });
+      console.log('Game retrieved from DB:', gameExist);
+
+      // If game doesn't exist, throw an error
+      if (!gameExist) {
+        response = {
+          success: false,
+          status: HttpStatus.BAD_REQUEST,
+          message: `Game with id ${body.get('gameId')}not Found`,
+          data: {},
+        };
+
+        await this.callbackLogRepository.update(
+          { id: callback.id },
+          { response: JSON.stringify(response) },
+        );
+        return response;
+      }
+
+      const getWallet = await this.walletService.getWallet({
+        userId: player.playerId,
+        clientId,
+      });
+
+      console.log('getWallet', getWallet);
+
+      if (!getWallet || !getWallet.status) {
+        response = {
+          success: false,
+          status: HttpStatus.BAD_REQUEST,
+          message: 'Invalid auth code, please login to try again',
+          data: {},
+        };
+
+        const val = await this.callbackLogRepository.update(
+          { id: callback.id },
+          { response: JSON.stringify(response) },
+        );
+        console.log('val', val);
+
+        return response;
+      }
+
+      const dataObject =
+        typeof getWallet.data === 'string'
+          ? JSON.parse(getWallet.data)
+          : getWallet.data;
+
+      console.log('dataObject', dataObject, body.get('amount'));
+
+      if (dataObject.availableBalance < body.get('amount')) {
+        response = {
+          success: false,
+          status: HttpStatus.BAD_REQUEST,
+          message: 'Insufficient balance to place this bet',
+          data: {},
+        };
+
+        const val = await this.callbackLogRepository.update(
+          { id: callback.id },
+          { response: JSON.stringify(response) },
+        );
+        console.log('val', val);
+
+        return response;
+      }
+
+       // Retrieve the Wallet-Session from the database
+       const session = await this.gameSessionRepo.findOne({
+        where: { game_id: gameExist.gameId },
+      });
+
+      if (!session) {
+        return {
+          success: false,
+          message: 'Session not found',
+          data: {},
+        };
+      }
+
+      const walletSessionId = session.session_id;
+
+      // Log game session details
+      console.log('Game session created:', walletSessionId);
+
+      if (!walletSessionId) {
+        console.error('Session ID is missing or invalid');
+        return {
+          success: false,
+          message: 'Session ID is missing',
+          data: {},
+        };
+      }
+
+      const placeBetPayload: PlaceCasinoBetRequest = {
+        userId: player.playerId,
+        clientId,
+        username: player.playerNickname,
+        roundId: body.get('roundId'),
+        transactionId: body.get('reference'),
+        gameId: body.get('gameId'),
+        stake: parseFloat(body.get('amount')),
+        gameName: gameExist.title,
+        gameNumber: gameExist.gameId,
+        source: gameExist.provider.slug,
+        winnings: 0,
+        roundDetails: body.get('roundDetails'),
+      };
+
+      console.log('placeBetPayload', placeBetPayload);
+
+      const place_bet = await this.placeBet(placeBetPayload);
+
+      console.log('place_bet', place_bet);
+
+      if (!place_bet.success) {
+        response = {
+          success: false,
+          status: HttpStatus.INTERNAL_SERVER_ERROR,
+          message: 'Place bet unsuccessful',
+        };
+
+        const val = await this.callbackLogRepository.update(
+          { id: callback.id },
+          { response: JSON.stringify(response) },
+        );
+        console.log('val', val);
+
+        return response;
+      }
+
+      const debit = await this.walletService.debit({
+        userId: player.playerId,
+        clientId,
+        amount: body.get('amount'),
+        source: gameExist.provider.slug,
+        description: `Casino Bet: (${gameExist.title}:${body.get('reference')})`,
+        username: player.playerNickname,
+        wallet: balanceType,
+        subject: 'Bet Deposit (Casino)',
+        channel: 'web',
+      });
+
+      console.log('debit', debit);
+
+      if (!debit.success) {
+        response = {
+          success: false,
+          status: HttpStatus.BAD_REQUEST,
+          message: 'Error debiting user wallet',
+        };
+
+        const val = await this.callbackLogRepository.update(
+          { id: callback.id },
+          { response: JSON.stringify(response) },
+        );
+        console.log('val', val);
+
+        return response;
+      }
+
+      const getUpdatedWallet = await this.walletService.getWallet({
+        userId: player.playerId,
+        clientId,
+      });
+
+      console.log('getWallet', getUpdatedWallet);
+
+      response = {
+        success: true,
+        message: 'Bet Successful',
+        status: HttpStatus.OK,
+        data: {
+          cash: parseFloat(getUpdatedWallet.data.availableBalance.toFixed(2)),
+          transactionId: place_bet.data.transactionId,
+          currency: player.currency,
+          bonus:
+            balanceType === 'casino'
+              ? parseFloat(getUpdatedWallet.data.casinoBonusBalance.toFixed(2))
+              : 0.0,
+          usedPromo:
+            balanceType === 'casino' ? parseFloat(body.get('amount')) : 0.0,
+          error: 0,
+          description: 'Successful',
+        },
+      };
+
+      const url = `${this.OPERATOR_URL}/transactions}`;
+
+      const headers = {
+        'Pass-Key': this.QTECH_PASSWORD,
+        'Wallet-Session': walletSessionId, 
+      };
+
+      const payload = {
+        playerId: player.playerId,
+        transactionId: body.get('reference'),
+        roundId: body.get('roundId'),
+        gameId: body.get('gameId'),
+        amount: parseFloat(body.get('amount')),
+        currency: player.currency,
+        type: 'bet',
+        status: 'success',
+        description: `Casino Bet: (${gameExist.title}:${body.get('reference')})`,
+      };
+
+      const { data } = await this.httpService
+        .post(url, payload, { headers })
+        .toPromise();
+      console.log(' response:', data);
+
+      await this.callbackLogRepository.update(
+        { id: callback.id },
+        { response: JSON.stringify(response) },
+      );
+
+      console.log('bet-response', response);
+
+      return response;
+    } else {
+      response = {
+        success: false,
+        status: HttpStatus.BAD_REQUEST,
+        message: `Player with userId ${player.playerId} not found`,
+        data: {},
+      };
+
+      await this.callbackLogRepository.update(
+        { id: callback.id },
+        { response: JSON.stringify(response) },
+      );
+      return response;
+    }
+  }
+
+  async placeBet(data: PlaceCasinoBetRequest) {
+    return firstValueFrom(this.betService.placeCasinoBet(data));
   }
 
   // async handleCallback(data: CallbackGameDto) {
