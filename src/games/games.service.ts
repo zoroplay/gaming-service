@@ -23,11 +23,10 @@ import {
   FindOneTournamentDto,
   Game,
   Games,
-  GamingServiceResponse,
-  IGame,
   PaginationDto,
   Promotion,
   Promotions,
+  QtechCallbackRequest,
   SaveCategoryRequest,
   StartGameDto,
   SyncGameDto,
@@ -790,6 +789,10 @@ export class GamesService {
       case 'pragmatic-play':
         console.log('using pragmatic-play');
         return await this.pragmaticPlayService.handleCallback(_data);
+
+      // case 'qtech-games':
+      //   console.log('using qtech-games');
+      //   return await this.qtechService.handleCallback(_data);
       default:
         throw new NotFoundException('Unknown provider');
     }
@@ -797,6 +800,14 @@ export class GamesService {
     // const gameList = await this.c2GamingService.getGames();
 
     // return gameList;
+  }
+
+  async handleQTGamesCallback(_data: QtechCallbackRequest): Promise<any> {
+    console.log('_data', _data);
+
+    console.log('using qtech-games');
+    return await this.qtechService.handleCallback(_data);
+
   }
 
   async handleC2Games(body: any, headers: any): Promise<any> {

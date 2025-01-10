@@ -6,6 +6,20 @@ import { Struct } from "./google/protobuf/struct.pb";
 
 export const protobufPackage = "gaming";
 
+export interface QtechCallbackRequest {
+  clientId?: number | undefined;
+  playerId: string;
+  gameId: string;
+  action?: string | undefined;
+  method?: string | undefined;
+  header: { [key: string]: any } | undefined;
+  body?: string | undefined;
+}
+
+export interface AddGameToCategoriesResponse {
+  gameCategories: GameCategory[];
+}
+
 export interface RegisterBonusRequest {
   clientId: number;
   gameId: string;
@@ -463,10 +477,6 @@ export interface Tournament {
   status: string;
 }
 
-export interface AddGameToCategoriesResponse {
-  gameCategories: GameCategory[];
-}
-
 export interface CreateTournamentDto {
   /** int32 clientId = 1; */
   id?: number | undefined;
@@ -561,6 +571,8 @@ export interface GamingServiceClient {
 
   handleCallback(request: CallbackGameDto): Observable<CallbackResponse>;
 
+  handleQtechCallback(request: QtechCallbackRequest): Observable<CallbackResponse>;
+
   xpressLogin(request: XpressRequest): Observable<XpressResponse>;
 
   xpressBalance(request: XpressRequest): Observable<XpressResponse>;
@@ -572,6 +584,8 @@ export interface GamingServiceClient {
   xpressRollback(request: XpressRequest): Observable<XpressResponse>;
 
   xpressLogout(request: XpressRequest): Observable<XpressResponse>;
+
+  qTechVerifySession(request: QtechCallbackRequest): Observable<CallbackResponse>;
 }
 
 export interface GamingServiceController {
@@ -647,6 +661,10 @@ export interface GamingServiceController {
 
   handleCallback(request: CallbackGameDto): Promise<CallbackResponse> | Observable<CallbackResponse> | CallbackResponse;
 
+  handleQtechCallback(
+    request: QtechCallbackRequest,
+  ): Promise<CallbackResponse> | Observable<CallbackResponse> | CallbackResponse;
+
   xpressLogin(request: XpressRequest): Promise<XpressResponse> | Observable<XpressResponse> | XpressResponse;
 
   xpressBalance(request: XpressRequest): Promise<XpressResponse> | Observable<XpressResponse> | XpressResponse;
@@ -658,6 +676,10 @@ export interface GamingServiceController {
   xpressRollback(request: XpressRequest): Promise<XpressResponse> | Observable<XpressResponse> | XpressResponse;
 
   xpressLogout(request: XpressRequest): Promise<XpressResponse> | Observable<XpressResponse> | XpressResponse;
+
+  qTechVerifySession(
+    request: QtechCallbackRequest,
+  ): Promise<CallbackResponse> | Observable<CallbackResponse> | CallbackResponse;
 }
 
 export function GamingServiceControllerMethods() {
@@ -696,12 +718,14 @@ export function GamingServiceControllerMethods() {
       "removePromotion",
       "startGame",
       "handleCallback",
+      "handleQtechCallback",
       "xpressLogin",
       "xpressBalance",
       "xpressDebit",
       "xpressCredit",
       "xpressRollback",
       "xpressLogout",
+      "qTechVerifySession",
     ];
     for (const method of grpcMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);

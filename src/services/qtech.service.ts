@@ -15,7 +15,7 @@ import {
   GameSession,
   Provider as ProviderEntity,
 } from '../entities';
-import { CallbackGameDto, StartGameDto } from 'src/proto/gaming.pb';
+import { CallbackGameDto, QtechCallbackRequest, StartGameDto } from 'src/proto/gaming.pb';
 import { PlaceCasinoBetRequest } from 'src/proto/betting.pb';
 import { firstValueFrom } from 'rxjs';
 
@@ -333,18 +333,103 @@ export class QtechService {
     }
   }
 
-  async verifySession(userId, gameId): Promise<any> {
+  // async verifySession(userId, gameId): Promise<any> {
+  //   try {
+  //     // Validate required parameters
+  //     if (!userId || !gameId) {
+  //       console.error('Missing required parameters: playerId or gameId');
+  //       return {
+  //         success: false,
+  //         message: 'Missing required parameters',
+  //         data: {},
+  //       };
+  //     }
+
+  //     const gameExist = await this.gameRepository.findOne({
+  //       where: { id: gameId },
+  //       relations: { provider: true },
+  //     });
+
+  //     console.log('Game retrieved from DB:', gameExist);
+
+  //     if (!gameExist) {
+  //       console.error(`Game with ID ${gameId} not found`);
+  //       throw new NotFoundException('Game not found');
+  //     }
+
+  //     // Retrieve the Wallet-Session from the database
+  //     const session = await this.gameSessionRepo.findOne({
+  //       where: { game_id: gameId },
+  //     });
+
+  //     if (!session) {
+  //       return {
+  //         success: false,
+  //         message: 'Session not found',
+  //         data: {},
+  //       };
+  //     }
+
+  //     const walletSessionId = session.session_id;
+
+  //     // Log game session details
+  //     console.log('Game session created:', walletSessionId);
+
+  //     if (!walletSessionId) {
+  //       console.error('Session ID is missing or invalid');
+  //       return {
+  //         success: false,
+  //         message: 'Session ID is missing',
+  //         data: {},
+  //       };
+  //     }
+
+  //     const playerId = userId;
+
+  //     // Construct the URL
+  //     const url = `${this.OPERATOR_URL}/accounts/${playerId}/session?gameId=${gameId}`;
+
+  //     const headers = {
+  //       'Pass-Key': this.QTECH_PASSWORD,
+  //       'Wallet-Session': walletSessionId,
+  //     };
+
+  //     // Make the GET request
+  //     const { data } = await this.httpService.get(url, { headers }).toPromise();
+  //     console.log('Verify Session response:', data);
+
+  //     return {
+  //       success: true,
+  //       message: 'Session verified successfully',
+  //       data,
+  //     };
+  //   } catch (e) {
+  //     console.error('Error in verifySession:', e.message);
+
+  //     return {
+  //       success: false,
+  //       message: 'Session verification failed',
+  //       data: {},
+  //     };
+  //   }
+  // }
+
+  async verifySession(
+    playerId,
+    gameId,
+    walletSessionId,
+    passkey,
+  ): Promise<any> {
     try {
       // Validate required parameters
-      if (!userId || !gameId) {
-        console.error('Missing required parameters: playerId or gameId');
+      if (!playerId || !gameId || !walletSessionId || !passkey) {
         return {
           success: false,
           message: 'Missing required parameters',
-          data: {},
         };
       }
 
+      // Check if the game exists
       const gameExist = await this.gameRepository.findOne({
         where: { id: gameId },
         relations: { provider: true },
@@ -357,60 +442,33 @@ export class QtechService {
         throw new NotFoundException('Game not found');
       }
 
-      // Retrieve the Wallet-Session from the database
-      const session = await this.gameSessionRepo.findOne({
-        where: { game_id: gameId },
-      });
-
-      if (!session) {
-        return {
-          success: false,
-          message: 'Session not found',
-          data: {},
-        };
-      }
-
-      const walletSessionId = session.session_id;
-
-      // Log game session details
-      console.log('Game session created:', walletSessionId);
-
-      if (!walletSessionId) {
-        console.error('Session ID is missing or invalid');
-        return {
-          success: false,
-          message: 'Session ID is missing',
-          data: {},
-        };
-      }
-
-      const playerId = userId;
-
       // Construct the URL
       const url = `${this.OPERATOR_URL}/accounts/${playerId}/session?gameId=${gameId}`;
 
+      // Set headers
       const headers = {
-        'Pass-Key': this.QTECH_PASSWORD,
+        'Pass-Key': passkey,
         'Wallet-Session': walletSessionId,
       };
+
+      console.log('Making GET request to:', url, 'with headers:', headers);
 
       // Make the GET request
       const { data } = await this.httpService.get(url, { headers }).toPromise();
       console.log('Verify Session response:', data);
 
-      return {
-        success: true,
-        message: 'Session verified successfully',
-        data,
-      };
+      // Return the response
+      return data;
     } catch (e) {
-      console.error('Error in verifySession:', e.message);
+      console.error('Error in verifySession:', e.message, {
+        playerId,
+        gameId,
+        walletSessionId,
+      });
 
-      return {
-        success: false,
-        message: 'Session verification failed',
-        data: {},
-      };
+      throw new RpcException(
+        e.response?.data?.message || 'Verify Session failed',
+      );
     }
   }
 
@@ -707,8 +765,8 @@ export class QtechService {
         return response;
       }
 
-       // Retrieve the Wallet-Session from the database
-       const session = await this.gameSessionRepo.findOne({
+      // Retrieve the Wallet-Session from the database
+      const session = await this.gameSessionRepo.findOne({
         where: { game_id: gameExist.gameId },
       });
 
@@ -831,7 +889,7 @@ export class QtechService {
 
       const headers = {
         'Pass-Key': this.QTECH_PASSWORD,
-        'Wallet-Session': walletSessionId, 
+        'Wallet-Session': walletSessionId,
       };
 
       const payload = {
@@ -877,6 +935,154 @@ export class QtechService {
 
   async placeBet(data: PlaceCasinoBetRequest) {
     return firstValueFrom(this.betService.placeCasinoBet(data));
+  }
+
+  async handleCallback(data: QtechCallbackRequest) {
+    console.log('_data', data);
+
+    const callback = await this.saveCallbackLog(data);
+    console.log('callback-4', callback);
+    let response;
+    let body = {};
+
+    // Return response if already logged
+    if (callback?.response != null) {
+      console.log('Existing callback response found. Processing it.');
+
+      const existingRequest = JSON.parse(callback.payload);
+      const existingResponse = JSON.parse(callback.response);
+
+      console.log('existingRequest', existingRequest);
+      console.log('existingResponse', existingResponse);
+
+      if (existingRequest?.userId) {
+        console.log('Got to the updated wallet block');
+        const userId = existingRequest.userId;
+
+        try {
+          const getWallet = await this.walletService.getWallet({
+            userId,
+            clientId: data.clientId,
+          });
+
+          console.log('getWallet', getWallet);
+
+          if (!getWallet || !getWallet.status) {
+            response = {
+              success: false,
+              status: HttpStatus.BAD_REQUEST,
+              message: 'Invalid auth code, please login to try again',
+              data: {},
+            };
+
+            const val = await this.callbackLogRepository.update(
+              { id: callback.id },
+              { response: JSON.stringify(response) },
+            );
+            console.log('val', val);
+
+            return response;
+          }
+
+          if (getWallet && getWallet.data.availableBalance !== undefined) {
+            existingResponse.data.cash = getWallet.data.availableBalance;
+
+            await this.callbackLogRepository.update(
+              { id: callback.id },
+              { response: JSON.stringify(existingResponse) },
+            );
+
+            console.log(
+              'Updated response with wallet balance:',
+              existingResponse,
+            );
+            return existingResponse;
+          }
+        } catch (error) {
+          console.error(
+            'Error fetching wallet details or updating response:',
+            error,
+          );
+        }
+      } else {
+        return JSON.parse(callback.response);
+      }
+    }
+
+    // Parse the body if it exists
+    if (data.body) {
+      try {
+        // Parse the body as URLSearchParams
+        body = new URLSearchParams(data.body);
+      } catch (error) {
+        console.error('Error parsing body:', error);
+        response = {
+          success: false,
+          message: 'Invalid body format',
+          status: HttpStatus.BAD_REQUEST,
+          data: { error: 5, description: 'Error' },
+        };
+
+        await this.callbackLogRepository.update(
+          { id: callback.id },
+          { response: JSON.stringify(response) },
+        );
+        return response;
+      }
+    }
+
+    console.log('body', body);
+
+    if (body instanceof URLSearchParams) {
+      // Retrieve required fields from URLSearchParams
+      const playerId = body.get('playerId');
+      const gameId = body.get('gameId');
+      const walletSessionId = body.get('walletSessionId');
+      const passKey = body.get('passKey');
+
+      if (!playerId || !gameId || !walletSessionId || !passKey) {
+        response = {
+          success: false,
+          message: 'Missing required parameters',
+          status: HttpStatus.BAD_REQUEST,
+          data: { error: 5, description: 'Missing data' },
+        };
+
+        await this.callbackLogRepository.update(
+          { id: callback.id },
+          { response: JSON.stringify(response) },
+        );
+        return response;
+      }
+
+      console.log('Parsed parameters:', {
+        playerId,
+        gameId,
+        walletSessionId,
+        passKey,
+      });
+
+      // Call verifySession with parsed parameters
+      return await this.verifySession(
+        playerId,
+        gameId,
+        walletSessionId,
+        passKey,
+      );
+    } else {
+      response = {
+        success: false,
+        message: 'Invalid body format',
+        status: HttpStatus.BAD_REQUEST,
+        data: { error: 5, description: 'Error' },
+      };
+
+      await this.callbackLogRepository.update(
+        { id: callback.id },
+        { response: JSON.stringify(response) },
+      );
+      return response;
+    }
   }
 
   // async handleCallback(data: CallbackGameDto) {
@@ -1145,12 +1351,7 @@ export class QtechService {
   //         balanceType,
   //       );
   //     case 'Balance':
-  //       return await this.getBalance(
-  //         data.clientId,
-  //         player,
-  //         callback,
-  //         balanceType,
-  //       );
+  //       return await this.getBalance(data.clientId, player, callback);
   //     case 'Bet':
   //       return await this.bet(
   //         data.clientId,
@@ -1159,46 +1360,50 @@ export class QtechService {
   //         body,
   //         balanceType,
   //       );
-  //     case 'Result':
-  //       return await this.win(
-  //         data.clientId,
-  //         player,
-  //         callback,
-  //         body,
-  //         balanceType,
-  //       );
-  //     case 'Refund':
-  //       return await this.refund(
-  //         data.clientId,
-  //         player,
-  //         callback,
-  //         body,
-  //         balanceType,
-  //       );
-  //     case 'BonusWin':
-  //       return await this.bonusWin(
-  //         data.clientId,
-  //         player,
-  //         callback,
-  //         body,
-  //         balanceType,
-  //       );
-  //     case 'JackpotWin':
-  //       return await this.jackpotWin(
-  //         data.clientId,
-  //         player,
-  //         callback,
-  //         body,
-  //         balanceType,
-  //       );
-  //     case 'PromoWin':
-  //       return await this.promoWin(
-  //         data.clientId,
-  //         player,
-  //         callback,
-  //         body,
-  //         balanceType,
-  //       );
+
+  //     case 'Session':
+  //       console.log('USING SESSION');
+  //       return await this.verifySession(playerId, player, callback, body);
+  //     // case 'Result':
+  //     //   return await this.win(
+  //     //     data.clientId,
+  //     //     player,
+  //     //     callback,
+  //     //     body,
+  //     //     balanceType,
+  //     //   );
+  //     // case 'Refund':
+  //     //   return await this.refund(
+  //     //     data.clientId,
+  //     //     player,
+  //     //     callback,
+  //     //     body,
+  //     //     balanceType,
+  //     //   );
+  //     // case 'BonusWin':
+  //     //   return await this.bonusWin(
+  //     //     data.clientId,
+  //     //     player,
+  //     //     callback,
+  //     //     body,
+  //     //     balanceType,
+  //     //   );
+  //     // case 'JackpotWin':
+  //     //   return await this.jackpotWin(
+  //     //     data.clientId,
+  //     //     player,
+  //     //     callback,
+  //     //     body,
+  //     //     balanceType,
+  //     //   );
+  //     // case 'PromoWin':
+  //     //   return await this.promoWin(
+  //     //     data.clientId,
+  //     //     player,
+  //     //     callback,
+  //     //     body,
+  //     //     balanceType,
+  //     //   );
   //     default:
   //       return {
   //         success: false,
