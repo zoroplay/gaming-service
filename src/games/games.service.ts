@@ -15,6 +15,7 @@ import {
   CommonResponseArray,
   CreateGameDto,
   CreatePromotionDto,
+  CreatePromotionRequest,
   CreateProviderDto,
   CreateTournamentDto,
   FetchGamesRequest,
@@ -51,6 +52,7 @@ import {
   Tournament as TournamentEntity,
 } from 'src/entities/tournament.entity';
 import { QtechService } from 'src/services/qtech.service';
+import { FirebaseService } from 'src/common/services/firebaseUpload';
 // import { Timestamp } from 'google-protobuf/google/protobuf/timestamp_pb';
 // import { Struct } from 'google-protobuf/google/protobuf/struct_pb';
 
@@ -80,6 +82,7 @@ export class GamesService {
     private readonly pragmaticPlayService: PragmaticService,
     private readonly identityService: IdentityService,
     private readonly qtechService: QtechService,
+    private readonly firebaseService: FirebaseService,
   ) {}
 
   async createProvider(
@@ -817,17 +820,25 @@ export class GamesService {
   }
 
   async createPromotion(
-    createPromotionDto: CreatePromotionDto,
+    createPromotionDto: CreatePromotionRequest,
+    file: Express.Multer.File, // Include the uploaded file
   ): Promise<Promotion> {
     console.log('createPromotionDto', createPromotionDto);
+    console.log('file', file);
+
+    // Upload the file to Firebase and get the public URL
+    const imageUrl = await this.firebaseService.uploadImage(file)
+
+    console.log("imageUrl", imageUrl);
+
     const newPromotion: Promotion = new PromotionEntity();
 
-    newPromotion.title = createPromotionDto.title;
-    newPromotion.imageUrl = createPromotionDto.imageUrl;
-    newPromotion.content = createPromotionDto.content;
-    newPromotion.type = createPromotionDto.type;
-    newPromotion.endDate = createPromotionDto.endDate;
-    newPromotion.startDate = createPromotionDto.startDate;
+    newPromotion.title = createPromotionDto.metadata.title;
+    newPromotion.imageUrl = imageUrl; // Assign the uploaded image URL
+    newPromotion.content = createPromotionDto.metadata.content;
+    newPromotion.type = createPromotionDto.metadata.type;
+    newPromotion.endDate = createPromotionDto.metadata.endDate;
+    newPromotion.startDate = createPromotionDto.metadata.startDate;
 
     const savedPromotion = await this.promotionRepository.save(newPromotion);
     console.log('savedPromotion', savedPromotion);
