@@ -14,22 +14,22 @@ export class GameSession {
   @Column()
   game_id: string;
 
-  @Column({nullable: true})
+  @Column({ nullable: true })
   callback_id: string;
 
-  @Column({nullable: true})
+  @Column({ nullable: true })
   session_id: string;
 
-  @Column({ type: 'int', nullable: true})
+  @Column({ type: 'int', nullable: true })
   bonus_id: number;
 
-  @Column()
+  @Column({ nullable: true })
   token: string;
 
   @Column()
   provider: string;
 
-  @Column()
+  @Column({ nullable: true })
   balance_type: string;
 
   @CreateDateColumn({ type: 'timestamp' })

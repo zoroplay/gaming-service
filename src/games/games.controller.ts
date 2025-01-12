@@ -19,6 +19,13 @@ import {
   CommonResponse,
   FetchGamesRequest,
   CallbackGameDto,
+  SaveCategoryRequest,
+  FindOneCategoryDto,
+  AddGameToCategoriesDto,
+  CreatePromotionDto,
+  FindOnePromotionDto,
+  FindOneTournamentDto,
+  CreateTournamentDto,
 } from 'src/proto/gaming.pb';
 import { Observable } from 'rxjs';
 import { GrpcMethod } from '@nestjs/microservices';
@@ -81,9 +88,59 @@ export class GamesController {
     return this.gamesService.fetchGames(payload);
   }
 
+  @GrpcMethod(GAMING_SERVICE_NAME, 'fetchGamesByName')
+  fetchGamesByName(payload: FetchGamesRequest): Promise<any> {
+    console.log('fetch gameNames');
+    return this.gamesService.fetchGamesByName(payload);
+  }
+
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'addGameToCategories')
+  addGameToCategories(payload: AddGameToCategoriesDto): Promise<any> {
+    console.log('addGameToCategories');
+    return this.gamesService.addGameToCategories(payload);
+  }
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'removeGameToCategories')
+  removeGameCategories(payload: AddGameToCategoriesDto): Promise<any> {
+    console.log('removeGameToCategories');
+    return this.gamesService.removeGameCategories(payload);
+  }
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'saveCategory')
+  createCategories(payload: SaveCategoryRequest): Promise<any> {
+    console.log('fetch gameNames');
+    return this.gamesService.saveCategory(payload);
+  }
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'updateCategory')
+  updateCategory(payload: SaveCategoryRequest): Promise<any> {
+    console.log('fetch gameNames');
+    return this.gamesService.updateCategory(payload);
+  }
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'findOneCategory')
+  findOneCategory(payload: FindOneCategoryDto): Promise<any> {
+    console.log('fetch category', payload);
+    return this.gamesService.findOneCategory(payload);
+  }
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'deleteCategory')
+  async deleteCategory(payload: FindOneCategoryDto): Promise<void> {
+    console.log('Payload received by gRPC server for deletion:', payload);
+    const { id } = payload;
+
+    if (!id) {
+      throw new Error('Invalid payload: Missing `id` property.');
+    }
+
+    return this.gamesService.deleteCategory(payload);
+  }
+
+
   @GrpcMethod(GAMING_SERVICE_NAME, 'FetchCategories')
   FetchCategories(): Promise<any> {
-    console.log('fetchc categories');
+    console.log('fetch categories');
     return this.gamesService.fetchCategories();
   }
 
@@ -120,7 +177,7 @@ export class GamesController {
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'startGame')
   async startGame(request: StartGameDto): Promise<any> {
-    console.log('startGame');
+    console.log('startGame', request);
     try {
       const resp = await this.gamesService.start(request);
       return resp;
@@ -138,12 +195,91 @@ export class GamesController {
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'handleCallback')
   async handleCallback(request: CallbackGameDto): Promise<any> {
-
+    console.log("request", request);
     try {
       return await this.gamesService.handleGamesCallback(request);
     } catch (error) {
       console.error('handleCallback error');
       console.error(error.message);
     }
+  }
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'createPromotion')
+  async createPromotion(payload: CreatePromotionDto): Promise<any> {
+    console.log('fetch promotions', payload);
+    const newPromo = await this.gamesService.createPromotion(payload);
+    return newPromo;
+  }
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'updatePromotion')
+  updatePromotion(payload: CreatePromotionDto): Promise<any> {
+    console.log('fetch gameNames');
+    return this.gamesService.updatePromotion(payload);
+  }
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'findPromotions')
+  fetchPromotions(): Promise<any> {
+    console.log('find Promotions');
+    return this.gamesService.fetchPromotions();
+  }
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'findOnePromotion')
+  findOnePromotion(payload: FindOnePromotionDto): Promise<any> {
+    console.log('fetch category', payload);
+    return this.gamesService.findOnePromotion(payload);
+  }
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'removePromotion')
+  async removePromotion(payload: FindOnePromotionDto): Promise<void> {
+    console.log('Payload received by gRPC server for deletion:', payload);
+    const { id } = payload;
+
+    if (!id) {
+      throw new Error('Invalid payload: Missing `id` property.');
+    }
+
+    return this.gamesService.removePromotion(payload);
+  }
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'getGames')
+  async getGames() {
+    return this.gamesService.getGamesWithCategories();
+  }
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'createTournament')
+  async createTournament(payload: CreateTournamentDto): Promise<any> {
+    console.log('tournament', payload);
+    const newPromo = await this.gamesService.createTournament(payload);
+    return newPromo;
+  }
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'updateTournament')
+  updateTournament(payload: CreateTournamentDto): Promise<any> {
+    console.log('tournament');
+    return this.gamesService.updateTournament(payload);
+  }
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'findAllTournaments')
+  fetchTournaments(): Promise<any> {
+    console.log('find Promotions');
+    return this.gamesService.fetchTournaments();
+  }
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'findOneTournament')
+  findOneTournament(payload: FindOneTournamentDto): Promise<any> {
+    console.log('fetch tournament', payload);
+    return this.gamesService.findOneTournament(payload);
+  }
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'deleteTournament')
+  async removeTournament(payload: FindOneTournamentDto): Promise<void> {
+    console.log('Payload received by gRPC server for deletion:', payload);
+    const { id } = payload;
+
+    if (!id) {
+      throw new Error('Invalid payload: Missing `id` property.');
+    }
+
+    return this.gamesService.removeTournament(payload);
   }
 }

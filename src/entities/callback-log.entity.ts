@@ -9,7 +9,7 @@ import {
 @Entity({ name: 'callback_logs' })
 export class CallbackLog {
   @PrimaryGeneratedColumn('uuid')
-  id: number;
+  id: string;
 
   @Column()
   transactionId: string;
