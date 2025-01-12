@@ -291,7 +291,7 @@ export class QtechService {
         throw new Error(`Failed to save game session: ${dbError.message}`);
       }
 
-      const passkey = this.QTECH_PASS_KEY;
+      const passkey = 'sbestaging';
       const sessionVerification = await this.verifySession(
         userId,
         gameExist.gameId,
@@ -466,7 +466,7 @@ export class QtechService {
 
       // Set headers
       const headers = {
-        'Pass-Key': passkey,
+        'Pass-Key': 'bestaging',
         'Wallet-Session': walletSessionId,
       };
 
