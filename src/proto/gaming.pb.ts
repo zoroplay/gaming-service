@@ -422,7 +422,6 @@ export interface Promotion {
 }
 
 export interface CreatePromotionDto {
-  /** int32 clientId = 1; */
   id?: number | undefined;
   title: string;
   imageUrl: string;
@@ -439,11 +438,11 @@ export interface FileChunk {
 
 export interface CreatePromotionRequest {
   /** Metadata for the promotion */
-  metadata?:
+  metadata:
     | CreatePromotionDto
     | undefined;
   /** Binary chunks of the file */
-  fileChunk?: FileChunk | undefined;
+  fileChunk: FileChunk | undefined;
 }
 
 export interface Promotions {
