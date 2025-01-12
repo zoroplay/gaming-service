@@ -15,7 +15,7 @@ import {
   GameSession,
   Provider as ProviderEntity,
 } from '../entities';
-import { CallbackGameDto, QtechCallbackRequest, StartGameDto } from 'src/proto/gaming.pb';
+import { QtechCallbackRequest, StartGameDto } from 'src/proto/gaming.pb';
 import { PlaceCasinoBetRequest } from 'src/proto/betting.pb';
 import { firstValueFrom } from 'rxjs';
 
@@ -290,6 +290,25 @@ export class QtechService {
         console.error('Error saving game session:', dbError.message);
         throw new Error(`Failed to save game session: ${dbError.message}`);
       }
+
+      const passkey = this.QTECH_PASS_KEY;
+      const sessionVerification = await this.verifySession(
+        userId,
+        gameExist.gameId,
+        walletSessionId,
+        passkey,
+      );
+      console.log('sessionVerification', sessionVerification);
+
+      if (!sessionVerification || !sessionVerification.success) {
+        return {
+          success: false,
+          message: 'Session verification failed',
+          data: {},
+        };
+      }
+
+      console.log('I am Verified');
 
       // Prepare the API request URL
       const requestUrl = `${this.QTECH_BASEURL}/v1/games/${gameExist.gameId}/launch-url`;

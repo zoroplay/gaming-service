@@ -508,13 +508,6 @@ export class GamesService {
 
       case 'qtech-games':
         console.log('using qtech-games');
-        // const privateKeyQuery = await this.gameKeyRepository.findOne({
-        //   where: {
-        //       client_id: startGameDto.clientId,
-        //       option: 'SMART_SOFT_PORTAL',
-        //       provider: 'smart-soft'
-        //   }
-        // });
 
         return await this.qtechService.launchGames(startGameDto);
         break;
@@ -810,7 +803,6 @@ export class GamesService {
 
     console.log('using qtech-games');
     return await this.qtechService.handleCallback(_data);
-
   }
 
   async handleC2Games(body: any, headers: any): Promise<any> {
