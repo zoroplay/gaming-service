@@ -257,7 +257,7 @@ export class QtechService {
       console.log('mode', 'device', mode, device);
 
       // Construct the wallet session ID (if applicable)
-      const walletSessionId = authCode || `session_${Date.now()}`;
+      const walletSessionId = authCode;
 
       // Log the mode and device selection for debugging
       console.log('Selected mode:', mode, 'Selected device:', device);
