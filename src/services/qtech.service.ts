@@ -291,6 +291,24 @@ export class QtechService {
         throw new Error(`Failed to save game session: ${dbError.message}`);
       }
 
+      const passkey = 'sbestaging';
+      const sessionVerification = await this.verifySession(
+        userId,
+        gameExist.gameId,
+        walletSessionId,
+        passkey,
+      );
+
+      if (!sessionVerification || !sessionVerification.success) {
+        console.error('Session verification failed:', sessionVerification);
+        return {
+          success: false,
+          message: 'Session verification failed',
+          data: {},
+        };
+      }
+
+      console.log('I am Verified');
       // Prepare the API request URL
       const requestUrl = `${this.QTECH_BASEURL}/v1/games/${gameId}/launch-url`;
 
@@ -322,25 +340,6 @@ export class QtechService {
 
       console.log('Response data:', data);
       console.log('Response returnUrl:', data.returnUrl);
-
-      const passkey = 'sbestaging';
-      const sessionVerification = await this.verifySession(
-        userId,
-        gameExist.gameId,
-        walletSessionId,
-        passkey,
-      );
-
-      if (!sessionVerification || !sessionVerification.success) {
-        console.error('Session verification failed:', sessionVerification);
-        return {
-          success: false,
-          message: 'Session verification failed',
-          data: {},
-        };
-      }
-
-      console.log('I am Verified');
 
       // Return the game URL
       return { url: data.url };
