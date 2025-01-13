@@ -381,7 +381,7 @@ export class QtechService {
       // }
 
       // Construct the URL
-      const url = `${this.OPERATOR_URL}/accounts/${playerId}/session?gameId=${gameId}`;
+      const url = `https://api.staging.sportsbookengine.com/accounts/${playerId}/session?gameId=${gameId}`;
 
       // Set headers
       const headers = {
