@@ -291,21 +291,6 @@ export class QtechService {
         throw new Error(`Failed to save game session: ${dbError.message}`);
       }
 
-      const passkey = 'sbestaging';
-      const sessionVerification = await this.verifySession(
-        userId,
-        gameExist.gameId,
-        walletSessionId,
-        passkey,
-      );
-  
-      if (!sessionVerification || !sessionVerification.success) {
-        console.error('Session verification failed:', sessionVerification);
-        return { success: false, message: 'Session verification failed', data: {} };
-      }
-
-      console.log('I am Verified');
-
       // Prepare the API request URL
       const requestUrl = `${this.QTECH_BASEURL}/v1/games/${gameId}/launch-url`;
 
@@ -338,6 +323,25 @@ export class QtechService {
       console.log('Response data:', data);
       console.log('Response returnUrl:', data.returnUrl);
 
+      const passkey = 'sbestaging';
+      const sessionVerification = await this.verifySession(
+        userId,
+        gameExist.gameId,
+        walletSessionId,
+        passkey,
+      );
+
+      if (!sessionVerification || !sessionVerification.success) {
+        console.error('Session verification failed:', sessionVerification);
+        return {
+          success: false,
+          message: 'Session verification failed',
+          data: {},
+        };
+      }
+
+      console.log('I am Verified');
+
       // Return the game URL
       return { url: data.url };
     } catch (error) {
@@ -347,7 +351,6 @@ export class QtechService {
       );
     }
   }
-
 
   async verifySession(
     playerId,
@@ -365,17 +368,17 @@ export class QtechService {
       }
 
       // Check if the game exists
-      const gameExist = await this.gameRepository.findOne({
-        where: { id: gameId },
-        relations: { provider: true },
-      });
+      // const gameExist = await this.gameRepository.findOne({
+      //   where: { id: gameId },
+      //   relations: { provider: true },
+      // });
 
-      console.log('Verify Session Game retrieved from DB:', gameExist);
+      // console.log('Verify Session Game retrieved from DB:', gameExist);
 
-      if (!gameExist) {
-        console.error(`Game with ID ${gameId} not found`);
-        throw new NotFoundException('Game not found');
-      }
+      // if (!gameExist) {
+      //   console.error(`Game with ID ${gameId} not found`);
+      //   throw new NotFoundException('Game not found');
+      // }
 
       // Construct the URL
       const url = `${this.OPERATOR_URL}/accounts/${playerId}/session?gameId=${gameId}`;
