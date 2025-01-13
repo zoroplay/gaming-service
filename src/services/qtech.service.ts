@@ -9,6 +9,7 @@ import { CasinoGame } from 'src/entities/casino-game.entity';
 import { IdentityService } from 'src/identity/identity.service';
 import { WalletService } from 'src/wallet/wallet.service';
 import { Repository } from 'typeorm';
+import axios from 'axios';
 import {
   CallbackLog,
   Game as GameEntity,
@@ -391,11 +392,16 @@ export class QtechService {
       console.log('Making GET request to:', url, 'with headers:', headers);
 
       // Make the GET request
-      const { data } = await this.httpService.get(url, { headers }).toPromise();
-      console.log('Verify Session response:', data);
-
-      // Return the response
-      return data;
+      try {
+        const response = await axios.get(url, { headers });
+        console.log('Verify Session response:', response.data);
+        return response.data; // Return the response data
+      } catch (error) {
+        console.error('Error verifying session:', error.message);
+        throw new RpcException(
+          error.response?.data?.message || 'Failed to verify session',
+        );
+      }
     } catch (e) {
       console.error('Error in verifySession:', e.message, {
         playerId,
