@@ -292,24 +292,6 @@ export class QtechService {
         throw new Error(`Failed to save game session: ${dbError.message}`);
       }
 
-      const passkey = 'sbestaging';
-      const sessionVerification = await this.verifySession(
-        userId,
-        gameExist.gameId,
-        walletSessionId,
-        passkey,
-      );
-
-      if (!sessionVerification || !sessionVerification.success) {
-        console.error('Session verification failed:', sessionVerification);
-        return {
-          success: false,
-          message: 'Session verification failed',
-          data: {},
-        };
-      }
-
-      console.log('I am Verified');
       // Prepare the API request URL
       const requestUrl = `${this.QTECH_BASEURL}/v1/games/${gameId}/launch-url`;
 
@@ -341,6 +323,28 @@ export class QtechService {
 
       console.log('Response data:', data);
       console.log('Response returnUrl:', data.returnUrl);
+
+      // Perform session verification after launch
+      const passkey = 'sbestaging';
+      const sessionVerification = await this.verifySession(
+        userId,
+        gameExist.gameId,
+        walletSessionId,
+        passkey,
+      );
+
+      console.log('I am Verified');
+
+      if (!sessionVerification || !sessionVerification.success) {
+        console.error('Session verification failed:', sessionVerification);
+        return {
+          success: false,
+          message: 'Session verification failed',
+          data: {},
+        };
+      }
+
+      console.log('Session verified successfully');
 
       // Return the game URL
       return { url: data.url };
@@ -387,13 +391,16 @@ export class QtechService {
       const headers = {
         'Pass-Key': passkey,
         'Wallet-Session': walletSessionId,
+        'Content-Type': 'application/json',
       };
 
       console.log('Making GET request to:', url, 'with headers:', headers);
 
       // Make the GET request
       try {
-        const response = await axios.get(url, { headers });
+        const response = await axios.get(url, {
+          headers,
+        });
         console.log('Verify Session response:', response.data);
         return response.data; // Return the response data
       } catch (error) {
