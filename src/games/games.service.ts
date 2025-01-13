@@ -180,7 +180,6 @@ export class GamesService {
 
   async fetchGames({
     categoryId,
-    clientId,
     providerId,
   }: FetchGamesRequest): Promise<Games> {
     // Build the base query to filter games by status
