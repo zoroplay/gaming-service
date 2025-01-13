@@ -27,7 +27,8 @@ import { CasinoGame } from 'src/entities/casino-game.entity';
 import { Promotion } from 'src/entities/promotion.entity';
 import { QtechService } from 'src/services/qtech.service';
 import { Tournament } from 'src/entities/tournament.entity';
-// import { FirebaseService } from 'src/common/services/firebaseUpload';
+import { FirebaseService } from 'src/common/services/firebaseUpload';
+
 
 @Module({
   imports: [
@@ -55,7 +56,7 @@ import { Tournament } from 'src/entities/tournament.entity';
     VirtualService,
     PragmaticService,
     QtechService,
-    // FirebaseService
+    FirebaseService
   ],
 })
 export class GamesModule {}

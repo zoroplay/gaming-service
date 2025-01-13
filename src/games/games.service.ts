@@ -52,7 +52,7 @@ import {
   Tournament as TournamentEntity,
 } from 'src/entities/tournament.entity';
 import { QtechService } from 'src/services/qtech.service';
-// import { FirebaseService } from 'src/common/services/firebaseUpload';
+import { FirebaseService } from 'src/common/services/firebaseUpload';
 // import { Timestamp } from 'google-protobuf/google/protobuf/timestamp_pb';
 // import { Struct } from 'google-protobuf/google/protobuf/struct_pb';
 
@@ -82,7 +82,7 @@ export class GamesService {
     private readonly pragmaticPlayService: PragmaticService,
     private readonly identityService: IdentityService,
     private readonly qtechService: QtechService,
-    // private readonly firebaseService: FirebaseService,
+    private readonly firebaseService: FirebaseService,
   ) {}
 
   async createProvider(
@@ -827,14 +827,14 @@ export class GamesService {
     console.log('file', file);
 
     // Upload the file to Firebase and get the public URL
-    // const imageUrl = await this.firebaseService.uploadImage(file)
+    const imageUrl = await this.firebaseService.uploadImage(file)
 
-    // console.log("imageUrl", imageUrl);
+    console.log("imageUrl", imageUrl);
 
     const newPromotion: Promotion = new PromotionEntity();
 
     newPromotion.title = createPromotionDto.metadata.title;
-    newPromotion.imageUrl = createPromotionDto.metadata.imageUrl; // Assign the uploaded image URL
+    newPromotion.imageUrl = imageUrl || ''; // Assign the uploaded image URL
     newPromotion.content = createPromotionDto.metadata.content;
     newPromotion.type = createPromotionDto.metadata.type;
     newPromotion.endDate = createPromotionDto.metadata.endDate;
