@@ -243,7 +243,7 @@ export class QtechService {
         relations: { provider: true },
       });
 
-      console.log('Game retrieved from DB:', gameExist);
+      console.log('Lunch Game retrieved from DB:', gameExist);
 
       if (!gameExist) {
         console.error(`Game with ID ${gameId} not found`);
@@ -298,20 +298,16 @@ export class QtechService {
         walletSessionId,
         passkey,
       );
-      console.log('sessionVerification', sessionVerification);
-
+  
       if (!sessionVerification || !sessionVerification.success) {
-        return {
-          success: false,
-          message: 'Session verification failed',
-          data: {},
-        };
+        console.error('Session verification failed:', sessionVerification);
+        return { success: false, message: 'Session verification failed', data: {} };
       }
 
       console.log('I am Verified');
 
       // Prepare the API request URL
-      const requestUrl = `${this.QTECH_BASEURL}/v1/games/${gameExist.gameId}/launch-url`;
+      const requestUrl = `${this.QTECH_BASEURL}/v1/games/${gameId}/launch-url`;
 
       console.log('requestUrl:', requestUrl);
 
@@ -352,86 +348,6 @@ export class QtechService {
     }
   }
 
-  // async verifySession(userId, gameId): Promise<any> {
-  //   try {
-  //     // Validate required parameters
-  //     if (!userId || !gameId) {
-  //       console.error('Missing required parameters: playerId or gameId');
-  //       return {
-  //         success: false,
-  //         message: 'Missing required parameters',
-  //         data: {},
-  //       };
-  //     }
-
-  //     const gameExist = await this.gameRepository.findOne({
-  //       where: { id: gameId },
-  //       relations: { provider: true },
-  //     });
-
-  //     console.log('Game retrieved from DB:', gameExist);
-
-  //     if (!gameExist) {
-  //       console.error(`Game with ID ${gameId} not found`);
-  //       throw new NotFoundException('Game not found');
-  //     }
-
-  //     // Retrieve the Wallet-Session from the database
-  //     const session = await this.gameSessionRepo.findOne({
-  //       where: { game_id: gameId },
-  //     });
-
-  //     if (!session) {
-  //       return {
-  //         success: false,
-  //         message: 'Session not found',
-  //         data: {},
-  //       };
-  //     }
-
-  //     const walletSessionId = session.session_id;
-
-  //     // Log game session details
-  //     console.log('Game session created:', walletSessionId);
-
-  //     if (!walletSessionId) {
-  //       console.error('Session ID is missing or invalid');
-  //       return {
-  //         success: false,
-  //         message: 'Session ID is missing',
-  //         data: {},
-  //       };
-  //     }
-
-  //     const playerId = userId;
-
-  //     // Construct the URL
-  //     const url = `${this.OPERATOR_URL}/accounts/${playerId}/session?gameId=${gameId}`;
-
-  //     const headers = {
-  //       'Pass-Key': this.QTECH_PASSWORD,
-  //       'Wallet-Session': walletSessionId,
-  //     };
-
-  //     // Make the GET request
-  //     const { data } = await this.httpService.get(url, { headers }).toPromise();
-  //     console.log('Verify Session response:', data);
-
-  //     return {
-  //       success: true,
-  //       message: 'Session verified successfully',
-  //       data,
-  //     };
-  //   } catch (e) {
-  //     console.error('Error in verifySession:', e.message);
-
-  //     return {
-  //       success: false,
-  //       message: 'Session verification failed',
-  //       data: {},
-  //     };
-  //   }
-  // }
 
   async verifySession(
     playerId,
@@ -454,7 +370,7 @@ export class QtechService {
         relations: { provider: true },
       });
 
-      console.log('Game retrieved from DB:', gameExist);
+      console.log('Verify Session Game retrieved from DB:', gameExist);
 
       if (!gameExist) {
         console.error(`Game with ID ${gameId} not found`);
@@ -466,7 +382,7 @@ export class QtechService {
 
       // Set headers
       const headers = {
-        'Pass-Key': 'bestaging',
+        'Pass-Key': passkey,
         'Wallet-Session': walletSessionId,
       };
 
