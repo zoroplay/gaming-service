@@ -310,8 +310,8 @@ export class QtechService {
         currency: 'NGN',
         country: 'NG',
         lang: 'en_US',
-        mode,
-        device,
+        mode: 'demo',
+        device: 'desktop',
         returnUrl,
       };
 
@@ -320,6 +320,15 @@ export class QtechService {
       const { data } = await this.httpService
         .post(requestUrl, requestBody, { headers })
         .toPromise();
+
+      if (!data || !data.url) {
+        console.error('Game launch failed: Missing URL in response', data);
+        throw new RpcException(
+          'Game launch failed: Invalid response from provider.',
+        );
+      }
+
+      console.log('Full API Response:', data);
 
       console.log('Response data:', data);
       console.log('Response returnUrl:', data.returnUrl);
