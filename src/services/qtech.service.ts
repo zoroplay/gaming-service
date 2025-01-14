@@ -249,13 +249,14 @@ export class QtechService {
         relations: { provider: true },
       });
 
-      console.log('Lunch Game retrieved from DB:', gameExist);
+      console.log('Game retrieved from DB:', gameExist);
 
       if (!gameExist) {
         console.error(`Game with ID ${gameId} not found`);
         return {
           status: HttpStatus.NOT_FOUND,
           message: 'Game not found',
+          data: {},
         };
       }
 
@@ -266,7 +267,7 @@ export class QtechService {
       console.log('mode', 'device', mode, device);
 
       // Construct the wallet session ID (if applicable)
-      const walletSessionId = authCode;
+      const walletSessionId = authCode || `session_${Date.now()}`;
 
       // Log the mode and device selection for debugging
       console.log('Selected mode:', mode, 'Selected device:', device);
@@ -290,6 +291,7 @@ export class QtechService {
         return {
           status: HttpStatus.BAD_REQUEST,
           message: 'Auth token is missing',
+          data: {},
         };
       }
 
@@ -300,21 +302,21 @@ export class QtechService {
         console.log('Game session saved successfully:', gameSession);
       } catch (dbError) {
         console.error('Error saving game session:', dbError.message);
-
         return {
           status: HttpStatus.INTERNAL_SERVER_ERROR,
-          message: 'Failed to save game session',
+          message: `Failed to save game session: ${dbError.message}`,
         };
       }
 
       // Prepare the API request URL
-      const requestUrl = `${this.QTECH_BASEURL}/v1/games/${gameId}/launch-url`;
+      const requestUrl = `${this.QTECH_BASEURL}/v1/games/${gameExist.gameId}/launch-url`;
 
       console.log('requestUrl:', requestUrl);
 
       // Set up headers
       const headers = {
         Authorization: `Bearer ${await this.getAccessToken()}`,
+        // 'Wallet-Session': walletSessionId,
       };
 
       // Prepare the payload
@@ -329,34 +331,17 @@ export class QtechService {
         returnUrl,
       };
 
-      console.log('Request URL:', requestUrl);
-      console.log('Request Body:', requestBody);
-
+      console.log('requestBody:', requestBody);
       // Make the API request
-      let response;
-      try {
-        response = await this.httpService
-          .post(requestUrl, requestBody, { headers })
-          .toPromise();
-      } catch (apiError) {
-        console.error(
-          'Error from QTech API:',
-          apiError.response?.data || apiError.message,
-        );
-        throw new RpcException('Game launch failed: Unable to reach provider.');
-      }
+      const { data } = await this.httpService
+        .post(requestUrl, requestBody, { headers })
+        .toPromise();
 
-      console.log('API Response:', response);
-
-      if (!response || !response.data || !response.data.url) {
-        console.error('Game launch failed: Missing URL in response', response);
-        throw new RpcException(
-          'Game launch failed: Invalid response from provider.',
-        );
-      }
+      console.log('Response data:', data);
+      console.log('Response returnUrl:', data.returnUrl);
 
       // Return the game URL
-      return { url: response.data.url };
+      return { url: data.url };
     } catch (error) {
       console.error('Error in launchGames:', error.message);
       throw new RpcException(
