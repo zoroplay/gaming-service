@@ -52,8 +52,6 @@ import { QtechService } from 'src/services/qtech.service';
 import { FindManyOptions, ILike, In, Repository } from 'typeorm';
 import { Game as GameEntity } from '../entities/game.entity';
 import { Provider as ProviderEntity } from '../entities/provider.entity';
-// import { Timestamp } from 'google-protobuf/google/protobuf/timestamp_pb';
-// import { Struct } from 'google-protobuf/google/protobuf/struct_pb';
 
 @Injectable()
 export class GamesService {
