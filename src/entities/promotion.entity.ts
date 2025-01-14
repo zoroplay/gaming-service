@@ -1,10 +1,12 @@
+/* eslint-disable prettier/prettier */
 import {
   Column,
   CreateDateColumn,
   Entity,
   PrimaryGeneratedColumn,
-  UpdateDateColumn,
+  UpdateDateColumn
 } from 'typeorm';
+
 
 @Entity({ name: 'promotions' })
 export class Promotion {
