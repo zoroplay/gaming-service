@@ -874,7 +874,7 @@ export class GamesService {
     // Update fields with provided values or retain existing ones
     // promotion.clientId = updatePromotionDto.clientId ?? promotion.clientId;
     promotion.title = updatePromotionDto.title ?? promotion.title;
-    promotion.imageUrl = updatePromotionDto.imageUrl ?? promotion.imageUrl;
+   // promotion.imageUrl = updatePromotionDto.imageUrl ?? promotion.imageUrl;
     promotion.content = updatePromotionDto.content ?? promotion.content;
     promotion.type = updatePromotionDto.type ?? promotion.type;
     promotion.targetUrl = updatePromotionDto.targetUrl ?? promotion.targetUrl;
