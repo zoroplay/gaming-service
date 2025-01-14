@@ -1,36 +1,34 @@
 /* eslint-disable prettier/prettier */
 import { Controller } from '@nestjs/common';
 // import { GrpcMethod } from '@nestjs/microservices';
-import { GamesService } from './games.service';
+import { GrpcMethod } from '@nestjs/microservices';
+import { Observable } from 'rxjs';
 import {
-  Game,
-  CreateGameDto,
-  Games,
-  FindOneGameDto,
-  PaginationDto,
-  StartGameDto,
-  SyncGameDto,
-  UpdateGameDto,
-  GAMING_SERVICE_NAME,
-  CreateProviderDto,
-  Empty,
-  Provider,
-  Providers,
-  CommonResponse,
-  FetchGamesRequest,
-  CallbackGameDto,
-  SaveCategoryRequest,
-  FindOneCategoryDto,
   AddGameToCategoriesDto,
-  CreatePromotionDto,
+  CallbackGameDto,
+  CommonResponse,
+  CreateGameDto,
+  CreateProviderDto,
+  CreateTournamentDto,
+  Empty,
+  FetchGamesRequest,
+  FindOneCategoryDto,
+  FindOneGameDto,
   FindOnePromotionDto,
   FindOneTournamentDto,
-  CreateTournamentDto,
-  CreatePromotionRequest,
+  Game,
+  Games,
+  GAMING_SERVICE_NAME,
+  PaginationDto,
+  Provider,
+  Providers,
   QtechCallbackRequest,
+  SaveCategoryRequest,
+  StartGameDto,
+  SyncGameDto,
+  UpdateGameDto
 } from 'src/proto/gaming.pb';
-import { Observable } from 'rxjs';
-import { GrpcMethod } from '@nestjs/microservices';
+import { GamesService } from './games.service';
 
 @Controller()
 export class GamesController {
@@ -204,34 +202,34 @@ export class GamesController {
     }
   }
 
-  @GrpcMethod(GAMING_SERVICE_NAME, 'createPromotion')
-  async createPromotion(
-    payload: CreatePromotionRequest & { file?: string },
-  ): Promise<any> {
-    console.log('Received payload:', payload);
+//   @GrpcMethod(GAMING_SERVICE_NAME, 'createPromotion')
+//   async createPromotion(
+  //   payload: CreatePromotionRequest & { file?: string },
+  // ): Promise<any> {
+//     console.log('Received payload:', payload);
 
-    let file: Express.Multer.File | undefined;
+  // let file: Express.Multer.File | undefined;
 
-    // Convert fileBase64 into an Express.Multer.File object if provided
-    if (payload.file) {
-      const buffer = Buffer.from(payload.file, 'base64');
-      file = {
-        buffer,
-        originalname: 'uploaded-file.png', // Or derive from metadata
-        mimetype: 'image/png', // Or derive from metadata
-        size: buffer.length,
-      } as Express.Multer.File;
-    }
+//     // Convert fileBase64 into an Express.Multer.File object if provided
+//     if (payload.file) {
+//       const buffer = Buffer.from(payload.file, 'base64');
+//       file = {
+//         buffer,
+//         originalname: 'uploaded-file.png', // Or derive from metadata
+//         mimetype: 'image/png', // Or derive from metadata
+//         size: buffer.length,
+//       } as Express.Multer.File;
+//     }
 
-    const newPromo = await this.gamesService.createPromotion(payload, file);
-    return newPromo;
-  }
+//     const newPromo = await this.gamesService.createPromotion(payload, file);
+//     return newPromo;
+//   }
 
-  @GrpcMethod(GAMING_SERVICE_NAME, 'updatePromotion')
-  updatePromotion(payload: CreatePromotionDto): Promise<any> {
-    console.log('fetch gameNames');
-    return this.gamesService.updatePromotion(payload);
-  }
+  // @GrpcMethod(GAMING_SERVICE_NAME, 'updatePromotion')
+  // updatePromotion(payload: CreatePromotionDto): Promise<any> {
+  //   console.log('fetch gameNames');
+  //   return this.gamesService.updatePromotion(payload);
+  // }
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'findPromotions')
   fetchPromotions(): Promise<any> {
@@ -298,6 +296,12 @@ export class GamesController {
 
     return this.gamesService.removeTournament(payload);
   }
+
+  // @GrpcMethod(GAMING_SERVICE_NAME, 'uploadImage')
+  // uploadImage(payload: FileChunk): Promise<any> {
+  //   return this.gamesService.uploadImage(payload)
+    
+  // }
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'handleQtechCallback')
   async handleQtechCallback(payload: QtechCallbackRequest): Promise<any> {

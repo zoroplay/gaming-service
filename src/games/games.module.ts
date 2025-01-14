@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Module } from '@nestjs/common';
 import { GamesService } from './games.service';
 import { GamesController } from './games.controller';
@@ -30,6 +31,7 @@ import { Tournament } from 'src/entities/tournament.entity';
 import { FirebaseService } from 'src/common/services/firebaseUpload';
 
 
+
 @Module({
   imports: [
     CacheModule.register({
@@ -37,7 +39,7 @@ import { FirebaseService } from 'src/common/services/firebaseUpload';
       max: 1000,
       isGlobal: true,
     }),
-    TypeOrmModule.forFeature([GameSession, CallbackLog, Category, Game, Promotion, Tournament, GameCategory, GameKey, Provider, CasinoGame]),
+    TypeOrmModule.forFeature([GameSession, CallbackLog, Category, Game, Promotion, Tournament, GameCategory, GameKey, Provider, CasinoGame ]),
     HttpModule,
     IdentityModule,
     WalletModule,
