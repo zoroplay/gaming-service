@@ -1,17 +1,15 @@
+/* eslint-disable prettier/prettier */
 import {
-  Entity,
-  PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
-  UpdateDateColumn,
+  Entity,
   ManyToOne,
-  ManyToMany,
-  JoinTable,
-  OneToMany
+  OneToMany,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn
 } from 'typeorm';
-import { Provider } from './provider.entity';
-import { Category } from './category.entity';
 import { GameCategory } from './game.category.entity';
+import { Provider } from './provider.entity';
 
 @Entity({ name: 'games' })
 export class Game {

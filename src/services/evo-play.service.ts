@@ -161,17 +161,21 @@ export class EvoPlayService {
     };
   }
 
-  //get games 
-  async getGameInfo() {
+  //get games Info
+  async getGameInfo(game: GameEntity) {
     try {
+
+      const newData: any = {
+        game: parseInt(game.gameId)
+      }
       const signature = this.getSignature(
         this.project,
         this.version,
-        {},
+        newData,
         this.token,
       );
       // $url = $this->project_id."*".$this->version."*".$this->token;
-      const url = `Game/getList?project=${this.project}&version=${this.version}&signature=${signature}`;
+      const url = `Game/getList?project=${this.project}&version=${this.version}&signature=${signature}&game=${newData.game}`;
       const response: AxiosResponse = await this.httpClient.axiosRef.get(
         url,
         this.requestConfig,
@@ -224,7 +228,7 @@ export class EvoPlayService {
             },
           },
           extra_bonuses_settings: {
-            registration_id: 'test_registration'
+            registration_id: 'test1'
           }
         }
       }

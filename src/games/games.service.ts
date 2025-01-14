@@ -3,9 +3,15 @@ import { Injectable, NotFoundException, Provider } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Observable, Subject } from 'rxjs';
 import { slugify } from 'src/common';
+import { FirebaseService } from 'src/common/services/firebaseUpload';
 import { Category } from 'src/entities/category.entity';
 import { GameKey } from 'src/entities/game-key.entity';
 import { GameCategory } from 'src/entities/game.category.entity';
+import { Promotion as PromotionEntity } from 'src/entities/promotion.entity';
+import {
+  Tournament,
+  Tournament as TournamentEntity,
+} from 'src/entities/tournament.entity';
 import { IdentityService } from 'src/identity/identity.service';
 import {
   AddGameToCategoriesDto,
@@ -14,8 +20,6 @@ import {
   CommonResponse,
   CommonResponseArray,
   CreateGameDto,
-  CreatePromotionDto,
-  CreatePromotionRequest,
   CreateProviderDto,
   CreateTournamentDto,
   FetchGamesRequest,
@@ -32,7 +36,7 @@ import {
   StartGameDto,
   SyncGameDto,
   Tournaments,
-  UpdateGameDto,
+  UpdateGameDto
 } from 'src/proto/gaming.pb';
 import {
   C2GamingService,
@@ -40,19 +44,14 @@ import {
   SmartSoftService,
   TadaGamingService,
 } from 'src/services';
+
 import { EntityToProtoService } from 'src/services/entity-to-proto.service';
 import { EvoPlayService } from 'src/services/evo-play.service';
 import { PragmaticService } from 'src/services/pragmatic-play.service';
+import { QtechService } from 'src/services/qtech.service';
 import { FindManyOptions, ILike, In, Repository } from 'typeorm';
 import { Game as GameEntity } from '../entities/game.entity';
 import { Provider as ProviderEntity } from '../entities/provider.entity';
-import { Promotion as PromotionEntity } from 'src/entities/promotion.entity';
-import {
-  Tournament,
-  Tournament as TournamentEntity,
-} from 'src/entities/tournament.entity';
-import { QtechService } from 'src/services/qtech.service';
-import { FirebaseService } from 'src/common/services/firebaseUpload';
 // import { Timestamp } from 'google-protobuf/google/protobuf/timestamp_pb';
 // import { Struct } from 'google-protobuf/google/protobuf/struct_pb';
 
@@ -819,31 +818,63 @@ export class GamesService {
     throw new Error('Method not implemented.');
   }
 
-  async createPromotion(
-    createPromotionDto: CreatePromotionRequest,
-    file: Express.Multer.File, // Include the uploaded file
-  ): Promise<Promotion> {
-    console.log('createPromotionDto', createPromotionDto);
-    console.log('file', file);
+//   async uploadImage(file: Express.Multer.File): Promise<any> {
+// try {
 
-    // Upload the file to Firebase and get the public URL
-    const imageUrl = await this.firebaseService.uploadImage(file);
+//       let url;
+//       let key;
 
-    console.log('imageUrl', imageUrl);
+//       console.log("simulatedFile", simulatedFile);
 
-    const newPromotion: Promotion = new PromotionEntity();
+//       const { url: fileUrl, key: fileKey } = await this.firebaseService.uploadImage(file);
 
-    newPromotion.title = createPromotionDto.metadata.title;
-    newPromotion.imageUrl = imageUrl || ''; // Assign the uploaded image URL
-    newPromotion.content = createPromotionDto.metadata.content;
-    newPromotion.type = createPromotionDto.metadata.type;
-    newPromotion.endDate = createPromotionDto.metadata.endDate;
-    newPromotion.startDate = createPromotionDto.metadata.startDate;
+//       // eslint-disable-next-line @typescript-eslint/no-unused-vars
+//       url = fileUrl;
+//       // eslint-disable-next-line @typescript-eslint/no-unused-vars
+//       key = fileKey;
+      
+//       const image = await this.firebaseService.uploadImage(simulatedFile);
 
-    const savedPromotion = await this.promotionRepository.save(newPromotion);
-    console.log('savedPromotion', savedPromotion);
-    return savedPromotion;
-  }
+//       console.log("image", image);
+
+//       return {
+//         status: 1,
+//         success: true,
+//         message: 'Upload success',
+//         data: image
+//       }
+
+//     } catch (error) {
+//       throw new Error(`Error saving file chunk to Firebase: ${error.message}`);
+//     }
+
+//   }
+
+  // async createPromotion(
+  //   createPromotionDto: CreatePromotionRequest,
+  //   file: Express.Multer.File, // Include the uploaded file
+  // ): Promise<Promotion> {
+  //   console.log('createPromotionDto', createPromotionDto);
+  //   console.log('file', file);
+
+  //   // Upload the file to Firebase and get the public URL
+  //   const imageUrl = await this.firebaseService.uploadImage(file)
+
+  //   console.log("imageUrl", imageUrl);
+
+  //   const newPromotion: Promotion = new PromotionEntity();
+
+  //   newPromotion.title = createPromotionDto.metadata.title;
+  //   newPromotion.imageUrl = imageUrl || ''; // Assign the uploaded image URL
+  //   newPromotion.content = createPromotionDto.metadata.content;
+  //   newPromotion.type = createPromotionDto.metadata.type;
+  //   newPromotion.endDate = createPromotionDto.metadata.endDate;
+  //   newPromotion.startDate = createPromotionDto.metadata.startDate;
+
+  //   const savedPromotion = await this.promotionRepository.save(newPromotion);
+  //   console.log('savedPromotion', savedPromotion);
+  //   return savedPromotion;
+  // }
 
   async findOnePromotion(request: FindOnePromotionDto): Promise<Promotion> {
     const { id } = request;
@@ -864,32 +895,32 @@ export class GamesService {
     return { data: promotions };
   }
 
-  async updatePromotion(
-    updatePromotionDto: CreatePromotionDto,
-  ): Promise<Promotion> {
-    const { id } = updatePromotionDto;
+  // async updatePromotion(
+  //   updatePromotionDto: CreatePromotionDto,
+  // ): Promise<Promotion> {
+  //   const { id } = updatePromotionDto;
 
-    // Find the promotion by ID
-    const promotion = await this.promotionRepository.findOneBy({ id });
+  //   // Find the promotion by ID
+  //   const promotion = await this.promotionRepository.findOneBy({ id });
 
-    if (!promotion) {
-      throw new Error(`Promotion with ID ${updatePromotionDto.id} not found`);
-    }
+  //   if (!promotion) {
+  //     throw new Error(`Promotion with ID ${updatePromotionDto.id} not found`);
+  //   }
 
-    // Update fields with provided values or retain existing ones
-    // promotion.clientId = updatePromotionDto.clientId ?? promotion.clientId;
-    promotion.title = updatePromotionDto.title ?? promotion.title;
-    // promotion.imageUrl = updatePromotionDto.imageUrl ?? promotion.imageUrl;
-    promotion.content = updatePromotionDto.content ?? promotion.content;
-    promotion.type = updatePromotionDto.type ?? promotion.type;
-    promotion.targetUrl = updatePromotionDto.targetUrl ?? promotion.targetUrl;
-    promotion.startDate = updatePromotionDto.startDate;
-    promotion.endDate = updatePromotionDto.endDate;
+  //   // Update fields with provided values or retain existing ones
+  //   // promotion.clientId = updatePromotionDto.clientId ?? promotion.clientId;
+  //   promotion.title = updatePromotionDto.title ?? promotion.title;
+  //   promotion.imageUrl = updatePromotionDto.imageUrl ?? promotion.imageUrl;
+  //   promotion.content = updatePromotionDto.content ?? promotion.content;
+  //   promotion.type = updatePromotionDto.type ?? promotion.type;
+  //   promotion.targetUrl = updatePromotionDto.targetUrl ?? promotion.targetUrl;
+  //   promotion.startDate = updatePromotionDto.startDate;
+  //   promotion.endDate = updatePromotionDto.endDate;
 
-    // Save the updated promotion
-    const updatedPromotion = await this.promotionRepository.save(promotion);
-    return updatedPromotion;
-  }
+  //   // Save the updated promotion
+  //   const updatedPromotion = await this.promotionRepository.save(promotion);
+  //   return updatedPromotion;
+  // }
 
   async removePromotion(request: FindOnePromotionDto) {
     const { id } = request;
@@ -1098,4 +1129,5 @@ export class GamesService {
 
     await this.tournamenRepository.remove(tournament);
   }
+
 }
