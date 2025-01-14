@@ -20,6 +20,7 @@ import { QtechCallbackRequest, StartGameDto } from 'src/proto/gaming.pb';
 import {
   CreditCasinoBetRequest,
   PlaceCasinoBetRequest,
+  RollbackCasinoBetRequest,
   SettleCasinoBetRequest,
 } from 'src/proto/betting.pb';
 import { firstValueFrom } from 'rxjs';
@@ -328,21 +329,34 @@ export class QtechService {
         returnUrl,
       };
 
-      console.log('requestBody:', requestBody);
-      // Make the API request
-      const { data } = await this.httpService
-        .post(requestUrl, requestBody, { headers })
-        .toPromise();
+      console.log('Request URL:', requestUrl);
+      console.log('Request Body:', requestBody);
 
-      if (!data || !data.url) {
-        console.error('Game launch failed: Missing URL in response', data);
+      // Make the API request
+      let response;
+      try {
+        response = await this.httpService
+          .post(requestUrl, requestBody, { headers })
+          .toPromise();
+      } catch (apiError) {
+        console.error(
+          'Error from QTech API:',
+          apiError.response?.data || apiError.message,
+        );
+        throw new RpcException('Game launch failed: Unable to reach provider.');
+      }
+
+      console.log('API Response:', response);
+
+      if (!response || !response.data || !response.data.url) {
+        console.error('Game launch failed: Missing URL in response', response);
         throw new RpcException(
           'Game launch failed: Invalid response from provider.',
         );
       }
 
       // Return the game URL
-      return { url: data.url };
+      return { url: response.data.url };
     } catch (error) {
       console.error('Error in launchGames:', error.message);
       throw new RpcException(
@@ -1030,6 +1044,191 @@ export class QtechService {
     return await firstValueFrom(this.betService.settleCasinoBet(data));
   }
 
+  async rollback(data: RollbackCasinoBetRequest) {
+    return await firstValueFrom(this.betService.cancelCasinoBet(data));
+  }
+
+  async refund(clientId, player, callback, body, balanceType) {
+    console.log('Got to refund method');
+    console.log('player', player, body, balanceType);
+    let response: any;
+
+    if (player) {
+      const reversePayload: RollbackCasinoBetRequest = {
+        transactionId: body.get('reference'),
+      };
+
+      console.log('reversePayload', reversePayload);
+
+      const callbackLog = await this.callbackLogRepository.findOne({
+        where: { transactionId: body.get('reference'), request_type: 'Bet' },
+      });
+
+      if (!callbackLog) {
+        console.log('Callback log not found');
+
+        response = {
+          success: true,
+          message: 'Refund Unsuccessful',
+          status: HttpStatus.OK,
+          data: {
+            transactionId: 0,
+            error: 0,
+            description: `Unsuccessful rollback`,
+          },
+        };
+
+        // response = {
+        //   transactionId: 0,
+        //   error: 0,
+        //   description: `Unsuccessful rollback`,
+        // }
+
+        await this.callbackLogRepository.update(
+          { id: callback.id },
+          { response: JSON.stringify(response) },
+        );
+        return response;
+      }
+
+      const callbackPayload = JSON.parse(callbackLog.payload);
+
+      const gameExist = await this.gameRepository.findOne({
+        where: { gameId: callbackPayload.gameId },
+        relations: { provider: true },
+      });
+      console.log('Game retrieved from DB:', gameExist);
+
+      // // If game doesn't exist, throw an error
+      if (!gameExist) {
+        response = {
+          success: false,
+          status: HttpStatus.BAD_REQUEST,
+          message: `Game with id ${body.get('gameId')}not Found`,
+          data: {},
+        };
+
+        await this.callbackLogRepository.update(
+          { id: callback.id },
+          { response: JSON.stringify(response) },
+        );
+        return response;
+      }
+
+      // console.log('update ticket')
+      const transaction = await this.rollback(reversePayload);
+
+      // const transaction = {
+      //   success: true,
+      //   status: HttpStatus.OK,
+      //   message: 'Casino Bet Placed',
+      //   data: {
+      //     transactionId: '123456',
+      //     balance: 756,
+      //   },
+      // }
+
+      if (!transaction.success) {
+        console.log('transaction error');
+        response = {
+          success: true,
+          message: 'Refund Unsuccessful',
+          status: HttpStatus.OK,
+          data: {
+            transactionId: 0,
+            error: 0,
+            description: `Unsuccessful rollback`,
+          },
+        };
+
+        await this.callbackLogRepository.update(
+          { id: callback.id },
+          { response: JSON.stringify(response) },
+        );
+        return response;
+      }
+
+      const rollbackWalletRes = await this.walletService.credit({
+        userId: player.playerId,
+        clientId,
+        amount: callbackPayload.amount,
+        source: gameExist.provider.slug,
+        description: `Bet Cancelled: (${gameExist.title})`,
+        username: player.playerNickname,
+        wallet: balanceType,
+        subject: 'Bet refund (Casino)',
+        channel: gameExist.title,
+      });
+
+      // const rollbackWalletRes = {
+      //   success: true,
+      //   status: HttpStatus.OK,
+      //   message: 'Casino Bet Placed',
+      //   data: {
+      //     userId: 11,
+      //     balance: 11,
+      //     availableBalance: 11,
+      //     trustBalance: 11,
+      //     sportBonusBalance: 22,
+      //     virtualBonusBalance: 11,
+      //     casinoBonusBalance: 1
+      //   },
+      // }
+
+      console.log('rollbackWalletRes', rollbackWalletRes);
+
+      if (!rollbackWalletRes.success) {
+        console.log('transaction error');
+        response = {
+          success: true,
+          message: 'Refund Unsuccessful',
+          status: HttpStatus.OK,
+          data: {
+            transactionId: 0,
+            error: 0,
+            description: `Unsuccessful rollback`,
+          },
+        };
+
+        await this.callbackLogRepository.update(
+          { id: callback.id },
+          { response: JSON.stringify(response) },
+        );
+        return response;
+      }
+
+      response = {
+        success: true,
+        message: 'Refund Successful',
+        status: HttpStatus.OK,
+        data: {
+          transactionId: transaction.data.transactionId,
+          error: 0,
+          description: 'Successful',
+        },
+      };
+
+      await this.callbackLogRepository.update(
+        { id: callback.id },
+        { response: JSON.stringify(response) },
+      );
+      return response;
+    } else {
+      response = {
+        success: false,
+        status: HttpStatus.BAD_REQUEST,
+        message: `Player with userId ${player.playerId} not found`,
+        data: {},
+      };
+
+      await this.callbackLogRepository.update(
+        { id: callback.id },
+        { response: JSON.stringify(response) },
+      );
+      return response;
+    }
+  }
+
   async handleQTGamesCallback(_data: QtechCallbackRequest): Promise<any> {
     console.log('_data', _data);
     const balanceType = 'main';
@@ -1060,15 +1259,15 @@ export class QtechService {
         );
         return transaction;
 
-        case 'win':
-          const win = await this.win(
-            _data.clientId,
-            _data.gameId,
-            balanceType,
-            callback,
-            body,
-          )
-          return win;
+      case 'win':
+        const win = await this.win(
+          _data.clientId,
+          _data.gameId,
+          balanceType,
+          callback,
+          body,
+        );
+        return win;
 
       default:
         return {
