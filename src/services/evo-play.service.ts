@@ -186,7 +186,7 @@ export class EvoPlayService {
   // start game here
   async constructGameUrl(data, game: GameEntity) {
     try {
-      let balanceType = data.balanceType;
+      const balanceType = data.balanceType;
       const baseUrl = this.baseUrl;
       const project = this.project;
       const secretKey = this.secretKey;
@@ -561,7 +561,7 @@ export class EvoPlayService {
           return response;
         }
 
-        let response = {
+        const response = {
           success: true,
           message: 'bet handled successfully',
           status: HttpStatus.OK,
@@ -1000,7 +1000,7 @@ export class EvoPlayService {
 
   async BalanceIncrease (clientId, data, callbackId, wallet) {
     try {
-      const {id, user_id, type, currency, amount, user_message} = data;
+      const {user_id, type, currency, amount, user_message} = data;
       // let wallet = 'main';
       // if (wallet_type === 'bonus')
       //   wallet = 'casino';

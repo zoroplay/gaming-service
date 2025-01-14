@@ -27,6 +27,7 @@ import {
   FindOneTournamentDto,
   CreateTournamentDto,
   CreatePromotionRequest,
+  QtechCallbackRequest,
 } from 'src/proto/gaming.pb';
 import { Observable } from 'rxjs';
 import { GrpcMethod } from '@nestjs/microservices';
@@ -95,7 +96,6 @@ export class GamesController {
     return this.gamesService.fetchGamesByName(payload);
   }
 
-
   @GrpcMethod(GAMING_SERVICE_NAME, 'addGameToCategories')
   addGameToCategories(payload: AddGameToCategoriesDto): Promise<any> {
     console.log('addGameToCategories');
@@ -137,7 +137,6 @@ export class GamesController {
 
     return this.gamesService.deleteCategory(payload);
   }
-
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'FetchCategories')
   FetchCategories(): Promise<any> {
@@ -196,7 +195,7 @@ export class GamesController {
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'handleCallback')
   async handleCallback(request: CallbackGameDto): Promise<any> {
-    console.log("request", request);
+    console.log('request', request);
     try {
       return await this.gamesService.handleGamesCallback(request);
     } catch (error) {
@@ -206,26 +205,27 @@ export class GamesController {
   }
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'createPromotion')
-  async createPromotion(payload: CreatePromotionRequest & { file?: string }): Promise<any> {
-  console.log('Received payload:', payload);
+  async createPromotion(
+    payload: CreatePromotionRequest & { file?: string },
+  ): Promise<any> {
+    console.log('Received payload:', payload);
 
-  let file: Express.Multer.File | undefined;
+    let file: Express.Multer.File | undefined;
 
-  // Convert fileBase64 into an Express.Multer.File object if provided
-  if (payload.file) {
-    const buffer = Buffer.from(payload.file, 'base64');
-    file = {
-      buffer,
-      originalname: 'uploaded-file.png', // Or derive from metadata
-      mimetype: 'image/png', // Or derive from metadata
-      size: buffer.length,
-    } as Express.Multer.File;
+    // Convert fileBase64 into an Express.Multer.File object if provided
+    if (payload.file) {
+      const buffer = Buffer.from(payload.file, 'base64');
+      file = {
+        buffer,
+        originalname: 'uploaded-file.png', // Or derive from metadata
+        mimetype: 'image/png', // Or derive from metadata
+        size: buffer.length,
+      } as Express.Multer.File;
+    }
+
+    const newPromo = await this.gamesService.createPromotion(payload, file);
+    return newPromo;
   }
-
-  const newPromo = await this.gamesService.createPromotion(payload, file);
-  return newPromo;
-}
-
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'updatePromotion')
   updatePromotion(payload: CreatePromotionDto): Promise<any> {
@@ -297,5 +297,10 @@ export class GamesController {
     }
 
     return this.gamesService.removeTournament(payload);
+  }
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'handleQtechCallback')
+  async handleQtechCallback(payload: QtechCallbackRequest): Promise<any> {
+    return this.gamesService.handleQtechCallback(payload);
   }
 }

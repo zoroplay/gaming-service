@@ -797,12 +797,16 @@ export class GamesService {
     // return gameList;
   }
 
-  async handleQTGamesCallback(_data: QtechCallbackRequest): Promise<any> {
-    console.log('_data', _data);
 
-    console.log('using qtech-games');
-    return await this.qtechService.handleCallback(_data);
+  async handleQtechCallback(request: QtechCallbackRequest): Promise<any> {
+    console.log('start-service', request);
+    // //(request);
+    const resp = await this.qtechService.handleQTGamesCallback(request);
+    console.log('resp', resp);
+
+    return resp;
   }
+  
 
   async handleC2Games(body: any, headers: any): Promise<any> {
     console.log(body);
@@ -870,7 +874,7 @@ export class GamesService {
     // Update fields with provided values or retain existing ones
     // promotion.clientId = updatePromotionDto.clientId ?? promotion.clientId;
     promotion.title = updatePromotionDto.title ?? promotion.title;
-    promotion.imageUrl = updatePromotionDto.imageUrl ?? promotion.imageUrl;
+   // promotion.imageUrl = updatePromotionDto.imageUrl ?? promotion.imageUrl;
     promotion.content = updatePromotionDto.content ?? promotion.content;
     promotion.type = updatePromotionDto.type ?? promotion.type;
     promotion.targetUrl = updatePromotionDto.targetUrl ?? promotion.targetUrl;
@@ -923,6 +927,9 @@ export class GamesService {
     console.log('Response:', response); // Log the response in a readable format
     return response;
   }
+
+
+  
 
   // async getGameCategories(
   //   page = 1,
