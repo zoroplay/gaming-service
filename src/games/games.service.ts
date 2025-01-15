@@ -797,7 +797,6 @@ export class GamesService {
     // return gameList;
   }
 
-
   async handleQtechCallback(request: QtechCallbackRequest): Promise<any> {
     console.log('start-service', request);
     // //(request);
@@ -806,7 +805,13 @@ export class GamesService {
 
     return resp;
   }
-  
+
+  async handleQtechGetBalance(request: QtechCallbackRequest): Promise<any> {
+    console.log('Get Balance');
+    const result = await this.qtechService.getBalance(request);
+
+    return result;
+  }
 
   async handleC2Games(body: any, headers: any): Promise<any> {
     console.log(body);
@@ -822,9 +827,9 @@ export class GamesService {
     console.log('file', file);
 
     // Upload the file to Firebase and get the public URL
-    const imageUrl = await this.firebaseService.uploadImage(file)
+    const imageUrl = await this.firebaseService.uploadImage(file);
 
-    console.log("imageUrl", imageUrl);
+    console.log('imageUrl', imageUrl);
 
     const newPromotion: Promotion = new PromotionEntity();
 
@@ -874,7 +879,7 @@ export class GamesService {
     // Update fields with provided values or retain existing ones
     // promotion.clientId = updatePromotionDto.clientId ?? promotion.clientId;
     promotion.title = updatePromotionDto.title ?? promotion.title;
-   // promotion.imageUrl = updatePromotionDto.imageUrl ?? promotion.imageUrl;
+    // promotion.imageUrl = updatePromotionDto.imageUrl ?? promotion.imageUrl;
     promotion.content = updatePromotionDto.content ?? promotion.content;
     promotion.type = updatePromotionDto.type ?? promotion.type;
     promotion.targetUrl = updatePromotionDto.targetUrl ?? promotion.targetUrl;
@@ -927,9 +932,6 @@ export class GamesService {
     console.log('Response:', response); // Log the response in a readable format
     return response;
   }
-
-
-  
 
   // async getGameCategories(
   //   page = 1,
