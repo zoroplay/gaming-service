@@ -35,12 +35,13 @@ async uploadFileToFirebase(
   try {
 
     const buffer = Buffer.from(localFilePath, 'base64');
+
     console.log("buffer", buffer);
 
     const file = this.bucket.file(destinationPath);
       await file.save(buffer, {
         metadata: {
-          contentType: 'image/*', // Set the appropriate content type
+          contentType: 'image/png', // Set the appropriate content type
         },
       });
 
