@@ -8,6 +8,7 @@ import {
   CallbackGameDto,
   CommonResponse,
   CreateGameDto,
+  CreatePromotionRequest,
   CreateProviderDto,
   CreateTournamentDto,
   Empty,
@@ -202,28 +203,15 @@ export class GamesController {
     }
   }
 
-//   @GrpcMethod(GAMING_SERVICE_NAME, 'createPromotion')
-//   async createPromotion(
-  //   payload: CreatePromotionRequest & { file?: string },
-  // ): Promise<any> {
-//     console.log('Received payload:', payload);
-
-  // let file: Express.Multer.File | undefined;
-
-//     // Convert fileBase64 into an Express.Multer.File object if provided
-//     if (payload.file) {
-//       const buffer = Buffer.from(payload.file, 'base64');
-//       file = {
-//         buffer,
-//         originalname: 'uploaded-file.png', // Or derive from metadata
-//         mimetype: 'image/png', // Or derive from metadata
-//         size: buffer.length,
-//       } as Express.Multer.File;
-//     }
-
-//     const newPromo = await this.gamesService.createPromotion(payload, file);
-//     return newPromo;
-//   }
+  @GrpcMethod(GAMING_SERVICE_NAME, 'createPromotion')
+  async createPromotion(
+    payload: CreatePromotionRequest, 
+  ): Promise<any> {
+    console.log('Received payload co:', payload);
+    // Pass the payload and file to the games service
+    const newPromo = await this.gamesService.createPromotion(payload);
+    return newPromo;
+  }
 
   // @GrpcMethod(GAMING_SERVICE_NAME, 'updatePromotion')
   // updatePromotion(payload: CreatePromotionDto): Promise<any> {

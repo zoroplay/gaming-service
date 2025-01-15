@@ -15,11 +15,13 @@ import {
 import { IdentityService } from 'src/identity/identity.service';
 import {
   AddGameToCategoriesDto,
+  AddGameToTournamentDto,
   CallbackGameDto,
   Categories,
   CommonResponse,
   CommonResponseArray,
   CreateGameDto,
+  CreatePromotionRequest,
   CreateProviderDto,
   CreateTournamentDto,
   FetchGamesRequest,
@@ -52,6 +54,7 @@ import { QtechService } from 'src/services/qtech.service';
 import { FindManyOptions, ILike, In, Repository } from 'typeorm';
 import { Game as GameEntity } from '../entities/game.entity';
 import { Provider as ProviderEntity } from '../entities/provider.entity';
+import { TournamentGame } from 'src/entities/tournament-game.entity';
 
 @Injectable()
 export class GamesService {
@@ -62,6 +65,8 @@ export class GamesService {
     private categoryRepository: Repository<Category>,
     @InjectRepository(GameCategory)
     private gameCategoryRepository: Repository<GameCategory>,
+    @InjectRepository(TournamentGame)
+    private tournamentGameRepository: Repository<TournamentGame>,
     @InjectRepository(ProviderEntity)
     private providerRepository: Repository<ProviderEntity>,
     @InjectRepository(PromotionEntity)
@@ -849,14 +854,14 @@ export class GamesService {
 //   }
 
   // async createPromotion(
-  //   createPromotionDto: CreatePromotionRequest,
+  //   createPromotionDto: CreatePromotionDto,
   //   file: Express.Multer.File, // Include the uploaded file
   // ): Promise<Promotion> {
   //   console.log('createPromotionDto', createPromotionDto);
   //   console.log('file', file);
 
   //   // Upload the file to Firebase and get the public URL
-  //   const imageUrl = await this.firebaseService.uploadImage(file)
+  //   const imageUrl = await this.firebaseService.uploadFileToFirebase(file)
 
   //   console.log("imageUrl", imageUrl);
 
@@ -873,6 +878,49 @@ export class GamesService {
   //   console.log('savedPromotion', savedPromotion);
   //   return savedPromotion;
   // }
+
+  async createPromotion(
+    createPromotionDto: CreatePromotionRequest
+  ): Promise<Promotion> {
+    console.log('createPromotionDto service', createPromotionDto);
+  
+  
+    // Define the folder and file name for the image in Firebase
+    const folderName = 'promotions'; // Example: folder to store promotion images
+    const fileName = `${Date.now()}_uploaded-file`; // Unique file name
+  
+    try {
+      // Upload the file to Firebase and get the public URL
+      const imageUrl = await this.firebaseService.uploadFileToFirebase(
+        folderName,
+        fileName,
+        createPromotionDto.file,
+      );
+  
+      console.log('Uploaded image URL:', imageUrl);
+  
+      // Create a new promotion entity and assign values
+      const newPromotion: Promotion = new PromotionEntity();
+  
+      newPromotion.title = createPromotionDto.metadata.title;
+      newPromotion.imageUrl = imageUrl || createPromotionDto.metadata.content; // Assign the uploaded image URL
+      newPromotion.content = createPromotionDto.metadata.content;
+      newPromotion.type = createPromotionDto.metadata.type;
+      newPromotion.startDate = createPromotionDto.metadata.startDate;
+      newPromotion.endDate = createPromotionDto.metadata.endDate;
+      newPromotion.targetUrl = createPromotionDto.metadata.targetUrl;
+  
+      // Save the promotion entity to the database
+      const savedPromotion = await this.promotionRepository.save(newPromotion);
+      console.log('Saved promotion:', savedPromotion);
+  
+      return savedPromotion;
+    } catch (error) {
+      console.error('Error creating promotion:', error.message);
+      throw new Error('Failed to create promotion. Please try again later.');
+    }
+  }
+  
 
   async findOnePromotion(request: FindOnePromotionDto): Promise<Promotion> {
     const { id } = request;
@@ -1126,6 +1174,61 @@ export class GamesService {
     }
 
     await this.tournamenRepository.remove(tournament);
+  }
+
+  async addTournamentGame(dto: AddGameToTournamentDto) {
+    console.log('got to this part');
+    const game = await this.gameRepository.findOne({
+      where: { id: dto.gameId },
+    });
+    if (!game) {
+      throw new NotFoundException('Game not found');
+    }
+
+    console.log('game', game);
+
+    const tournaments = await this.tournamenRepository.find({
+      where: { id: In(dto.tournamentId) },
+    });
+
+    console.log('tournament', tournaments);
+
+
+    const TournamentGames = tournaments.map((tournament) => {
+      const tournamentGame = new TournamentGame();
+      tournamentGame.game = game;
+      tournamentGame.tournament = tournament;
+      return tournament;
+    });
+
+    console.log('gameCategories', TournamentGames);
+
+    const val = await this.gameCategoryRepository.save(TournamentGames);
+    return val[0];
+  }
+
+  async removeTournamentGames(dto: AddGameToCategoriesDto) {
+    const game = await this.gameRepository.findOne({
+      where: { id: dto.gameId },
+    });
+    if (!game) {
+      throw new NotFoundException('Game not found');
+    }
+
+    const categories = await this.categoryRepository.find({
+      where: { id: In(dto.categories) },
+    });
+
+    if (categories.length !== dto.categories.length) {
+      throw new NotFoundException('Some categories not found');
+    }
+
+    await this.gameCategoryRepository.delete({
+      game,
+      category: In(categories.map((category) => category.id)),
+    });
+
+    return { message: 'Categories removed successfully' };
   }
 
 }
