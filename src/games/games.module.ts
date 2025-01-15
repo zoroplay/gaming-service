@@ -29,6 +29,7 @@ import { Promotion } from 'src/entities/promotion.entity';
 import { QtechService } from 'src/services/qtech.service';
 import { Tournament } from 'src/entities/tournament.entity';
 import { FirebaseService } from 'src/common/services/firebaseUpload';
+import { TournamentGame } from 'src/entities/tournament-game.entity';
 
 
 
@@ -39,7 +40,7 @@ import { FirebaseService } from 'src/common/services/firebaseUpload';
       max: 1000,
       isGlobal: true,
     }),
-    TypeOrmModule.forFeature([GameSession, CallbackLog, Category, Game, Promotion, Tournament, GameCategory, GameKey, Provider, CasinoGame ]),
+    TypeOrmModule.forFeature([GameSession, CallbackLog, Category, Game, Promotion, Tournament, GameCategory, GameKey, Provider, CasinoGame, TournamentGame ]),
     HttpModule,
     IdentityModule,
     WalletModule,
