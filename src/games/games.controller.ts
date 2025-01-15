@@ -8,7 +8,6 @@ import {
   CallbackGameDto,
   CommonResponse,
   CreateGameDto,
-  CreatePromotionRequest,
   CreateProviderDto,
   CreateTournamentDto,
   Empty,
@@ -203,15 +202,15 @@ export class GamesController {
     }
   }
 
-  @GrpcMethod(GAMING_SERVICE_NAME, 'createPromotion')
-  async createPromotion(
-    payload: CreatePromotionRequest, 
-  ): Promise<any> {
-    console.log('Received payload co:', payload);
-    // Pass the payload and file to the games service
-    const newPromo = await this.gamesService.createPromotion(payload);
-    return newPromo;
-  }
+  // @GrpcMethod(GAMING_SERVICE_NAME, 'createPromotion')
+  // async createPromotion(
+  //   payload: CreatePromotionRequest, 
+  // ): Promise<any> {
+  //   console.log('Received payload co:', payload);
+  //   // Pass the payload and file to the games service
+  //   const newPromo = await this.gamesService.createPromotion(payload);
+  //   return newPromo;
+  // }
 
   // @GrpcMethod(GAMING_SERVICE_NAME, 'updatePromotion')
   // updatePromotion(payload: CreatePromotionDto): Promise<any> {
@@ -296,7 +295,7 @@ export class GamesController {
     return this.gamesService.handleQtechCallback(payload);
   }
 
-  @GrpcMethod(GAMING_SERVICE_NAME, 'handleQtechCallback')
+  @GrpcMethod(GAMING_SERVICE_NAME, 'handleQtechGetBalance')
   async handleQtechGetBalance(payload: QtechCallbackRequest): Promise<any> {
     return this.gamesService.handleQtechGetBalance(payload);
   }

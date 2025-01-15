@@ -261,7 +261,7 @@ export class QtechService {
       }
 
       // Determine mode and device
-      const mode = demo ? 'demo' : 'real';
+      const mode = demo ? 'real' : 'demo';
       const device = isMobile ? 'mobile' : 'desktop';
 
       console.log('mode', 'device', mode, device);
