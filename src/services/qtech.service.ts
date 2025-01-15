@@ -261,7 +261,7 @@ export class QtechService {
       }
 
       // Determine mode and device
-      const mode = demo ? 'demo' : 'real';
+      const mode = demo ? 'real' : 'demo';
       const device = isMobile ? 'mobile' : 'desktop';
 
       console.log('mode', 'device', mode, device);
@@ -352,7 +352,7 @@ export class QtechService {
 
   async verifySession(payload: QtechCallbackRequest): Promise<any> {
     try {
-      const { walletSessionId, clientId } = payload;
+      const { walletSessionId, clientId, playerId } = payload;
 
       // Validate token
       const isValid = await this.identityService.validateToken({
@@ -366,20 +366,26 @@ export class QtechService {
         return response;
       }
 
+      const wallet = await this.walletService.getWallet({
+        userId: Number(playerId),
+        clientId: clientId,
+      });
+
+      console.log('My Wallet', wallet);
+
       // Parse validation data
       const dataObject =
-        typeof isValid.data === 'string'
-          ? JSON.parse(isValid.data)
-          : isValid.data;
+        typeof wallet === 'string' ? JSON.parse(wallet) : wallet;
 
       console.log('Parsed Data Object:', dataObject);
 
+      const currency = isValid.data.currency;
+      const balance = wallet.data.balance;
+
+      console.log('Currency:', currency, 'Balance:', balance);
+
       // Construct success response
-      const response = this.createSuccessResponse(
-        dataObject,
-        // walletType,
-        // walletSessionId,
-      );
+      const response = this.createSuccessResponse({ currency, balance });
       return response;
     } catch (error) {
       console.error('Error in verifySession:', error);
@@ -403,115 +409,59 @@ export class QtechService {
   }
 
   // Helper to create success responses
-  private createSuccessResponse(
-    data: any,
-    //walletType: string,
-    // walletSessionId: string,
-  ): any {
+  private createSuccessResponse(data: {
+    currency: string;
+    balance: number;
+  }): any {
     return {
       success: true,
       status: HttpStatus.OK,
       message: 'Authentication Successful',
       data: {
         currency: data.currency,
-        balance: data.casinoBalance,
-
+        balance: data.balance,
         error: 0,
         description: 'Success',
       },
     };
   }
-
-  async getBalance(clientId, playerId, gameId?): Promise<any> {
+  async getBalance(payload: QtechCallbackRequest): Promise<any> {
     try {
-      console.log('Got to balance method');
+      const { walletSessionId, clientId, playerId } = payload;
 
-      // Validate input parameters
-      if (!playerId || !clientId) {
-        return {
-          success: false,
-          status: HttpStatus.BAD_REQUEST,
-          message: 'ClientId or UserId is missing',
-          data: {},
-        };
+      // Validate token
+      const isValid = await this.identityService.validateToken({
+        clientId,
+        token: walletSessionId,
+      });
+      console.log('Validation Result:', isValid);
+
+      if (!isValid || !isValid.status) {
+        const response = this.createErrorResponse('Invalid session', 5);
+        return response;
       }
 
-      // Fetch the wallet balance using wallet service
       const wallet = await this.walletService.getWallet({
-        userId: playerId,
-        clientId,
+        userId: Number(playerId),
+        clientId: clientId,
       });
 
-      // Parse the wallet response
-      const walletData =
+      console.log('My Wallet', wallet);
+
+      // Parse validation data
+      const dataObject =
         typeof wallet === 'string' ? JSON.parse(wallet) : wallet;
 
-      if (!walletData?.success) {
-        return {
-          success: false,
-          status: HttpStatus.INTERNAL_SERVER_ERROR,
-          message: 'Could not retrieve balance from wallet service',
-          data: {},
-        };
-      }
+      console.log('Parsed Data Object:', dataObject);
 
-      // Fetch game details if gameId is provided
-      let gameExist;
-      if (gameId) {
-        gameExist = await this.gameRepository.findOne({
-          where: { id: gameId },
-          relations: { provider: true },
-        });
+      const currency = isValid.data.currency;
+      const balance = wallet.data.balance;
 
-        if (!gameExist) {
-          return {
-            success: false,
-            status: HttpStatus.NOT_FOUND,
-            message: 'Game not found',
-            data: {},
-          };
-        }
-      }
+      console.log('Currency:', currency, 'Balance:', balance);
 
-      // Fetch session information
-      const session = await this.gameSessionRepo.findOne({
-        where: { game_id: gameId },
-      });
-
-      if (!session) {
-        return {
-          success: false,
-          message: 'Session not found',
-          data: {},
-        };
-      }
-
-      const walletSessionId = session.session_id;
-
-      // Validate session ID
-      if (!walletSessionId) {
-        return {
-          success: false,
-          message: 'Session ID is missing',
-          data: {},
-        };
-      }
-
-      const params: Record<string, string> = {};
-      if (gameId) {
-        params.gameId = gameId;
-      }
-
-      // Construct the response
-      return {
-        success: true,
-        status: HttpStatus.OK,
-        message: 'Balance retrieved successfully',
-        data: {
-          cash: parseFloat(walletData.data.availableBalance.toFixed(2)),
-          currency: walletData.data.currency || 'NGN',
-        },
-      };
+      // Construct success response
+      const response = this.createSuccessResponse({ currency, balance });
+      return response;
     } catch (error) {
       console.error('Error in getBalance:', error.message);
       throw new RpcException(
@@ -519,61 +469,6 @@ export class QtechService {
       );
     }
   }
-
-  // async authenticate(clientId, token, callback, walletType) {
-  //   console.log('Got to authenticate method');
-  //   const isValid = await this.identityService.validateToken({
-  //     clientId,
-  //     token,
-  //   });
-
-  //   console.log('isValid', isValid);
-  //   let response: any;
-  //   const dataObject =
-  //     typeof isValid.data === 'string'
-  //       ? JSON.parse(isValid.data)
-  //       : isValid.data;
-
-  //   console.log('dataObject', dataObject);
-
-  //   if (!isValid || !isValid.status) {
-  //     response = {
-  //       success: false,
-  //       status: HttpStatus.BAD_REQUEST,
-  //       message: 'Invalid auth code, please login to try again',
-  //       data: {},
-  //     };
-
-  //     const val = await this.callbackLogRepository.update(
-  //       { id: callback.id },
-  //       { response: JSON.stringify(response) },
-  //     );
-  //     console.log('val', val);
-
-  //     return response;
-  //   }
-
-  //   response = {
-  //     success: true,
-  //     status: HttpStatus.OK,
-  //     message: 'Authentication Successful',
-  //     data: {
-  //       userId: dataObject.playerId,
-  //       currency: dataObject.currency,
-  //       bonus: dataObject.casinoBalance,
-  //       token: token,
-  //       error: 0,
-  //       description: 'Success',
-  //     },
-  //   };
-
-  //   await this.callbackLogRepository.update(
-  //     { id: callback.id },
-  //     { response: JSON.stringify(response) },
-  //   );
-
-  //   return response;
-  // }
 
   async saveCallbackLog(data) {
     console.log('body-data', data);
@@ -798,24 +693,65 @@ export class QtechService {
 
       console.log('getWallet', getUpdatedWallet);
 
+      // Construct the response in the `QtechDepositTransactionResponse` format
       response = {
-        success: true,
-        message: 'Bet Successful',
+        txnType: 'DEBIT',
+        txnId: body.get('reference'),
         status: HttpStatus.OK,
+        message: 'Bet Successful',
         data: {
-          cash: parseFloat(getUpdatedWallet.data.availableBalance.toFixed(2)),
           transactionId: place_bet.data.transactionId,
+          balance: parseFloat(
+            getUpdatedWallet.data.availableBalance.toFixed(2),
+          ),
           currency: player.currency,
           bonus:
             balanceType === 'casino'
               ? parseFloat(getUpdatedWallet.data.casinoBonusBalance.toFixed(2))
               : 0.0,
-          usedPromo:
-            balanceType === 'casino' ? parseFloat(body.get('amount')) : 0.0,
           error: 0,
           description: 'Successful',
         },
+        playerId: player.playerId,
+        roundId: body.get('roundId'),
+        amount: parseFloat(body.get('amount')),
+        currency: player.currency,
+        jpContributions: [
+          {
+            id: 'jackpot-123',
+            amount: 0.0, // Update as per your logic
+            balance: parseFloat(
+              getUpdatedWallet.data.availableBalance.toFixed(2),
+            ),
+          },
+        ],
+        gameId: body.get('gameId'),
+        device: 'web', // or any other device type
+        clientType: 'casino', // or other relevant type
+        clientRoundId: body.get('roundDetails'),
+        category: 'casino',
+        created: new Date().toISOString(),
+        completed: true,
       };
+
+      // response = {
+      //   success: true,
+      //   message: 'Bet Successful',
+      //   status: HttpStatus.OK,
+      //   data: {
+      //     cash: parseFloat(getUpdatedWallet.data.availableBalance.toFixed(2)),
+      //     transactionId: place_bet.data.transactionId,
+      //     currency: player.currency,
+      //     bonus:
+      //       balanceType === 'casino'
+      //         ? parseFloat(getUpdatedWallet.data.casinoBonusBalance.toFixed(2))
+      //         : 0.0,
+      //     usedPromo:
+      //       balanceType === 'casino' ? parseFloat(body.get('amount')) : 0.0,
+      //     error: 0,
+      //     description: 'Successful',
+      //   },
+      // };
 
       await this.callbackLogRepository.update(
         { id: callback.id },
@@ -1229,10 +1165,17 @@ export class QtechService {
         const result = await this.verifySession(_data);
         return result;
 
-      case 'getBalance':
-        const balance = await this.getBalance(_data.clientId, _data.playerId);
+      // case 'getBalance':
+      //   const data = {
+      //     _data.clientId,
+      //     _data.playerId,
+      //     _data.gameId
+      //   }
+      //   const balance = await this.getBalance(
+      //    data
+      //   );
 
-        return balance;
+      // return balance;
 
       case 'transaction':
         const transaction = await this.bet(

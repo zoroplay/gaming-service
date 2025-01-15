@@ -24,6 +24,49 @@ export interface QtechCallbackRequest {
   action: string;
 }
 
+export interface JPContribution {
+  id: string;
+  amount: number;
+  balance: number;
+}
+
+/** remover from wallet balance */
+export interface QtechDepositTransactionResponse {
+  txnType: string;
+  txnId: string;
+  playerId: string;
+  roundId: string;
+  amount: number;
+  currency: string;
+  jpContributions: JPContribution[];
+  gameId: string;
+  device: string;
+  clientType: string;
+  clientRoundId: string;
+  category: string;
+  created: string;
+  completed: boolean;
+}
+
+/** Rollback can use this to update wallet */
+export interface QtechWinTransactionResponse {
+  txnType: string;
+  txnId: string;
+  betId: string;
+  playerId: string;
+  roundId: string;
+  amount: number;
+  currency: string;
+  jpPayout: number;
+  gameId: string;
+  device: string;
+  clientType: string;
+  clientRoundId: string;
+  category: string;
+  created: string;
+  completed: boolean;
+}
+
 export interface AddGameToCategoriesResponse {
   gameCategories: GameCategory[];
 }
@@ -593,7 +636,9 @@ export interface GamingServiceClient {
 
   handleQtechCallback(request: QtechCallbackRequest): Observable<CallbackResponse>;
 
-  handleQtechTransaction(request: QtechtransactionRequest): Observable<CallbackResponse>;
+  handleQtechGetBalance(request: QtechCallbackRequest): Observable<CallbackResponse>;
+
+  handleQtechTransaction(request: QtechtransactionRequest): Observable<QtechDepositTransactionResponse>;
 
   xpressLogin(request: XpressRequest): Observable<XpressResponse>;
 
@@ -691,9 +736,16 @@ export interface GamingServiceController {
     request: QtechCallbackRequest,
   ): Promise<CallbackResponse> | Observable<CallbackResponse> | CallbackResponse;
 
+  handleQtechGetBalance(
+    request: QtechCallbackRequest,
+  ): Promise<CallbackResponse> | Observable<CallbackResponse> | CallbackResponse;
+
   handleQtechTransaction(
     request: QtechtransactionRequest,
-  ): Promise<CallbackResponse> | Observable<CallbackResponse> | CallbackResponse;
+  ):
+    | Promise<QtechDepositTransactionResponse>
+    | Observable<QtechDepositTransactionResponse>
+    | QtechDepositTransactionResponse;
 
   xpressLogin(request: XpressRequest): Promise<XpressResponse> | Observable<XpressResponse> | XpressResponse;
 
@@ -748,6 +800,7 @@ export function GamingServiceControllerMethods() {
       "startGame",
       "handleCallback",
       "handleQtechCallback",
+      "handleQtechGetBalance",
       "handleQtechTransaction",
       "xpressLogin",
       "xpressBalance",

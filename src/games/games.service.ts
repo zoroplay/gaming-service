@@ -799,7 +799,6 @@ export class GamesService {
     // return gameList;
   }
 
-
   async handleQtechCallback(request: QtechCallbackRequest): Promise<any> {
     console.log('start-service', request);
     // //(request);
@@ -808,13 +807,77 @@ export class GamesService {
 
     return resp;
   }
-  
+
+  async handleQtechGetBalance(request: QtechCallbackRequest): Promise<any> {
+    console.log('Get Balance');
+    const result = await this.qtechService.getBalance(request);
+
+    return result;
+  }
 
   async handleC2Games(body: any, headers: any): Promise<any> {
     console.log(body);
     console.log(headers);
     throw new Error('Method not implemented.');
   }
+
+  //   async uploadImage(file: Express.Multer.File): Promise<any> {
+  // try {
+
+  //       let url;
+  //       let key;
+
+  //       console.log("simulatedFile", simulatedFile);
+
+  //       const { url: fileUrl, key: fileKey } = await this.firebaseService.uploadImage(file);
+
+  //       // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  //       url = fileUrl;
+  //       // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  //       key = fileKey;
+
+  //       const image = await this.firebaseService.uploadImage(simulatedFile);
+
+  //       console.log("image", image);
+
+  //       return {
+  //         status: 1,
+  //         success: true,
+  //         message: 'Upload success',
+  //         data: image
+  //       }
+
+  //     } catch (error) {
+  //       throw new Error(`Error saving file chunk to Firebase: ${error.message}`);
+  //     }
+
+  //   }
+
+  // async createPromotion(
+  //   createPromotionDto: CreatePromotionDto,
+  //   file: Express.Multer.File, // Include the uploaded file
+  // ): Promise<Promotion> {
+  //   console.log('createPromotionDto', createPromotionDto);
+  //   console.log('file', file);
+
+  //   // Upload the file to Firebase and get the public URL
+  //   const imageUrl = await this.firebaseService.uploadFileToFirebase(file)
+
+  //   console.log("imageUrl", imageUrl);
+
+  //   const newPromotion: Promotion = new PromotionEntity();
+
+  //   newPromotion.title = createPromotionDto.metadata.title;
+  //   newPromotion.imageUrl = imageUrl || ''; // Assign the uploaded image URL
+  //   newPromotion.content = createPromotionDto.metadata.content;
+  //   newPromotion.type = createPromotionDto.metadata.type;
+  //   newPromotion.endDate = createPromotionDto.metadata.endDate;
+  //   newPromotion.startDate = createPromotionDto.metadata.startDate;
+
+  //   const savedPromotion = await this.promotionRepository.save(newPromotion);
+  //   console.log('savedPromotion', savedPromotion);
+  //   return savedPromotion;
+  // }
 
 //   async uploadImage(file: Express.Multer.File): Promise<any> {
 // try {
@@ -1004,9 +1067,6 @@ export class GamesService {
     console.log('Response:', response); // Log the response in a readable format
     return response;
   }
-
-
-  
 
   // async getGameCategories(
   //   page = 1,

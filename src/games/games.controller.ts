@@ -295,4 +295,9 @@ export class GamesController {
   async handleQtechCallback(payload: QtechCallbackRequest): Promise<any> {
     return this.gamesService.handleQtechCallback(payload);
   }
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'handleQtechGetBalance')
+  async handleQtechGetBalance(payload: QtechCallbackRequest): Promise<any> {
+    return this.gamesService.handleQtechGetBalance(payload);
+  }
 }
