@@ -10,6 +10,7 @@ import {
 } from 'typeorm';
 import { GameCategory } from './game.category.entity';
 import { Provider } from './provider.entity';
+import { TournamentGame } from './tournament-game.entity';
 
 @Entity({ name: 'games' })
 export class Game {
@@ -55,6 +56,9 @@ export class Game {
 
   @OneToMany(() => GameCategory, (gameCategory) => gameCategory.game)
   gameCategories: GameCategory[];
+
+  @OneToMany(() => TournamentGame, (tournamentGame) => tournamentGame.game)
+  tournamentGames: TournamentGame[];
 
   @ManyToOne(() => Provider, (provider) => provider.games)
   provider: Provider;

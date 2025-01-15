@@ -16,7 +16,7 @@ export class Promotion {
   @Column({ type: 'varchar' })
   title: string;
 
-  @Column({ type: 'varchar', nullable: true })
+  @Column({ type: 'text', nullable: true })
   imageUrl: string;
 
   @Column({ type: 'text' })
