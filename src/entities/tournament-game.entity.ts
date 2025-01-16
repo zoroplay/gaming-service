@@ -14,7 +14,7 @@ export class TournamentGame {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => Game, (game) => game.gameCategories)
+  @ManyToOne(() => Game, (game) => game.tournamentGames)
   @JoinColumn()
   game: Game;
 
