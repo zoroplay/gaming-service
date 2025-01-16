@@ -5723,7 +5723,6 @@ saxes@^5.0.1:
 "sbe-service-proto@github:zoroplay/sbe-service-proto":
   version "1.0.0"
   resolved "git+ssh://git@github.com/zoroplay/sbe-service-proto.git#c7166c96d5d6adffe3503229d60534cda7840380"
-  resolved "git+ssh://git@github.com/zoroplay/sbe-service-proto.git#3c2c92c8557edde19ecc5aa11c2acf2cd16b81fb"
 
 schema-utils@^3.1.1, schema-utils@^3.2.0:
   version "3.3.0"
@@ -6477,12 +6476,7 @@ uuid@^11.0.2, uuid@^11.0.5:
   resolved "https://registry.npmjs.org/uuid/-/uuid-11.0.5.tgz"
   integrity sha512-508e6IcKLrhxKdBbcA2b4KQZlLVp2+J5UwQ6F7Drckkc5N9ZJwFa4TgWtsww9UG8fGHbm6gbV19TdM5pQ4GaIA==
 
-uuid@^11.0.5:
-  version "11.0.5"
-  resolved "https://registry.yarnpkg.com/uuid/-/uuid-11.0.5.tgz#07b46bdfa6310c92c3fb3953a8720f170427fc62"
-  integrity sha512-508e6IcKLrhxKdBbcA2b4KQZlLVp2+J5UwQ6F7Drckkc5N9ZJwFa4TgWtsww9UG8fGHbm6gbV19TdM5pQ4GaIA==
-
-uuid@^8.0.0, uuid@^8.3.0:
+uuid@^8.0.0:
   version "8.3.2"
   resolved "https://registry.npmjs.org/uuid/-/uuid-8.3.2.tgz"
   integrity sha512-+NYs2QeMWy+GWFOEm9xnn6HCDp0l7QBD7ml8zLUmJ+93Q5NF0NocErnwkTkXVFNiX3/fpC6afS8Dhb/gz7R7eg==

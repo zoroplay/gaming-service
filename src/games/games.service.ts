@@ -1262,11 +1262,11 @@ export class GamesService {
 
     console.log('games', games);
 
-    const tournaments = await this.tournamenRepository.find({
-      where: { id: In([dto.tournamentId]) },
+    const tournament = await this.tournamenRepository.findOne({
+      where: { id: dto.tournamentId },
     });
 
-    console.log('tournament', tournaments);
+    console.log('tournament', tournament);
 
     const TournamentGames = games.map((tour) => {
       const tournamentGame = new TournamentGame();
@@ -1280,7 +1280,6 @@ export class GamesService {
     const val = await this.tournamentGameRepository.save(TournamentGames);
     return val[0];
   }
-
   async removeTournamentGames(dto: AddGameToTournamentDto) {
     const games = await this.gameRepository.find({
       where: { id: In(dto.gameId) },
