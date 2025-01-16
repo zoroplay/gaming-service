@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { TournamentGame } from "./tournament-game.entity";
 

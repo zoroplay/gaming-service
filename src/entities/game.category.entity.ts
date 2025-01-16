@@ -15,13 +15,6 @@ export class GameCategory {
   @PrimaryGeneratedColumn()
   id: number;
 
-  // @ManyToOne(() => Category, (category) => category.games)
-  // category: Category;
-
-  // @ManyToOne(() => Game)
-  // @JoinColumn()
-  // game: Game;
-
   @ManyToOne(() => Game, (game) => game.gameCategories)
   @JoinColumn()
   game: Game;
