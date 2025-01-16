@@ -3,6 +3,8 @@
 import { Injectable } from '@nestjs/common';
 import * as admin from 'firebase-admin';
 import { firebaseServiceAccount } from './firebaseConfig';
+import * as dotenv from 'dotenv';
+dotenv.config();
 
 
 
@@ -15,7 +17,7 @@ export class FirebaseService {
       admin.apps.find((app) => app && app.name === 'storageApp') ||
       admin.initializeApp(
         {
-          credential: admin.credential.cert(firebaseServiceAccount),
+          credential: admin.credential.cert(firebaseServiceAccount) ,
           storageBucket: process.env.FIREBASE_STORAGE_BUCKET as string,
         },
         'storageApp',
