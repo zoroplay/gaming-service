@@ -6471,7 +6471,7 @@ utils-merge@1.0.1:
   resolved "https://registry.npmjs.org/utils-merge/-/utils-merge-1.0.1.tgz"
   integrity sha512-pMZTvIkT1d+TFGvDOqodOclx0QWkkgi6Tdoa8gC8ffGAAqz9pzPTZWAybbsHHoED/ztMtkv/VoYTYyShUn81hA==
 
-uuid@^11.0.2:
+uuid@^11.0.2, uuid@^11.0.5:
   version "11.0.5"
   resolved "https://registry.npmjs.org/uuid/-/uuid-11.0.5.tgz"
   integrity sha512-508e6IcKLrhxKdBbcA2b4KQZlLVp2+J5UwQ6F7Drckkc5N9ZJwFa4TgWtsww9UG8fGHbm6gbV19TdM5pQ4GaIA==
@@ -6486,7 +6486,17 @@ uuid@^8.3.0:
   resolved "https://registry.npmjs.org/uuid/-/uuid-8.3.2.tgz"
   integrity sha512-+NYs2QeMWy+GWFOEm9xnn6HCDp0l7QBD7ml8zLUmJ+93Q5NF0NocErnwkTkXVFNiX3/fpC6afS8Dhb/gz7R7eg==
 
-uuid@^9.0.0, uuid@^9.0.1, uuid@9.0.1:
+uuid@^9.0.0:
+  version "9.0.1"
+  resolved "https://registry.npmjs.org/uuid/-/uuid-9.0.1.tgz"
+  integrity sha512-b+1eJOlsR9K8HJpow9Ok3fiWOWSIcIzXodvv0rQjVoOVNpWMpxf1wZNpt4y9h10odCNrqnYp1OBzRktckBe3sA==
+
+uuid@^9.0.1:
+  version "9.0.1"
+  resolved "https://registry.npmjs.org/uuid/-/uuid-9.0.1.tgz"
+  integrity sha512-b+1eJOlsR9K8HJpow9Ok3fiWOWSIcIzXodvv0rQjVoOVNpWMpxf1wZNpt4y9h10odCNrqnYp1OBzRktckBe3sA==
+
+uuid@9.0.1:
   version "9.0.1"
   resolved "https://registry.npmjs.org/uuid/-/uuid-9.0.1.tgz"
   integrity sha512-b+1eJOlsR9K8HJpow9Ok3fiWOWSIcIzXodvv0rQjVoOVNpWMpxf1wZNpt4y9h10odCNrqnYp1OBzRktckBe3sA==
