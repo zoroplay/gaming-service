@@ -8,10 +8,22 @@ export const protobufPackage = "gaming";
 
 export interface QtechtransactionRequest {
   clientId: number;
+  playerId: string;
   gameId?: string | undefined;
   passkey: string;
   walletSessionId: string;
   body?: string | undefined;
+}
+
+export interface QtechTransactionDto {
+  txnType: string;
+  playerId: number;
+  amount: number;
+  currency: string;
+  roundId: string;
+  clientId: number;
+  passkey: string;
+  walletSessionId: string;
 }
 
 export interface QtechCallbackRequest {
