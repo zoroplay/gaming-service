@@ -1016,56 +1016,32 @@ export class GamesService {
     return { data: promotions };
   }
 
-  async updatePromotion(
-    updatePromotionDto: CreatePromotionRequest,
-  ): Promise<Promotion> {
-    const { id } = updatePromotionDto;
-  
-    // Find the promotion by ID
-    const promotion = await this.promotionRepository.findOneBy({ id });
-  
-    if (!promotion) {
-      throw new Error(`Promotion with ID ${id} not found`);
-    }
-  
-    try {
-      let imageUrl: string | undefined;
-  
-      if (updatePromotionDto.file) {
-        // Define folder and file name for the new image in Firebase
-        const folderName = 'promotions';
-        const fileName = `${Date.now()}_uploaded-file`;
-  
-        // Upload the new file to Firebase and get the public URL
-        imageUrl = await this.firebaseService.uploadFileToFirebase(
-          folderName,
-          fileName,
-          updatePromotionDto.file,
-        );
-  
-        console.log('Uploaded image URL:', imageUrl);
-      }
-  
-      // Update fields dynamically
-      promotion.title = updatePromotionDto.metadata.title ?? promotion.title;
-      promotion.imageUrl = imageUrl || promotion.imageUrl;
-      promotion.content = updatePromotionDto.metadata.content ?? promotion.content;
-      promotion.type = updatePromotionDto.metadata.type ?? promotion.type;
-      promotion.targetUrl = updatePromotionDto.metadata.targetUrl ?? promotion.targetUrl;
-      promotion.startDate = updatePromotionDto.metadata.startDate ?? promotion.startDate;
-      promotion.endDate = updatePromotionDto.metadata.endDate ?? promotion.endDate;
-  
-      // Save the updated promotion
-      const updatedPromotion = await this.promotionRepository.save(promotion);
-      console.log('Updated promotion:', updatedPromotion);
-  
-      return updatedPromotion;
-    } catch (error) {
-      console.error('Error updating promotion:', error.message);
-      throw new Error('Failed to update promotion. Please try again later.');
-    }
-  }
-  
+  // async updatePromotion(
+  //   updatePromotionDto: CreatePromotionDto,
+  // ): Promise<Promotion> {
+  //   const { id } = updatePromotionDto;
+
+  //   // Find the promotion by ID
+  //   const promotion = await this.promotionRepository.findOneBy({ id });
+
+  //   if (!promotion) {
+  //     throw new Error(`Promotion with ID ${updatePromotionDto.id} not found`);
+  //   }
+
+  //   // Update fields with provided values or retain existing ones
+  //   // promotion.clientId = updatePromotionDto.clientId ?? promotion.clientId;
+  //   promotion.title = updatePromotionDto.title ?? promotion.title;
+  //   promotion.imageUrl = updatePromotionDto.imageUrl ?? promotion.imageUrl;
+  //   promotion.content = updatePromotionDto.content ?? promotion.content;
+  //   promotion.type = updatePromotionDto.type ?? promotion.type;
+  //   promotion.targetUrl = updatePromotionDto.targetUrl ?? promotion.targetUrl;
+  //   promotion.startDate = updatePromotionDto.startDate;
+  //   promotion.endDate = updatePromotionDto.endDate;
+
+  //   // Save the updated promotion
+  //   const updatedPromotion = await this.promotionRepository.save(promotion);
+  //   return updatedPromotion;
+  // }
 
   async removePromotion(request: FindOnePromotionDto) {
     const { id } = request;
@@ -1286,8 +1262,8 @@ export class GamesService {
 
     console.log('games', games);
 
-    const tournament = await this.tournamenRepository.findOne({
-      where: { id: dto.tournamentId },
+    const tournaments = await this.tournamenRepository.find({
+      where: { id: In([dto.tournamentId]) },
     });
 
     console.log('tournament', tournaments);

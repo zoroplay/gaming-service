@@ -564,9 +564,9 @@ export class QtechService {
       }
 
       const walletData =
-        typeof getWallet.data === 'string'
-          ? JSON.parse(getWallet.data)
-          : getWallet.data;
+        typeof getWallet.data.balance === 'string'
+          ? JSON.parse(getWallet.data.balance)
+          : getWallet.data.balance;
 
       console.log('Wallet data:', walletData);
 
@@ -714,9 +714,9 @@ export class QtechService {
       }
 
       const walletData =
-        typeof getWallet.data === 'string'
-          ? JSON.parse(getWallet.data)
-          : getWallet.data;
+        typeof getWallet.data.balance === 'string'
+          ? JSON.parse(getWallet.data.balance)
+          : getWallet.data.balance;
 
       console.log('Wallet data:', walletData);
 
