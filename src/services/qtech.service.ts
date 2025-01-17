@@ -388,7 +388,7 @@ export class QtechService {
       console.log('Currency:', currency, 'Balance:', balance);
 
       // Construct success response
-      const response = this.createSuccessResponse({ currency, balance });
+      const response = this.createSuccessResponse({ balance, currency });
       return response;
     } catch (error) {
       console.error('Error in verifySession:', error);
@@ -421,8 +421,8 @@ export class QtechService {
       status: HttpStatus.OK,
       message: 'Authentication Successful',
       data: {
-        currency: data.currency,
         balance: data.balance,
+        currency: data.currency,
         error: 0,
         description: 'Success',
       },
@@ -460,10 +460,10 @@ export class QtechService {
       const currency = isValid.data.currency;
       const balance = wallet.data.availableBalance;
 
-      console.log('Currency:', currency, 'Balance:', balance);
+      console.log('Balance:', balance, 'Currency:', currency);
 
       // Construct success response
-      const response = this.createSuccessResponse({ currency, balance });
+      const response = this.createSuccessResponse({ balance, currency });
       return response;
     } catch (error) {
       console.error('Error in getBalance:', error.message);
