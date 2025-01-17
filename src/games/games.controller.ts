@@ -306,4 +306,9 @@ export class GamesController {
   async handleQtechBet(payload: QtechtransactionRequest): Promise<any> {
     return this.gamesService.handleQtechBet(payload);
   }
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'handleQtechTransactionWin')
+  async handleQtechWin(payload: QtechtransactionRequest): Promise<any> {
+    return this.gamesService.handleQtechWin(payload);
+  }
 }

@@ -644,6 +644,8 @@ export interface GamingServiceClient {
 
   handleQtechTransaction(request: QtechtransactionRequest): Observable<QtechDepositTransactionResponse>;
 
+  handleQtechTransactionWin(request: QtechtransactionRequest): Observable<QtechDepositTransactionResponse>;
+
   xpressLogin(request: XpressRequest): Observable<XpressResponse>;
 
   xpressBalance(request: XpressRequest): Observable<XpressResponse>;
@@ -751,6 +753,13 @@ export interface GamingServiceController {
     | Observable<QtechDepositTransactionResponse>
     | QtechDepositTransactionResponse;
 
+  handleQtechTransactionWin(
+    request: QtechtransactionRequest,
+  ):
+    | Promise<QtechDepositTransactionResponse>
+    | Observable<QtechDepositTransactionResponse>
+    | QtechDepositTransactionResponse;
+
   xpressLogin(request: XpressRequest): Promise<XpressResponse> | Observable<XpressResponse> | XpressResponse;
 
   xpressBalance(request: XpressRequest): Promise<XpressResponse> | Observable<XpressResponse> | XpressResponse;
@@ -806,6 +815,7 @@ export function GamingServiceControllerMethods() {
       "handleQtechCallback",
       "handleQtechGetBalance",
       "handleQtechTransaction",
+      "handleQtechTransactionWin",
       "xpressLogin",
       "xpressBalance",
       "xpressDebit",
