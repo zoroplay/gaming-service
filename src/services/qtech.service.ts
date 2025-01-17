@@ -383,7 +383,7 @@ export class QtechService {
       console.log('Parsed Data Object:', dataObject);
 
       const currency = isValid.data.currency;
-      const balance = wallet.data.balance;
+      const balance = wallet.data.availableBalance;
 
       console.log('Currency:', currency, 'Balance:', balance);
 
@@ -458,7 +458,7 @@ export class QtechService {
       console.log('Parsed Data Object:', dataObject);
 
       const currency = isValid.data.currency;
-      const balance = wallet.data.balance;
+      const balance = wallet.data.availableBalance;
 
       console.log('Currency:', currency, 'Balance:', balance);
 
@@ -528,7 +528,12 @@ export class QtechService {
       // Validate gameId
       if (!gameId || isNaN(Number(gameId))) {
         console.error('Invalid gameId:', gameId);
-        throw new Error('Invalid gameId. It must be a valid number.');
+        return {
+          success: false,
+          status: HttpStatus.BAD_REQUEST,
+          message: 'Invalid gameId. It must be a valid number.',
+          data: {},
+        };
       }
 
       // Check if the game exists
@@ -554,6 +559,8 @@ export class QtechService {
         clientId,
       });
 
+      console.log('GET DEBIT WALLET', getWallet);
+
       if (!getWallet || !getWallet.status) {
         return {
           success: false,
@@ -564,8 +571,8 @@ export class QtechService {
       }
 
       const walletData =
-        typeof getWallet.data.balance === 'string'
-          ? JSON.parse(getWallet.data.balance)
+        typeof getWallet.data.availableBalance === 'string'
+          ? JSON.parse(getWallet.data.availableBalance)
           : getWallet.data.balance;
 
       console.log('Wallet data:', walletData);
@@ -587,7 +594,7 @@ export class QtechService {
         username: playerId,
         roundId,
         transactionId: trx,
-        gameId,
+        gameId: gameId.toString(),
         stake: amount,
         gameName: gameExist?.title || '',
         gameNumber: gameExist?.gameId || '',
@@ -644,20 +651,20 @@ export class QtechService {
           ? JSON.parse(updatedWallet.data)
           : updatedWallet.data;
 
-      console.log('Updated wallet data:', updatedWalletData);
+      console.log('Updated wallet data:', updatedWalletData.availableBalance);
 
       // Construct the response
-      const response = {
+      const QtResponse = {
         success: true,
         status: HttpStatus.OK,
         message: 'Bet placed successfully',
         data: {
-          balance: updatedWalletData.balance,
+          balance: updatedWalletData.availableBalance,
           referenceId: trx,
         },
       };
-
-      return response;
+      console.log('THAT REAL RES', QtResponse);
+      return QtResponse;
     } catch (error) {
       console.error('Error in Placing bet:', error.message);
       throw new RpcException(
@@ -712,11 +719,12 @@ export class QtechService {
           data: {},
         };
       }
+      console.log('GET WIN WALLET', getWallet);
 
       const walletData =
-        typeof getWallet.data.balance === 'string'
-          ? JSON.parse(getWallet.data.balance)
-          : getWallet.data.balance;
+        typeof getWallet.data === 'string'
+          ? JSON.parse(getWallet.data)
+          : getWallet.data;
 
       console.log('Wallet data:', walletData);
 
@@ -756,9 +764,9 @@ export class QtechService {
       }
 
       const updatedWalletData =
-        typeof updatedWallet.data === 'string'
-          ? JSON.parse(updatedWallet.data)
-          : updatedWallet.data;
+        typeof updatedWallet.data.availableBalance === 'string'
+          ? JSON.parse(updatedWallet.data.availableBalance)
+          : updatedWallet.data.availableBalance;
 
       console.log('Updated wallet details:', updatedWalletData);
 
@@ -766,12 +774,14 @@ export class QtechService {
       const response = {
         success: true,
         status: HttpStatus.OK,
-        message: 'Bet placed successfully',
+        message: 'Win Successful',
         data: {
-          balance: updatedWalletData.balance,
+          balance: updatedWalletData,
           referenceId: trx,
         },
       };
+
+      console.log('QTECH WIN', response);
 
       return response;
     } catch (error) {
