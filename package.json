@@ -61,7 +61,7 @@
     "sbe-service-proto": "github:zoroplay/sbe-service-proto",
     "ts-proto": "^1.157.0",
     "typeorm": "^0.3.17",
-    "uuid": "^9.0.1"
+    "uuid": "^11.0.5"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.0.0",
@@ -107,4 +107,3 @@
     "testEnvironment": "node"
   }
 }
-

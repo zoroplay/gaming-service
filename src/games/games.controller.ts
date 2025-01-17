@@ -24,6 +24,7 @@ import {
   Provider,
   Providers,
   QtechCallbackRequest,
+  QtechtransactionRequest,
   SaveCategoryRequest,
   StartGameDto,
   SyncGameDto,
@@ -299,5 +300,10 @@ export class GamesController {
   @GrpcMethod(GAMING_SERVICE_NAME, 'handleQtechGetBalance')
   async handleQtechGetBalance(payload: QtechCallbackRequest): Promise<any> {
     return this.gamesService.handleQtechGetBalance(payload);
+  }
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'handleQtechTransaction')
+  async handleQtechBet(payload: QtechtransactionRequest): Promise<any> {
+    return this.gamesService.handleQtechBet(payload);
   }
 }
