@@ -628,7 +628,7 @@ export interface GamingServiceClient {
 
   findOnePromotion(request: FindOnePromotionDto): Observable<Promotion>;
 
-  updatePromotion(request: CreatePromotionDto): Observable<Promotion>;
+  updatePromotion(request: CreatePromotionRequest): Observable<Promotion>;
 
   removePromotion(request: FindOnePromotionDto): Observable<Empty>;
 
@@ -726,7 +726,7 @@ export interface GamingServiceController {
 
   findOnePromotion(request: FindOnePromotionDto): Promise<Promotion> | Observable<Promotion> | Promotion;
 
-  updatePromotion(request: CreatePromotionDto): Promise<Promotion> | Observable<Promotion> | Promotion;
+  updatePromotion(request: CreatePromotionRequest): Promise<Promotion> | Observable<Promotion> | Promotion;
 
   removePromotion(request: FindOnePromotionDto): Promise<Empty> | Observable<Empty> | Empty;
 
