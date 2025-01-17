@@ -208,17 +208,17 @@ export class GamesController {
   async createPromotion(
     payload: CreatePromotionRequest, 
   ): Promise<any> {
-    console.log('Received payload co:', payload);
+    console.log('Received payload', payload);
     // Pass the payload and file to the games service
     const newPromo = await this.gamesService.createPromotion(payload);
     return newPromo;
   }
 
-  // @GrpcMethod(GAMING_SERVICE_NAME, 'updatePromotion')
-  // updatePromotion(payload: CreatePromotionDto): Promise<any> {
-  //   console.log('fetch gameNames');
-  //   return this.gamesService.updatePromotion(payload);
-  // }
+  @GrpcMethod(GAMING_SERVICE_NAME, 'updatePromotion')
+  updatePromotion(payload: CreatePromotionRequest): Promise<any> {
+    console.log('fetch gameNames');
+    return this.gamesService.updatePromotion(payload);
+  }
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'findPromotions')
   fetchPromotions(): Promise<any> {
