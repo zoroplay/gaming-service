@@ -486,6 +486,7 @@ export interface CreatePromotionDto {
 }
 
 export interface CreatePromotionRequest {
+  id?: number | undefined;
   metadata: CreatePromotionDto | undefined;
   file: string;
 }
@@ -504,7 +505,6 @@ export interface AddGameToCategoriesDto {
 }
 
 export interface AddGameToTournamentDto {
-  id?: number | undefined;
   tournamentId: number;
   gameId: number[];
 }
