@@ -483,6 +483,7 @@ export interface CreatePromotionDto {
   endDate: string;
   type: string;
   targetUrl?: string | undefined;
+  file?: string | undefined;
 }
 
 export interface CreatePromotionRequest {
