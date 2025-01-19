@@ -21,7 +21,7 @@ import {
   CommonResponse,
   CommonResponseArray,
   CreateGameDto,
-  CreatePromotionRequest,
+  CreatePromotionDto,
   CreateProviderDto,
   CreateTournamentDto,
   FetchGamesRequest,
@@ -842,34 +842,22 @@ export class GamesService {
   }
 
   async createPromotion(
-    createPromotionDto: CreatePromotionRequest,
+    createPromotionDto: CreatePromotionDto,
   ): Promise<Promotion> {
     console.log('createPromotionDto service', createPromotionDto);
 
-    // Define the folder and file name for the image in Firebase
-    const folderName = 'promotions'; // Example: folder to store promotion images
-    const fileName = `${Date.now()}_uploaded-file`; // Unique file name
-
     try {
-      // Upload the file to Firebase and get the public URL
-      const imageUrl = await this.firebaseService.uploadFileToFirebase(
-        folderName,
-        fileName,
-        createPromotionDto.file,
-      );
-
-      console.log('Uploaded image URL:', imageUrl);
-
       // Create a new promotion entity and assign values
       const newPromotion: Promotion = new PromotionEntity();
 
-      newPromotion.title = createPromotionDto.metadata.title;
-      newPromotion.imageUrl = imageUrl || createPromotionDto.metadata.content; // Assign the uploaded image URL
-      newPromotion.content = createPromotionDto.metadata.content;
-      newPromotion.type = createPromotionDto.metadata.type;
-      newPromotion.startDate = createPromotionDto.metadata.startDate;
-      newPromotion.endDate = createPromotionDto.metadata.endDate;
-      newPromotion.targetUrl = createPromotionDto.metadata.targetUrl;
+      newPromotion.title = createPromotionDto.title;
+      newPromotion.clientId = createPromotionDto.clientId;
+      newPromotion.imageUrl = createPromotionDto.imageUrl // Assign the uploaded image URL
+      newPromotion.content = createPromotionDto.content;
+      newPromotion.type = createPromotionDto.type;
+      newPromotion.startDate = createPromotionDto.startDate;
+      newPromotion.endDate = createPromotionDto.endDate;
+      newPromotion.targetUrl = createPromotionDto.targetUrl;
 
       // Save the promotion entity to the database
       const savedPromotion = await this.promotionRepository.save(newPromotion);
@@ -902,10 +890,10 @@ export class GamesService {
   }
 
   async updatePromotion(
-    updatePromotionDto: CreatePromotionRequest,
+    updatePromotionDto: CreatePromotionDto,
   ): Promise<Promotion> {
     console.log('updatePromotionDto service', updatePromotionDto);
-    const id = updatePromotionDto.metadata.id;
+    const id = updatePromotionDto.id;
   
     // Find the promotion by ID
     const promotion = await this.promotionRepository.findOneBy({ id });
@@ -917,27 +905,15 @@ export class GamesService {
     }
   
     try {
-        // Define folder and file name for the new image in Firebase
-        const folderName = 'promotions';
-        const fileName = `${Date.now()}_uploaded-file`;
-  
-        // Upload the new file to Firebase and get the public URL
-        const imageUrl = await this.firebaseService.uploadFileToFirebase(
-          folderName,
-          fileName,
-          updatePromotionDto.file,
-        );
-  
-        console.log('Uploaded image URL:', imageUrl);
   
       // Update fields dynamically
-      promotion.title = updatePromotionDto.metadata.title ?? promotion.title;
-      promotion.imageUrl = imageUrl || promotion.imageUrl;
-      promotion.content = updatePromotionDto.metadata.content ?? promotion.content;
-      promotion.type = updatePromotionDto.metadata.type ?? promotion.type;
-      promotion.targetUrl = updatePromotionDto.metadata.targetUrl ?? promotion.targetUrl;
-      promotion.startDate = updatePromotionDto.metadata.startDate ?? promotion.startDate;
-      promotion.endDate = updatePromotionDto.metadata.endDate ?? promotion.endDate;
+      promotion.title = updatePromotionDto.title ?? promotion.title;
+      promotion.imageUrl = updatePromotionDto.imageUrl || promotion.imageUrl;
+      promotion.content = updatePromotionDto.content ?? promotion.content;
+      promotion.type = updatePromotionDto.type ?? promotion.type;
+      promotion.targetUrl = updatePromotionDto.targetUrl ?? promotion.targetUrl;
+      promotion.startDate = updatePromotionDto.startDate ?? promotion.startDate;
+      promotion.endDate = updatePromotionDto.endDate ?? promotion.endDate;
   
       // Save the updated promotion
       const updatedPromotion = await this.promotionRepository.save(promotion);
