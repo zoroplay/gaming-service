@@ -161,43 +161,10 @@ export class EvoPlayService {
     };
   }
 
-  //get games 
-  async getGameInfo() {
-    try {
-      const signature = this.getSignature(
-        this.project,
-        this.version,
-        {},
-        this.token,
-      );
-      // $url = $this->project_id."*".$this->version."*".$this->token;
-      const url = `Game/getList?project=${this.project}&version=${this.version}&signature=${signature}`;
-      const response: AxiosResponse = await this.httpClient.axiosRef.get(
-        url,
-        this.requestConfig,
-      );
-      // console.log(response.data.data);
-      return response.data.data;
-    } catch (e) {
-      console.error(e.message);
-    }
-  }
-
   // start game here
   async constructGameUrl(data, game: GameEntity) {
     try {
       let balanceType = data.balanceType;
-      const baseUrl = this.baseUrl;
-      const project = this.project;
-      const secretKey = this.secretKey;
-      const token = this.token;
-      const version = this.version;
-
-      console.log('baseUrl', baseUrl);
-      console.log('project', project);
-      console.log('secretKey', secretKey);
-      console.log('token', token);
-      console.log('version', version);
 
       // this.token = data.authCode;
       const newData: any = {
@@ -219,12 +186,12 @@ export class EvoPlayService {
           ...newData.settings, 
           extra_bonuses: {
             bonus_spins: {
-              spins_count: 5,
-              bet_in_money: 500
-            },
+              spins_count: data.spins_count,
+              bet_in_money: data.bonusAmount
+            }
           },
           extra_bonuses_settings: {
-            registration_id: 'test_registration'
+            registration_id: data.bonusID
           }
         }
       }
@@ -250,15 +217,12 @@ export class EvoPlayService {
         newData,
         this.token,
       );
-      console.log("signature", signature);
-      console.log("newData", newData);
-
+      // console.log(signature)
       // $url = $this->project_id."*".$this->version."*".$this->token;
-      // let url = `Game/getURL?project=${this.project}&version=${this.version}&signature=${signature}&token=${newData.token}&game=${newData.game}&settings[user_id]=${newData.settings.user_id}&settings[exit_url]=${newData.settings.exit_url}&settings[https]=${newData.settings.https}`;
-      let url = `Game/getURL?project=${this.project}&version=1&signature=${signature}&token=${newData.token}&game=${newData.game}&settings[user_id]=${newData.settings.user_id}&settings[exit_url]=${newData.settings.exit_url}&settings[https]=${newData.settings.https}`;
+      let url = `Game/getURL?project=${this.project}&version=${this.version}&signature=${signature}&token=${newData.token}&game=${newData.game}&settings[user_id]=${newData.settings.user_id}&settings[exit_url]=${newData.settings.exit_url}&settings[https]=${newData.settings.https}`;
       
       if (data.isBonus)
-        url += `&settings[extra_bonuses][bonus_spins][spins_count]=${newData.settings.extra_bonuses.bonus_spins.spins_count}&settings[extra_bonuses][bonus_spins][bet_in_money]=${newData.settings.extra_bonuses.bonus_spins.bet_in_money}&settings[extra_bonuses_settings][registration_id]=${newData.settings.extra_bonuses_settings.registration_id}`;
+        url += `&settings[extra_bonuses][bonus_spins][spins_count]=${data.spins_count}&settings[extra_bonuses][bonus_spins][bet_in_money]=${data.bonusAmount}&settings[extra_bonuses_settings][registration_id]=${data.bonusID}`;
 
       if (data.isBonus && data.bonusType === 'featured_trigger')
         url += `&settings[extra_bonuses][freespins_on_start][freespins_count]=${data.spins_count}&settings[extra_bonuses][freespins_on_start][bet_in_money]=${data.bonusAmount}&settings[extra_bonuses_settings][registration_id]=${data.bonusID}`;
@@ -270,9 +234,6 @@ export class EvoPlayService {
         this.requestConfig,
       );
 
-      console.log("url", url);
-      console.log("response", response);
-
       const gameSession = new GameSession();
       gameSession.balance_type = balanceType;
       gameSession.game_id = game.gameId;
@@ -280,15 +241,10 @@ export class EvoPlayService {
       gameSession.provider = game.provider.slug;
       await this.gameSessionRepo.save(gameSession);
 
-      console.log("game-session created", gameSession)
-
       if(response.data.error) {
-        console.log("errorLink");
         return {success: false, message: response.data.error.message}
       } else {
-        const responseLink = response.data.data.link;
-        console.log("responseLink", responseLink);
-        return {url: responseLink};
+        return {url: response.data.data.link}
       }
     } catch (e) {
       console.error(e.message);
@@ -308,7 +264,6 @@ export class EvoPlayService {
         for (const key of Object.keys(arg)) {
           result.push(compact(arg[key]));
         }
-        console.log("result", result)
         return result.join(':');
       } else {
         return '' + arg;
@@ -325,7 +280,7 @@ export class EvoPlayService {
     parts.push(compact(integrationKey));
 
     const str = parts.join('*')
-    console.log('str', str);
+    // console.log(str)
     const md5Hash = crypto
       .createHash('md5')
       .update(str)
@@ -342,13 +297,13 @@ export class EvoPlayService {
   async handleCallback(data: any) {
     const body = JSON.parse(data.body);
 
-    console.log(body);
+    // console.log(body);
 
     const callback = await this.saveCallbackLog(body);
     
     const hash = this.getSignature(
       this.project,
-      2,
+      this.version,
       body,
       this.token
     );
@@ -386,9 +341,7 @@ export class EvoPlayService {
     let balanceType = 'main';
 
     // get game session
-    const gameSession = await this.gameSessionRepo.findOne({where: {token: body.token}});
-
-    console.log("gameSession", gameSession);
+    const gameSession = await this.gameSessionRepo.findOne({where: {session_id: body.token}})
       
     if (gameSession.balance_type === 'bonus')
       balanceType = 'casino';
@@ -1106,6 +1059,3 @@ export class EvoPlayService {
   }
   
 }
-
-
-
