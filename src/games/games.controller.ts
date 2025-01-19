@@ -215,9 +215,10 @@ export class GamesController {
   }
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'updatePromotion')
-  updatePromotion(payload: CreatePromotionRequest): Promise<any> {
-    console.log('fetch gameNames');
-    return this.gamesService.updatePromotion(payload);
+  async updatePromotion(payload: CreatePromotionRequest): Promise<any> {
+    console.log('Received payload', payload);
+    const updatePromotion = await this.gamesService.updatePromotion(payload);
+    return updatePromotion;
   }
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'findPromotions')

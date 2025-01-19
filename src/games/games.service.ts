@@ -808,6 +808,7 @@ export class GamesService {
 
     return resp;
   }
+  
 
   async handleQtechGetBalance(request: QtechCallbackRequest): Promise<any> {
     console.log('Get Balance');
@@ -903,32 +904,31 @@ export class GamesService {
   async updatePromotion(
     updatePromotionDto: CreatePromotionRequest,
   ): Promise<Promotion> {
-    const { id } = updatePromotionDto;
+    console.log('updatePromotionDto service', updatePromotionDto);
+    const id = updatePromotionDto.metadata.id;
   
     // Find the promotion by ID
     const promotion = await this.promotionRepository.findOneBy({ id });
+
+    console.log('promotion', promotion);
   
     if (!promotion) {
       throw new Error(`Promotion with ID ${id} not found`);
     }
   
     try {
-      let imageUrl: string | undefined;
-  
-      if (updatePromotionDto.file) {
         // Define folder and file name for the new image in Firebase
         const folderName = 'promotions';
         const fileName = `${Date.now()}_uploaded-file`;
   
         // Upload the new file to Firebase and get the public URL
-        imageUrl = await this.firebaseService.uploadFileToFirebase(
+        const imageUrl = await this.firebaseService.uploadFileToFirebase(
           folderName,
           fileName,
           updatePromotionDto.file,
         );
   
         console.log('Uploaded image URL:', imageUrl);
-      }
   
       // Update fields dynamically
       promotion.title = updatePromotionDto.metadata.title ?? promotion.title;
