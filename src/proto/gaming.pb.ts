@@ -472,6 +472,7 @@ export interface Promotion {
   endDate: string;
   status: string;
   targetUrl?: string | undefined;
+  clientId: string;
 }
 
 export interface CreatePromotionDto {
@@ -484,6 +485,7 @@ export interface CreatePromotionDto {
   type: string;
   targetUrl?: string | undefined;
   file?: string | undefined;
+  clientId?: string | undefined;
 }
 
 export interface CreatePromotionRequest {
@@ -622,13 +624,13 @@ export interface GamingServiceClient {
 
   getGames(request: Empty): Observable<CommonResponseArray>;
 
-  createPromotion(request: CreatePromotionRequest): Observable<Promotion>;
+  createPromotion(request: CreatePromotionDto): Observable<Promotion>;
 
   findPromotions(request: Empty): Observable<Promotions>;
 
   findOnePromotion(request: FindOnePromotionDto): Observable<Promotion>;
 
-  updatePromotion(request: CreatePromotionRequest): Observable<Promotion>;
+  updatePromotion(request: CreatePromotionDto): Observable<Promotion>;
 
   removePromotion(request: FindOnePromotionDto): Observable<Empty>;
 
@@ -722,13 +724,13 @@ export interface GamingServiceController {
 
   getGames(request: Empty): Promise<CommonResponseArray> | Observable<CommonResponseArray> | CommonResponseArray;
 
-  createPromotion(request: CreatePromotionRequest): Promise<Promotion> | Observable<Promotion> | Promotion;
+  createPromotion(request: CreatePromotionDto): Promise<Promotion> | Observable<Promotion> | Promotion;
 
   findPromotions(request: Empty): Promise<Promotions> | Observable<Promotions> | Promotions;
 
   findOnePromotion(request: FindOnePromotionDto): Promise<Promotion> | Observable<Promotion> | Promotion;
 
-  updatePromotion(request: CreatePromotionRequest): Promise<Promotion> | Observable<Promotion> | Promotion;
+  updatePromotion(request: CreatePromotionDto): Promise<Promotion> | Observable<Promotion> | Promotion;
 
   removePromotion(request: FindOnePromotionDto): Promise<Empty> | Observable<Empty> | Empty;
 

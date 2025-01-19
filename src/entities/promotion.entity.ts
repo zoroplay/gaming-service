@@ -23,6 +23,9 @@ export class Promotion {
   content: string;
 
   @Column({ type: 'text', nullable: true })
+  clientId: string;
+
+  @Column({ type: 'text', nullable: true })
   startDate: string | null;
 
   @Column({ type: 'text', nullable: true })

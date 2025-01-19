@@ -8,7 +8,7 @@ import {
   CallbackGameDto,
   CommonResponse,
   CreateGameDto,
-  CreatePromotionRequest,
+  CreatePromotionDto,
   CreateProviderDto,
   CreateTournamentDto,
   Empty,
@@ -206,7 +206,7 @@ export class GamesController {
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'createPromotion')
   async createPromotion(
-    payload: CreatePromotionRequest, 
+    payload: CreatePromotionDto, 
   ): Promise<any> {
     console.log('Received payload', payload);
     // Pass the payload and file to the games service
@@ -215,7 +215,7 @@ export class GamesController {
   }
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'updatePromotion')
-  async updatePromotion(payload: CreatePromotionRequest): Promise<any> {
+  async updatePromotion(payload: CreatePromotionDto): Promise<any> {
     console.log('Received payload', payload);
     const updatePromotion = await this.gamesService.updatePromotion(payload);
     return updatePromotion;
