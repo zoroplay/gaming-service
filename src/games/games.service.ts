@@ -3,18 +3,25 @@ import { Injectable, NotFoundException, Provider } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Observable, Subject } from 'rxjs';
 import { slugify } from 'src/common';
+import { FirebaseService } from 'src/common/services/firebaseUpload';
 import { Category } from 'src/entities/category.entity';
 import { GameKey } from 'src/entities/game-key.entity';
 import { GameCategory } from 'src/entities/game.category.entity';
+import { Promotion as PromotionEntity } from 'src/entities/promotion.entity';
+import {
+  Tournament,
+  Tournament as TournamentEntity,
+} from 'src/entities/tournament.entity';
 import { IdentityService } from 'src/identity/identity.service';
 import {
   AddGameToCategoriesDto,
+  AddGameToTournamentDto,
   CallbackGameDto,
   Categories,
   CommonResponse,
   CommonResponseArray,
   CreateGameDto,
-  CreatePromotionDto,
+  CreatePromotionRequest,
   CreateProviderDto,
   CreateTournamentDto,
   FetchGamesRequest,
@@ -23,11 +30,11 @@ import {
   FindOneTournamentDto,
   Game,
   Games,
-  GamingServiceResponse,
-  IGame,
   PaginationDto,
   Promotion,
   Promotions,
+  QtechCallbackRequest,
+  QtechtransactionRequest,
   SaveCategoryRequest,
   StartGameDto,
   SyncGameDto,
@@ -40,20 +47,15 @@ import {
   SmartSoftService,
   TadaGamingService,
 } from 'src/services';
+
 import { EntityToProtoService } from 'src/services/entity-to-proto.service';
 import { EvoPlayService } from 'src/services/evo-play.service';
 import { PragmaticService } from 'src/services/pragmatic-play.service';
+import { QtechService } from 'src/services/qtech.service';
 import { FindManyOptions, ILike, In, Repository } from 'typeorm';
 import { Game as GameEntity } from '../entities/game.entity';
 import { Provider as ProviderEntity } from '../entities/provider.entity';
-import { Promotion as PromotionEntity } from 'src/entities/promotion.entity';
-import {
-  Tournament,
-  Tournament as TournamentEntity,
-} from 'src/entities/tournament.entity';
-import { QtechService } from 'src/services/qtech.service';
-// import { Timestamp } from 'google-protobuf/google/protobuf/timestamp_pb';
-// import { Struct } from 'google-protobuf/google/protobuf/struct_pb';
+import { TournamentGame } from 'src/entities/tournament-game.entity';
 
 @Injectable()
 export class GamesService {
@@ -64,6 +66,8 @@ export class GamesService {
     private categoryRepository: Repository<Category>,
     @InjectRepository(GameCategory)
     private gameCategoryRepository: Repository<GameCategory>,
+    @InjectRepository(TournamentGame)
+    private tournamentGameRepository: Repository<TournamentGame>,
     @InjectRepository(ProviderEntity)
     private providerRepository: Repository<ProviderEntity>,
     @InjectRepository(PromotionEntity)
@@ -81,6 +85,7 @@ export class GamesService {
     private readonly pragmaticPlayService: PragmaticService,
     private readonly identityService: IdentityService,
     private readonly qtechService: QtechService,
+    private readonly firebaseService: FirebaseService,
   ) {}
 
   async createProvider(
@@ -178,7 +183,6 @@ export class GamesService {
 
   async fetchGames({
     categoryId,
-    clientId,
     providerId,
   }: FetchGamesRequest): Promise<Games> {
     // Build the base query to filter games by status
@@ -506,13 +510,6 @@ export class GamesService {
 
       case 'qtech-games':
         console.log('using qtech-games');
-        // const privateKeyQuery = await this.gameKeyRepository.findOne({
-        //   where: {
-        //       client_id: startGameDto.clientId,
-        //       option: 'SMART_SOFT_PORTAL',
-        //       provider: 'smart-soft'
-        //   }
-        // });
 
         return await this.qtechService.launchGames(startGameDto);
         break;
@@ -790,6 +787,10 @@ export class GamesService {
       case 'pragmatic-play':
         console.log('using pragmatic-play');
         return await this.pragmaticPlayService.handleCallback(_data);
+
+      // case 'qtech-games':
+      //   console.log('using qtech-games');
+      //   return await this.qtechService.handleCallback(_data);
       default:
         throw new NotFoundException('Unknown provider');
     }
@@ -799,6 +800,40 @@ export class GamesService {
     // return gameList;
   }
 
+  async handleQtechCallback(request: QtechCallbackRequest): Promise<any> {
+    console.log('start-service', request);
+    // //(request);
+    const resp = await this.qtechService.handleQTGamesCallback(request);
+    console.log('resp', resp);
+
+    return resp;
+  }
+
+  async handleQtechGetBalance(request: QtechCallbackRequest): Promise<any> {
+    console.log('Get Balance');
+    const result = await this.qtechService.getBalance(request);
+
+    return result;
+  }
+
+  async handleQtechBet(request: QtechtransactionRequest): Promise<any> {
+    try {
+      console.log('Bet Balance');
+      const result = await this.qtechService.bet(request);
+
+      return result;
+    } catch (error) {
+      console.log('THIS', error);
+    }
+  }
+
+  async handleQtechWin(request: QtechtransactionRequest): Promise<any> {
+    console.log('Win Balance');
+    const result = await this.qtechService.win(request);
+
+    return result;
+  }
+
   async handleC2Games(body: any, headers: any): Promise<any> {
     console.log(body);
     console.log(headers);
@@ -806,21 +841,44 @@ export class GamesService {
   }
 
   async createPromotion(
-    createPromotionDto: CreatePromotionDto,
+    createPromotionDto: CreatePromotionRequest,
   ): Promise<Promotion> {
-    console.log('createPromotionDto', createPromotionDto);
-    const newPromotion: Promotion = new PromotionEntity();
+    console.log('createPromotionDto service', createPromotionDto);
 
-    newPromotion.title = createPromotionDto.title;
-    newPromotion.imageUrl = createPromotionDto.imageUrl;
-    newPromotion.content = createPromotionDto.content;
-    newPromotion.type = createPromotionDto.type;
-    newPromotion.endDate = createPromotionDto.endDate;
-    newPromotion.startDate = createPromotionDto.startDate;
+    // Define the folder and file name for the image in Firebase
+    const folderName = 'promotions'; // Example: folder to store promotion images
+    const fileName = `${Date.now()}_uploaded-file`; // Unique file name
 
-    const savedPromotion = await this.promotionRepository.save(newPromotion);
-    console.log('savedPromotion', savedPromotion);
-    return savedPromotion;
+    try {
+      // Upload the file to Firebase and get the public URL
+      const imageUrl = await this.firebaseService.uploadFileToFirebase(
+        folderName,
+        fileName,
+        createPromotionDto.file,
+      );
+
+      console.log('Uploaded image URL:', imageUrl);
+
+      // Create a new promotion entity and assign values
+      const newPromotion: Promotion = new PromotionEntity();
+
+      newPromotion.title = createPromotionDto.metadata.title;
+      newPromotion.imageUrl = imageUrl || createPromotionDto.metadata.content; // Assign the uploaded image URL
+      newPromotion.content = createPromotionDto.metadata.content;
+      newPromotion.type = createPromotionDto.metadata.type;
+      newPromotion.startDate = createPromotionDto.metadata.startDate;
+      newPromotion.endDate = createPromotionDto.metadata.endDate;
+      newPromotion.targetUrl = createPromotionDto.metadata.targetUrl;
+
+      // Save the promotion entity to the database
+      const savedPromotion = await this.promotionRepository.save(newPromotion);
+      console.log('Saved promotion:', savedPromotion);
+
+      return savedPromotion;
+    } catch (error) {
+      console.error('Error creating promotion:', error.message);
+      throw new Error('Failed to create promotion. Please try again later.');
+    }
   }
 
   async findOnePromotion(request: FindOnePromotionDto): Promise<Promotion> {
@@ -843,31 +901,55 @@ export class GamesService {
   }
 
   async updatePromotion(
-    updatePromotionDto: CreatePromotionDto,
+    updatePromotionDto: CreatePromotionRequest,
   ): Promise<Promotion> {
     const { id } = updatePromotionDto;
-
+  
     // Find the promotion by ID
     const promotion = await this.promotionRepository.findOneBy({ id });
-
+  
     if (!promotion) {
-      throw new Error(`Promotion with ID ${updatePromotionDto.id} not found`);
+      throw new Error(`Promotion with ID ${id} not found`);
     }
-
-    // Update fields with provided values or retain existing ones
-    // promotion.clientId = updatePromotionDto.clientId ?? promotion.clientId;
-    promotion.title = updatePromotionDto.title ?? promotion.title;
-    promotion.imageUrl = updatePromotionDto.imageUrl ?? promotion.imageUrl;
-    promotion.content = updatePromotionDto.content ?? promotion.content;
-    promotion.type = updatePromotionDto.type ?? promotion.type;
-    promotion.targetUrl = updatePromotionDto.targetUrl ?? promotion.targetUrl;
-    promotion.startDate = updatePromotionDto.startDate;
-    promotion.endDate = updatePromotionDto.endDate;
-
-    // Save the updated promotion
-    const updatedPromotion = await this.promotionRepository.save(promotion);
-    return updatedPromotion;
+  
+    try {
+      let imageUrl: string | undefined;
+  
+      if (updatePromotionDto.file) {
+        // Define folder and file name for the new image in Firebase
+        const folderName = 'promotions';
+        const fileName = `${Date.now()}_uploaded-file`;
+  
+        // Upload the new file to Firebase and get the public URL
+        imageUrl = await this.firebaseService.uploadFileToFirebase(
+          folderName,
+          fileName,
+          updatePromotionDto.file,
+        );
+  
+        console.log('Uploaded image URL:', imageUrl);
+      }
+  
+      // Update fields dynamically
+      promotion.title = updatePromotionDto.metadata.title ?? promotion.title;
+      promotion.imageUrl = imageUrl || promotion.imageUrl;
+      promotion.content = updatePromotionDto.metadata.content ?? promotion.content;
+      promotion.type = updatePromotionDto.metadata.type ?? promotion.type;
+      promotion.targetUrl = updatePromotionDto.metadata.targetUrl ?? promotion.targetUrl;
+      promotion.startDate = updatePromotionDto.metadata.startDate ?? promotion.startDate;
+      promotion.endDate = updatePromotionDto.metadata.endDate ?? promotion.endDate;
+  
+      // Save the updated promotion
+      const updatedPromotion = await this.promotionRepository.save(promotion);
+      console.log('Updated promotion:', updatedPromotion);
+  
+      return updatedPromotion;
+    } catch (error) {
+      console.error('Error updating promotion:', error.message);
+      throw new Error('Failed to update promotion. Please try again later.');
+    }
   }
+  
 
   async removePromotion(request: FindOnePromotionDto) {
     const { id } = request;
@@ -1075,5 +1157,54 @@ export class GamesService {
     }
 
     await this.tournamenRepository.remove(tournament);
+  }
+
+  async addTournamentGame(dto: AddGameToTournamentDto) {
+    console.log('got to this part');
+    const games = await this.gameRepository.find({
+      where: { id: In(dto.gameId) },
+    });
+    if (!games) {
+      throw new NotFoundException('Game not found');
+    }
+
+    console.log('games', games);
+
+    const tournament = await this.tournamenRepository.findOne({
+      where: { id: dto.tournamentId },
+    });
+
+    console.log('tournament', tournament);
+
+    const TournamentGames = games.map((tour) => {
+      const tournamentGame = new TournamentGame();
+      tournamentGame.game = tour;
+      tournamentGame.tournament = tournament;
+      return tournament;
+    });
+
+    console.log('TournamentGames', TournamentGames);
+
+    const val = await this.tournamentGameRepository.save(TournamentGames);
+    return val[0];
+  }
+  async removeTournamentGames(dto: AddGameToTournamentDto) {
+    const games = await this.gameRepository.find({
+      where: { id: In(dto.gameId) },
+    });
+    if (!games) {
+      throw new NotFoundException('Game not found');
+    }
+
+    const tournament = await this.tournamenRepository.findOne({
+      where: { id: dto.tournamentId },
+    });
+
+    await this.tournamentGameRepository.delete({
+      game: In(games.map((game) => game.id)),
+      tournament: tournament,
+    });
+
+    return { message: 'Categories removed successfully' };
   }
 }

@@ -1,4 +1,6 @@
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+/* eslint-disable prettier/prettier */
+import { Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { TournamentGame } from "./tournament-game.entity";
 
 @Entity({ name: 'tournaments' })
 export class Tournament {
@@ -17,11 +19,17 @@ export class Tournament {
   @Column({ type: 'text', nullable: true })
   startDate: string | null;
 
+  @Column({ nullable: true })
+  categoryId: number | null;
+
   @Column({ type: 'text', nullable: true })
   endDate: string | null;
 
   @Column({ type: 'varchar', nullable: true })
   type: string;
+
+  @OneToMany(() => TournamentGame, (tournamentGame) => tournamentGame.tournament)
+  tournamentGames: TournamentGame[];
 
   @Column({ default: 'active' })
   status: string;

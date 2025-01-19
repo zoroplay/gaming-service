@@ -161,10 +161,47 @@ export class EvoPlayService {
     };
   }
 
+  //get games Info
+  async getGameInfo(game: GameEntity) {
+    try {
+
+      const newData: any = {
+        game: parseInt(game.gameId)
+      }
+      const signature = this.getSignature(
+        this.project,
+        this.version,
+        newData,
+        this.token,
+      );
+      // $url = $this->project_id."*".$this->version."*".$this->token;
+      const url = `Game/getList?project=${this.project}&version=${this.version}&signature=${signature}&game=${newData.game}`;
+      const response: AxiosResponse = await this.httpClient.axiosRef.get(
+        url,
+        this.requestConfig,
+      );
+      // console.log(response.data.data);
+      return response.data.data;
+    } catch (e) {
+      console.error(e.message);
+    }
+  }
+
   // start game here
   async constructGameUrl(data, game: GameEntity) {
     try {
-      let balanceType = data.balanceType;
+      const balanceType = data.balanceType;
+      const baseUrl = this.baseUrl;
+      const project = this.project;
+      const secretKey = this.secretKey;
+      const token = this.token;
+      const version = this.version;
+
+      console.log('baseUrl', baseUrl);
+      console.log('project', project);
+      console.log('secretKey', secretKey);
+      console.log('token', token);
+      console.log('version', version);
 
       // this.token = data.authCode;
       const newData: any = {
@@ -191,7 +228,7 @@ export class EvoPlayService {
             }
           },
           extra_bonuses_settings: {
-            registration_id: data.bonusID
+            registration_id: 'test2'
           }
         }
       }
@@ -514,7 +551,7 @@ export class EvoPlayService {
           return response;
         }
 
-        let response = {
+        const response = {
           success: true,
           message: 'bet handled successfully',
           status: HttpStatus.OK,
@@ -953,7 +990,7 @@ export class EvoPlayService {
 
   async BalanceIncrease (clientId, data, callbackId, wallet) {
     try {
-      const {id, user_id, type, currency, amount, user_message} = data;
+      const {user_id, type, currency, amount, user_message} = data;
       // let wallet = 'main';
       // if (wallet_type === 'bonus')
       //   wallet = 'casino';

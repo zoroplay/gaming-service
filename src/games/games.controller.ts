@@ -1,34 +1,36 @@
 /* eslint-disable prettier/prettier */
 import { Controller } from '@nestjs/common';
 // import { GrpcMethod } from '@nestjs/microservices';
-import { GamesService } from './games.service';
+import { GrpcMethod } from '@nestjs/microservices';
+import { Observable } from 'rxjs';
 import {
-  Game,
-  CreateGameDto,
-  Games,
-  FindOneGameDto,
-  PaginationDto,
-  StartGameDto,
-  SyncGameDto,
-  UpdateGameDto,
-  GAMING_SERVICE_NAME,
-  CreateProviderDto,
-  Empty,
-  Provider,
-  Providers,
-  CommonResponse,
-  FetchGamesRequest,
-  CallbackGameDto,
-  SaveCategoryRequest,
-  FindOneCategoryDto,
   AddGameToCategoriesDto,
-  CreatePromotionDto,
+  CallbackGameDto,
+  CommonResponse,
+  CreateGameDto,
+  CreatePromotionRequest,
+  CreateProviderDto,
+  CreateTournamentDto,
+  Empty,
+  FetchGamesRequest,
+  FindOneCategoryDto,
+  FindOneGameDto,
   FindOnePromotionDto,
   FindOneTournamentDto,
-  CreateTournamentDto,
+  Game,
+  Games,
+  GAMING_SERVICE_NAME,
+  PaginationDto,
+  Provider,
+  Providers,
+  QtechCallbackRequest,
+  QtechtransactionRequest,
+  SaveCategoryRequest,
+  StartGameDto,
+  SyncGameDto,
+  UpdateGameDto
 } from 'src/proto/gaming.pb';
-import { Observable } from 'rxjs';
-import { GrpcMethod } from '@nestjs/microservices';
+import { GamesService } from './games.service';
 
 @Controller()
 export class GamesController {
@@ -94,7 +96,6 @@ export class GamesController {
     return this.gamesService.fetchGamesByName(payload);
   }
 
-
   @GrpcMethod(GAMING_SERVICE_NAME, 'addGameToCategories')
   addGameToCategories(payload: AddGameToCategoriesDto): Promise<any> {
     console.log('addGameToCategories');
@@ -136,7 +137,6 @@ export class GamesController {
 
     return this.gamesService.deleteCategory(payload);
   }
-
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'FetchCategories')
   FetchCategories(): Promise<any> {
@@ -195,7 +195,7 @@ export class GamesController {
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'handleCallback')
   async handleCallback(request: CallbackGameDto): Promise<any> {
-    console.log("request", request);
+    console.log('request', request);
     try {
       return await this.gamesService.handleGamesCallback(request);
     } catch (error) {
@@ -205,14 +205,17 @@ export class GamesController {
   }
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'createPromotion')
-  async createPromotion(payload: CreatePromotionDto): Promise<any> {
-    console.log('fetch promotions', payload);
+  async createPromotion(
+    payload: CreatePromotionRequest, 
+  ): Promise<any> {
+    console.log('Received payload', payload);
+    // Pass the payload and file to the games service
     const newPromo = await this.gamesService.createPromotion(payload);
     return newPromo;
   }
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'updatePromotion')
-  updatePromotion(payload: CreatePromotionDto): Promise<any> {
+  updatePromotion(payload: CreatePromotionRequest): Promise<any> {
     console.log('fetch gameNames');
     return this.gamesService.updatePromotion(payload);
   }
@@ -281,5 +284,31 @@ export class GamesController {
     }
 
     return this.gamesService.removeTournament(payload);
+  }
+
+  // @GrpcMethod(GAMING_SERVICE_NAME, 'uploadImage')
+  // uploadImage(payload: FileChunk): Promise<any> {
+  //   return this.gamesService.uploadImage(payload)
+    
+  // }
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'handleQtechCallback')
+  async handleQtechCallback(payload: QtechCallbackRequest): Promise<any> {
+    return this.gamesService.handleQtechCallback(payload);
+  }
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'handleQtechGetBalance')
+  async handleQtechGetBalance(payload: QtechCallbackRequest): Promise<any> {
+    return this.gamesService.handleQtechGetBalance(payload);
+  }
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'handleQtechTransaction')
+  async handleQtechBet(payload: QtechtransactionRequest): Promise<any> {
+    return this.gamesService.handleQtechBet(payload);
+  }
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'handleQtechTransactionWin')
+  async handleQtechWin(payload: QtechtransactionRequest): Promise<any> {
+    return this.gamesService.handleQtechWin(payload);
   }
 }
