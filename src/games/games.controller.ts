@@ -24,11 +24,12 @@ import {
   Provider,
   Providers,
   QtechCallbackRequest,
+  QtechRollbackRequest,
   QtechtransactionRequest,
   SaveCategoryRequest,
   StartGameDto,
   SyncGameDto,
-  UpdateGameDto
+  UpdateGameDto,
 } from 'src/proto/gaming.pb';
 import { GamesService } from './games.service';
 
@@ -206,7 +207,7 @@ export class GamesController {
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'createPromotion')
   async createPromotion(
-    payload: CreatePromotionDto, 
+    payload: CreatePromotionDto,
   ): Promise<any> {
     console.log('Received payload', payload);
     // Pass the payload and file to the games service
@@ -290,7 +291,7 @@ export class GamesController {
   // @GrpcMethod(GAMING_SERVICE_NAME, 'uploadImage')
   // uploadImage(payload: FileChunk): Promise<any> {
   //   return this.gamesService.uploadImage(payload)
-    
+
   // }
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'handleQtechCallback')
@@ -303,9 +304,14 @@ export class GamesController {
     return this.gamesService.handleQtechGetBalance(payload);
   }
 
-  @GrpcMethod(GAMING_SERVICE_NAME, 'handleQtechTransaction')
+  @GrpcMethod(GAMING_SERVICE_NAME, 'handleQtechTransactionBet')
   async handleQtechBet(payload: QtechtransactionRequest): Promise<any> {
     return this.gamesService.handleQtechBet(payload);
+  }
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'handleQtechRollback')
+  async handleQtechRollback(payload: QtechRollbackRequest): Promise<any> {
+    return this.gamesService.handleQtechRollback(payload);
   }
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'handleQtechTransactionWin')
