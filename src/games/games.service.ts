@@ -848,33 +848,22 @@ export class GamesService {
     console.log(headers);
     throw new Error('Method not implemented.');
   }
-
   async createPromotion(
     createPromotionDto: CreatePromotionDto,
   ): Promise<Promotion> {
-    console.log('createPromotionDto service', createPromotionDto);
+    console.log('createPromotionDto', createPromotionDto);
+    const newPromotion: Promotion = new PromotionEntity();
 
-    try {
-      // Create a new promotion entity and assign values
-      const newPromotion: Promotion = new PromotionEntity();
+    newPromotion.title = createPromotionDto.title;
+    newPromotion.imageUrl = createPromotionDto.imageUrl;
+    newPromotion.content = createPromotionDto.content;
+    newPromotion.type = createPromotionDto.type;
+    newPromotion.endDate = createPromotionDto.endDate;
+    newPromotion.startDate = createPromotionDto.startDate;
 
-      newPromotion.title = createPromotionDto.metadata.title;
-      newPromotion.imageUrl = imageUrl || createPromotionDto.metadata.content; // Assign the uploaded image URL
-      newPromotion.content = createPromotionDto.metadata.content;
-      newPromotion.type = createPromotionDto.metadata.type;
-      newPromotion.startDate = createPromotionDto.metadata.startDate;
-      newPromotion.endDate = createPromotionDto.metadata.endDate;
-      newPromotion.targetUrl = createPromotionDto.metadata.targetUrl;
-
-      // Save the promotion entity to the database
-      const savedPromotion = await this.promotionRepository.save(newPromotion);
-      console.log('Saved promotion:', savedPromotion);
-
-      return savedPromotion;
-    } catch (error) {
-      console.error('Error creating promotion:', error.message);
-      throw new Error('Failed to create promotion. Please try again later.');
-    }
+    const savedPromotion = await this.promotionRepository.save(newPromotion);
+    console.log('savedPromotion', savedPromotion);
+    return savedPromotion;
   }
 
   async findOnePromotion(request: FindOnePromotionDto): Promise<Promotion> {
@@ -905,49 +894,22 @@ export class GamesService {
     const promotion = await this.promotionRepository.findOneBy({ id });
 
     if (!promotion) {
-      throw new Error(`Promotion with ID ${id} not found`);
+      throw new Error(`Promotion with ID ${updatePromotionDto.id} not found`);
     }
 
-    try {
-      let imageUrl: string | undefined;
+    // Update fields with provided values or retain existing ones
+    // promotion.clientId = updatePromotionDto.clientId ?? promotion.clientId;
+    promotion.title = updatePromotionDto.title ?? promotion.title;
+    promotion.imageUrl = updatePromotionDto.imageUrl ?? promotion.imageUrl;
+    promotion.content = updatePromotionDto.content ?? promotion.content;
+    promotion.type = updatePromotionDto.type ?? promotion.type;
+    promotion.targetUrl = updatePromotionDto.targetUrl ?? promotion.targetUrl;
+    promotion.startDate = updatePromotionDto.startDate;
+    promotion.endDate = updatePromotionDto.endDate;
 
-      if (updatePromotionDto.file) {
-        // Define folder and file name for the new image in Firebase
-        const folderName = 'promotions';
-        const fileName = `${Date.now()}_uploaded-file`;
-
-        // Upload the new file to Firebase and get the public URL
-        imageUrl = await this.firebaseService.uploadFileToFirebase(
-          folderName,
-          fileName,
-          updatePromotionDto.file,
-        );
-
-        console.log('Uploaded image URL:', imageUrl);
-      }
-
-      // Update fields dynamically
-      promotion.title = updatePromotionDto.metadata.title ?? promotion.title;
-      promotion.imageUrl = imageUrl || promotion.imageUrl;
-      promotion.content =
-        updatePromotionDto.metadata.content ?? promotion.content;
-      promotion.type = updatePromotionDto.metadata.type ?? promotion.type;
-      promotion.targetUrl =
-        updatePromotionDto.metadata.targetUrl ?? promotion.targetUrl;
-      promotion.startDate =
-        updatePromotionDto.metadata.startDate ?? promotion.startDate;
-      promotion.endDate =
-        updatePromotionDto.metadata.endDate ?? promotion.endDate;
-
-      // Save the updated promotion
-      const updatedPromotion = await this.promotionRepository.save(promotion);
-      console.log('Updated promotion:', updatedPromotion);
-
-      return updatedPromotion;
-    } catch (error) {
-      console.error('Error updating promotion:', error.message);
-      throw new Error('Failed to update promotion. Please try again later.');
-    }
+    // Save the updated promotion
+    const updatedPromotion = await this.promotionRepository.save(promotion);
+    return updatedPromotion;
   }
 
   async removePromotion(request: FindOnePromotionDto) {
