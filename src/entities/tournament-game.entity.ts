@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import {
     CreateDateColumn,
     Entity,
@@ -9,7 +10,7 @@ import {
 import { Game } from './game.entity';
 import { Tournament } from './tournament.entity';
 
-@Entity({ name: 'games_categories' })
+@Entity({ name: 'tournament_games' })
 export class TournamentGame {
   @PrimaryGeneratedColumn()
   id: number;

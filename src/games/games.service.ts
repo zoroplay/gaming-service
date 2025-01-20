@@ -1162,8 +1162,10 @@ export class GamesService {
     console.log('TournamentGames', TournamentGames);
 
     const val = await this.tournamentGameRepository.save(TournamentGames);
+    console.log('val', val);
     return val[0];
   }
+
   async removeTournamentGames(dto: AddGameToTournamentDto) {
     const games = await this.gameRepository.find({
       where: { id: In(dto.gameId) },

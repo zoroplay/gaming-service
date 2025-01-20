@@ -5,6 +5,7 @@ import { GrpcMethod } from '@nestjs/microservices';
 import { Observable } from 'rxjs';
 import {
   AddGameToCategoriesDto,
+  AddGameToTournamentDto,
   CallbackGameDto,
   CommonResponse,
   CreateGameDto,
@@ -306,5 +307,17 @@ export class GamesController {
   @GrpcMethod(GAMING_SERVICE_NAME, 'handleQtechTransaction')
   async handleQtechBet(payload: QtechtransactionRequest): Promise<any> {
     return this.gamesService.handleQtechBet(payload);
+  }
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'addTournamentGame')
+  addTournamentGame(payload: AddGameToTournamentDto): Promise<any> {
+    console.log('addGameToCategories');
+    return this.gamesService.addTournamentGame(payload);
+  }
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'removeTournamentGame')
+  removeTournamentGames(payload: AddGameToTournamentDto): Promise<any> {
+    console.log('removeGameToCategories');
+    return this.gamesService.removeTournamentGames(payload);
   }
 }
