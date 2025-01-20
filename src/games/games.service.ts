@@ -34,6 +34,7 @@ import {
   Promotion,
   Promotions,
   QtechCallbackRequest,
+  QtechRollbackRequest,
   QtechtransactionRequest,
   SaveCategoryRequest,
   StartGameDto,
@@ -808,7 +809,14 @@ export class GamesService {
 
     return resp;
   }
-  
+
+  async handleQtechRollback(request: QtechRollbackRequest): Promise<any> {
+    console.log('Start Game service Roll back');
+
+    const resp = await this.qtechService.refund(request);
+
+    return resp;
+  }
 
   async handleQtechGetBalance(request: QtechCallbackRequest): Promise<any> {
     console.log('Get Balance');
@@ -821,7 +829,7 @@ export class GamesService {
     try {
       console.log('Bet Balance');
       const result = await this.qtechService.bet(request);
-
+      console.log('Game-Game', result);
       return result;
     } catch (error) {
       console.log('THIS', error);
@@ -831,7 +839,7 @@ export class GamesService {
   async handleQtechWin(request: QtechtransactionRequest): Promise<any> {
     console.log('Win Balance');
     const result = await this.qtechService.win(request);
-
+    console.log(result);
     return result;
   }
 
@@ -850,14 +858,13 @@ export class GamesService {
       // Create a new promotion entity and assign values
       const newPromotion: Promotion = new PromotionEntity();
 
-      newPromotion.title = createPromotionDto.title;
-      newPromotion.clientId = createPromotionDto.clientId;
-      newPromotion.imageUrl = createPromotionDto.imageUrl // Assign the uploaded image URL
-      newPromotion.content = createPromotionDto.content;
-      newPromotion.type = createPromotionDto.type;
-      newPromotion.startDate = createPromotionDto.startDate;
-      newPromotion.endDate = createPromotionDto.endDate;
-      newPromotion.targetUrl = createPromotionDto.targetUrl;
+      newPromotion.title = createPromotionDto.metadata.title;
+      newPromotion.imageUrl = imageUrl || createPromotionDto.metadata.content; // Assign the uploaded image URL
+      newPromotion.content = createPromotionDto.metadata.content;
+      newPromotion.type = createPromotionDto.metadata.type;
+      newPromotion.startDate = createPromotionDto.metadata.startDate;
+      newPromotion.endDate = createPromotionDto.metadata.endDate;
+      newPromotion.targetUrl = createPromotionDto.metadata.targetUrl;
 
       // Save the promotion entity to the database
       const savedPromotion = await this.promotionRepository.save(newPromotion);
@@ -892,40 +899,56 @@ export class GamesService {
   async updatePromotion(
     updatePromotionDto: CreatePromotionDto,
   ): Promise<Promotion> {
-    console.log('updatePromotionDto service', updatePromotionDto);
-    const id = updatePromotionDto.id;
-  
+    const { id } = updatePromotionDto;
+
     // Find the promotion by ID
     const promotion = await this.promotionRepository.findOneBy({ id });
 
-    console.log('promotion', promotion);
-  
     if (!promotion) {
       throw new Error(`Promotion with ID ${id} not found`);
     }
-  
+
     try {
-  
+      let imageUrl: string | undefined;
+
+      if (updatePromotionDto.file) {
+        // Define folder and file name for the new image in Firebase
+        const folderName = 'promotions';
+        const fileName = `${Date.now()}_uploaded-file`;
+
+        // Upload the new file to Firebase and get the public URL
+        imageUrl = await this.firebaseService.uploadFileToFirebase(
+          folderName,
+          fileName,
+          updatePromotionDto.file,
+        );
+
+        console.log('Uploaded image URL:', imageUrl);
+      }
+
       // Update fields dynamically
-      promotion.title = updatePromotionDto.title ?? promotion.title;
-      promotion.imageUrl = updatePromotionDto.imageUrl || promotion.imageUrl;
-      promotion.content = updatePromotionDto.content ?? promotion.content;
-      promotion.type = updatePromotionDto.type ?? promotion.type;
-      promotion.targetUrl = updatePromotionDto.targetUrl ?? promotion.targetUrl;
-      promotion.startDate = updatePromotionDto.startDate ?? promotion.startDate;
-      promotion.endDate = updatePromotionDto.endDate ?? promotion.endDate;
-  
+      promotion.title = updatePromotionDto.metadata.title ?? promotion.title;
+      promotion.imageUrl = imageUrl || promotion.imageUrl;
+      promotion.content =
+        updatePromotionDto.metadata.content ?? promotion.content;
+      promotion.type = updatePromotionDto.metadata.type ?? promotion.type;
+      promotion.targetUrl =
+        updatePromotionDto.metadata.targetUrl ?? promotion.targetUrl;
+      promotion.startDate =
+        updatePromotionDto.metadata.startDate ?? promotion.startDate;
+      promotion.endDate =
+        updatePromotionDto.metadata.endDate ?? promotion.endDate;
+
       // Save the updated promotion
       const updatedPromotion = await this.promotionRepository.save(promotion);
       console.log('Updated promotion:', updatedPromotion);
-  
+
       return updatedPromotion;
     } catch (error) {
       console.error('Error updating promotion:', error.message);
       throw new Error('Failed to update promotion. Please try again later.');
     }
   }
-  
 
   async removePromotion(request: FindOnePromotionDto) {
     const { id } = request;

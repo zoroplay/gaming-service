@@ -17,10 +17,10 @@ export class CallbackLog {
   @Column({ nullable: true })
   request_type: string;
 
-  @Column({type: 'text'})
+  @Column({ type: 'text' })
   payload: string;
 
-  @Column({ type: 'text', nullable: true})
+  @Column({ type: 'text', nullable: true })
   response: string;
 
   @Column({ default: 0 })
