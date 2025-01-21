@@ -760,7 +760,7 @@ export class GamesService {
   }
 
   async handleGamesCallback(_data: CallbackGameDto): Promise<any> {
-    console.log('_data', _data);
+    // console.log('_data', _data);
     switch (_data.provider) {
       case 'shack-evolution':
         return await this.handleC2Games(_data.body, _data.header);
@@ -787,10 +787,6 @@ export class GamesService {
       case 'pragmatic-play':
         console.log('using pragmatic-play');
         return await this.pragmaticPlayService.handleCallback(_data);
-
-      // case 'qtech-games':
-      //   console.log('using qtech-games');
-      //   return await this.qtechService.handleCallback(_data);
       default:
         throw new NotFoundException('Unknown provider');
     }
@@ -798,40 +794,6 @@ export class GamesService {
     // const gameList = await this.c2GamingService.getGames();
 
     // return gameList;
-  }
-
-  async handleQtechCallback(request: QtechCallbackRequest): Promise<any> {
-    console.log('start-service', request);
-    // //(request);
-    const resp = await this.qtechService.handleQTGamesCallback(request);
-    console.log('resp', resp);
-
-    return resp;
-  }
-
-  async handleQtechGetBalance(request: QtechCallbackRequest): Promise<any> {
-    console.log('Get Balance');
-    const result = await this.qtechService.getBalance(request);
-
-    return result;
-  }
-
-  async handleQtechBet(request: QtechtransactionRequest): Promise<any> {
-    try {
-      console.log('Bet Balance');
-      const result = await this.qtechService.bet(request);
-
-      return result;
-    } catch (error) {
-      console.log('THIS', error);
-    }
-  }
-
-  async handleQtechWin(request: QtechtransactionRequest): Promise<any> {
-    console.log('Win Balance');
-    const result = await this.qtechService.win(request);
-
-    return result;
   }
 
   async handleC2Games(body: any, headers: any): Promise<any> {
@@ -950,7 +912,6 @@ export class GamesService {
     }
   }
   
-
   async removePromotion(request: FindOnePromotionDto) {
     const { id } = request;
     console.log('Deleting promotion with ID:', id);

@@ -31,10 +31,14 @@ import {
   UpdateGameDto
 } from 'src/proto/gaming.pb';
 import { GamesService } from './games.service';
+import { QtechService } from 'src/services';
 
 @Controller()
 export class GamesController {
-  constructor(private readonly gamesService: GamesService) {}
+  constructor(
+    private readonly gamesService: GamesService,
+    private readonly qtechService: QtechService
+  ) {}
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'createProvider')
   createProvider(request: CreateProviderDto): Promise<CommonResponse> {
@@ -294,21 +298,6 @@ export class GamesController {
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'handleQtechCallback')
   async handleQtechCallback(payload: QtechCallbackRequest): Promise<any> {
-    return this.gamesService.handleQtechCallback(payload);
-  }
-
-  @GrpcMethod(GAMING_SERVICE_NAME, 'handleQtechGetBalance')
-  async handleQtechGetBalance(payload: QtechCallbackRequest): Promise<any> {
-    return this.gamesService.handleQtechGetBalance(payload);
-  }
-
-  @GrpcMethod(GAMING_SERVICE_NAME, 'handleQtechTransaction')
-  async handleQtechBet(payload: QtechtransactionRequest): Promise<any> {
-    return this.gamesService.handleQtechBet(payload);
-  }
-
-  @GrpcMethod(GAMING_SERVICE_NAME, 'handleQtechTransactionWin')
-  async handleQtechWin(payload: QtechtransactionRequest): Promise<any> {
-    return this.gamesService.handleQtechWin(payload);
+    return this.qtechService.handlCallbacks(payload);
   }
 }

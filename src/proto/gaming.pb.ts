@@ -657,8 +657,6 @@ export interface GamingServiceClient {
   xpressRollback(request: XpressRequest): Observable<XpressResponse>;
 
   xpressLogout(request: XpressRequest): Observable<XpressResponse>;
-
-  qTechVerifySession(request: QtechCallbackRequest): Observable<CallbackResponse>;
 }
 
 export interface GamingServiceController {
@@ -773,10 +771,6 @@ export interface GamingServiceController {
   xpressRollback(request: XpressRequest): Promise<XpressResponse> | Observable<XpressResponse> | XpressResponse;
 
   xpressLogout(request: XpressRequest): Promise<XpressResponse> | Observable<XpressResponse> | XpressResponse;
-
-  qTechVerifySession(
-    request: QtechCallbackRequest,
-  ): Promise<CallbackResponse> | Observable<CallbackResponse> | CallbackResponse;
 }
 
 export function GamingServiceControllerMethods() {
@@ -828,7 +822,6 @@ export function GamingServiceControllerMethods() {
       "xpressCredit",
       "xpressRollback",
       "xpressLogout",
-      "qTechVerifySession",
     ];
     for (const method of grpcMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
