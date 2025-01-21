@@ -886,7 +886,6 @@ export class GamesService {
       console.log('Uploaded image URL:', imageUrl);
   
       // Create a new promotion entity and assign values
-      const newPromotion: any = new PromotionEntity();
 
       const newPromotion: Promotion = new PromotionEntity();
   
@@ -930,9 +929,6 @@ export class GamesService {
 
   async updatePromotion(
     updatePromotionDto: CreatePromotionRequest,
-  ): Promise<any> {
-    const { id } = updatePromotionDto;
-  
   ): Promise<Promotion> {
     console.log("updatePromotionDto", updatePromotionDto);
     const { id } = updatePromotionDto.metadata;
