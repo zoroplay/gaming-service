@@ -762,7 +762,7 @@ export class GamesService {
   }
 
   async handleGamesCallback(_data: CallbackGameDto): Promise<any> {
-    console.log('_data', _data);
+    // console.log('_data', _data);
     switch (_data.provider) {
       case 'shack-evolution':
         return await this.handleC2Games(_data.body, _data.header);
@@ -789,10 +789,6 @@ export class GamesService {
       case 'pragmatic-play':
         console.log('using pragmatic-play');
         return await this.pragmaticPlayService.handleCallback(_data);
-
-      // case 'qtech-games':
-      //   console.log('using qtech-games');
-      //   return await this.qtechService.handleCallback(_data);
       default:
         throw new NotFoundException('Unknown provider');
     }
@@ -843,7 +839,7 @@ export class GamesService {
     console.log(result);
     return result;
   }
-
+  
   async handleC2Games(body: any, headers: any): Promise<any> {
     console.log(body);
     console.log(headers);
@@ -890,6 +886,8 @@ export class GamesService {
       console.log('Uploaded image URL:', imageUrl);
   
       // Create a new promotion entity and assign values
+      const newPromotion: any = new PromotionEntity();
+
       const newPromotion: Promotion = new PromotionEntity();
   
       newPromotion.title = createPromotionDto.metadata.title;
@@ -911,7 +909,7 @@ export class GamesService {
     }
   }
 
-  async findOnePromotion(request: FindOnePromotionDto): Promise<Promotion> {
+  async findOnePromotion(request: FindOnePromotionDto): Promise<any> {
     const { id } = request;
     console.log('id', id);
     const promotion = await this.promotionRepository.findOne({
@@ -924,7 +922,7 @@ export class GamesService {
     return promotion;
   }
 
-  async fetchPromotions(): Promise<Promotions> {
+  async fetchPromotions(): Promise<any> {
     const promotions = await this.promotionRepository.find();
     console.log('promotions', promotions);
     return { data: promotions };
@@ -932,10 +930,13 @@ export class GamesService {
 
   async updatePromotion(
     updatePromotionDto: CreatePromotionRequest,
+  ): Promise<any> {
+    const { id } = updatePromotionDto;
+  
   ): Promise<Promotion> {
     console.log("updatePromotionDto", updatePromotionDto);
     const { id } = updatePromotionDto.metadata;
-
+      
     // Find the promotion by ID
     const promotion = await this.promotionRepository.findOneBy({ id });
 
@@ -960,7 +961,6 @@ export class GamesService {
     }
 
     console.log('Uploaded image URL:', imageUrl);
-  
 
     // Update fields with provided values or retain existing ones
     // promotion.clientId = updatePromotionDto.clientId ?? promotion.clientId;
