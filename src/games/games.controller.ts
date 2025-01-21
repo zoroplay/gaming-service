@@ -33,10 +33,14 @@ import {
   UpdateGameDto
 } from 'src/proto/gaming.pb';
 import { GamesService } from './games.service';
+import { QtechService } from 'src/services';
 
 @Controller()
 export class GamesController {
-  constructor(private readonly gamesService: GamesService) {}
+  constructor(
+    private readonly gamesService: GamesService,
+    private readonly qtechService: QtechService
+  ) {}
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'createProvider')
   createProvider(request: CreateProviderDto): Promise<CommonResponse> {

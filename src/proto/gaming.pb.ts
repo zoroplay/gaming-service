@@ -16,6 +16,7 @@ export interface QtechCallbackRequest {
   action: string;
 }
 
+
 export interface QtechRollbackResponse {
   success: boolean;
   message: string;
@@ -659,7 +660,7 @@ export interface GamingServiceClient {
   handleQtechTransactionWin(request: QtechtransactionRequest): Observable<QtechDepositTransactionResponse>;
 
   handleQtechRollback(request: QtechRollbackRequest): Observable<QtechRollbackResponse>;
-
+  
   xpressLogin(request: XpressRequest): Observable<XpressResponse>;
 
   xpressBalance(request: XpressRequest): Observable<XpressResponse>;
@@ -831,6 +832,7 @@ export function GamingServiceControllerMethods() {
       "startGame",
       "handleCallback",
       "handleQtechCallback",
+
       "handleQtechGetBalance",
       "handleQtechTransactionBet",
       "handleQtechTransactionWin",
