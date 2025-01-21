@@ -1087,11 +1087,14 @@ export class GamesService {
       image: game.imagePath,
       description: game.description,
       priority: game.priority,
-      category: game.gameCategories.map((gc) => ({
-        id: gc.category.id,
-        name: gc.category.name,
-      })),
+      category: game.gameCategories
+        .filter((gc) => gc.category) // Filter out null or undefined categories
+        .map((gc) => ({
+          id: gc.category.id,
+          name: gc.category.name,
+        })),
     }));
+
 
     // const gameDatas = {
     //   total,
