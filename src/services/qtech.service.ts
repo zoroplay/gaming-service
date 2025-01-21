@@ -8,8 +8,7 @@ import { BetService } from 'src/bet/bet.service';
 import { CasinoGame } from 'src/entities/casino-game.entity';
 import { IdentityService } from 'src/identity/identity.service';
 import { WalletService } from 'src/wallet/wallet.service';
-import { Raw, Repository } from 'typeorm';
-import { v4 as uuidv4 } from 'uuid';
+import { Repository } from 'typeorm';
 
 import {
   CallbackLog,
@@ -19,7 +18,6 @@ import {
 } from '../entities';
 import {
   QtechCallbackRequest,
-  QtechtransactionRequest,
   StartGameDto,
 } from 'src/proto/gaming.pb';
 import {

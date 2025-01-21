@@ -34,7 +34,6 @@ import {
   Promotion,
   Promotions,
   QtechCallbackRequest,
-  QtechtransactionRequest,
   SaveCategoryRequest,
   StartGameDto,
   SyncGameDto,
@@ -822,7 +821,7 @@ export class GamesService {
       console.log('Uploaded image URL:', imageUrl);
 
       // Create a new promotion entity and assign values
-      const newPromotion: Promotion = new PromotionEntity();
+      const newPromotion: any = new PromotionEntity();
 
       newPromotion.title = createPromotionDto.metadata.title;
       newPromotion.imageUrl = imageUrl || createPromotionDto.metadata.content; // Assign the uploaded image URL
@@ -843,7 +842,7 @@ export class GamesService {
     }
   }
 
-  async findOnePromotion(request: FindOnePromotionDto): Promise<Promotion> {
+  async findOnePromotion(request: FindOnePromotionDto): Promise<any> {
     const { id } = request;
     console.log('id', id);
     const promotion = await this.promotionRepository.findOne({
@@ -856,7 +855,7 @@ export class GamesService {
     return promotion;
   }
 
-  async fetchPromotions(): Promise<Promotions> {
+  async fetchPromotions(): Promise<any> {
     const promotions = await this.promotionRepository.find();
     console.log('promotions', promotions);
     return { data: promotions };
@@ -864,7 +863,7 @@ export class GamesService {
 
   async updatePromotion(
     updatePromotionDto: CreatePromotionRequest,
-  ): Promise<Promotion> {
+  ): Promise<any> {
     const { id } = updatePromotionDto;
   
     // Find the promotion by ID

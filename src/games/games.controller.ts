@@ -24,7 +24,6 @@ import {
   Provider,
   Providers,
   QtechCallbackRequest,
-  QtechtransactionRequest,
   SaveCategoryRequest,
   StartGameDto,
   SyncGameDto,

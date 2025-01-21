@@ -16,59 +16,6 @@ export interface QtechCallbackRequest {
   action: string;
 }
 
-export interface JPContribution {
-  id: string;
-  amount: number;
-  balance: number;
-}
-
-export interface QtechtransactionRequest {
-  /** Headers */
-  walletSessionId: string;
-  passKey: string;
-  /** Required Parameters */
-  txnType: string;
-  txnId: string;
-  playerId: string;
-  roundId: string;
-  amount: number;
-  currency: string;
-  conversionRat: number;
-  clientId: number;
-  jpContributions: JPContribution[];
-  gameId: string;
-  device: string;
-  clientType: string;
-  clientRoundId: string;
-  category: string;
-  created: string;
-  completed: boolean;
-}
-
-export interface QtechDepositTransactionResponse {
-  balance: number;
-  referenceId: string;
-}
-
-/** Rollback can use this to update wallet */
-export interface QtechWinTransactionResponse {
-  txnType: string;
-  txnId: string;
-  betId: string;
-  playerId: string;
-  roundId: string;
-  amount: number;
-  currency: string;
-  jpPayout: number;
-  gameId: string;
-  device: string;
-  clientType: string;
-  clientRoundId: string;
-  category: string;
-  created: string;
-  completed: boolean;
-}
-
 export interface AddGameToCategoriesResponse {
   gameCategories: GameCategory[];
 }
@@ -472,6 +419,7 @@ export interface Promotion {
   endDate: string;
   status: string;
   targetUrl?: string | undefined;
+  clientId: string;
 }
 
 export interface CreatePromotionDto {
@@ -484,12 +432,13 @@ export interface CreatePromotionDto {
   type: string;
   targetUrl?: string | undefined;
   file?: string | undefined;
+  clientId?: string | undefined;
 }
 
 export interface CreatePromotionRequest {
   id?: number | undefined;
   metadata: CreatePromotionDto | undefined;
-  file: string;
+  file?: string | undefined;
 }
 
 export interface Promotions {
@@ -640,12 +589,6 @@ export interface GamingServiceClient {
 
   handleQtechCallback(request: QtechCallbackRequest): Observable<CallbackResponse>;
 
-  handleQtechGetBalance(request: QtechCallbackRequest): Observable<CallbackResponse>;
-
-  handleQtechTransaction(request: QtechtransactionRequest): Observable<QtechDepositTransactionResponse>;
-
-  handleQtechTransactionWin(request: QtechtransactionRequest): Observable<QtechDepositTransactionResponse>;
-
   xpressLogin(request: XpressRequest): Observable<XpressResponse>;
 
   xpressBalance(request: XpressRequest): Observable<XpressResponse>;
@@ -742,24 +685,6 @@ export interface GamingServiceController {
     request: QtechCallbackRequest,
   ): Promise<CallbackResponse> | Observable<CallbackResponse> | CallbackResponse;
 
-  handleQtechGetBalance(
-    request: QtechCallbackRequest,
-  ): Promise<CallbackResponse> | Observable<CallbackResponse> | CallbackResponse;
-
-  handleQtechTransaction(
-    request: QtechtransactionRequest,
-  ):
-    | Promise<QtechDepositTransactionResponse>
-    | Observable<QtechDepositTransactionResponse>
-    | QtechDepositTransactionResponse;
-
-  handleQtechTransactionWin(
-    request: QtechtransactionRequest,
-  ):
-    | Promise<QtechDepositTransactionResponse>
-    | Observable<QtechDepositTransactionResponse>
-    | QtechDepositTransactionResponse;
-
   xpressLogin(request: XpressRequest): Promise<XpressResponse> | Observable<XpressResponse> | XpressResponse;
 
   xpressBalance(request: XpressRequest): Promise<XpressResponse> | Observable<XpressResponse> | XpressResponse;
@@ -813,9 +738,6 @@ export function GamingServiceControllerMethods() {
       "startGame",
       "handleCallback",
       "handleQtechCallback",
-      "handleQtechGetBalance",
-      "handleQtechTransaction",
-      "handleQtechTransactionWin",
       "xpressLogin",
       "xpressBalance",
       "xpressDebit",
