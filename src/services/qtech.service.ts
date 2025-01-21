@@ -19,6 +19,7 @@ import {
 } from '../entities';
 import {
   QtechCallbackRequest,
+  QtechRollbackRequest,
   QtechtransactionRequest,
   StartGameDto,
 } from 'src/proto/gaming.pb';
@@ -383,12 +384,12 @@ export class QtechService {
       console.log('Parsed Data Object:', dataObject);
 
       const currency = isValid.data.currency;
-      const balance = wallet.data.balance;
+      const balance = wallet.data.availableBalance;
 
       console.log('Currency:', currency, 'Balance:', balance);
 
       // Construct success response
-      const response = this.createSuccessResponse({ currency, balance });
+      const response = this.createSuccessResponse({ balance, currency });
       return response;
     } catch (error) {
       console.error('Error in verifySession:', error);
@@ -421,8 +422,25 @@ export class QtechService {
       status: HttpStatus.OK,
       message: 'Authentication Successful',
       data: {
-        currency: data.currency,
         balance: data.balance,
+        currency: data.currency,
+        error: 0,
+        description: 'Success',
+      },
+    };
+  }
+
+  private createSBetuccessResponse(data: {
+    balance: number;
+    referenceId: string;
+  }): any {
+    return {
+      success: true,
+      status: HttpStatus.OK,
+      message: 'Bet placed successfully',
+      data: {
+        balance: data.balance,
+        referenceId: data.referenceId,
         error: 0,
         description: 'Success',
       },
@@ -458,12 +476,12 @@ export class QtechService {
       console.log('Parsed Data Object:', dataObject);
 
       const currency = isValid.data.currency;
-      const balance = wallet.data.balance;
+      const balance = wallet.data.availableBalance;
 
-      console.log('Currency:', currency, 'Balance:', balance);
+      console.log('Balance:', balance, 'Currency:', currency);
 
       // Construct success response
-      const response = this.createSuccessResponse({ currency, balance });
+      const response = this.createSuccessResponse({ balance, currency });
       return response;
     } catch (error) {
       console.error('Error in getBalance:', error.message);
@@ -519,7 +537,7 @@ export class QtechService {
   }
   async bet(payload: QtechtransactionRequest): Promise<any> {
     try {
-      const { playerId, amount, gameId, clientId, roundId } = payload;
+      const { playerId, amount, gameId, clientId, roundId, txnId } = payload;
 
       const trx = uuidv4();
 
@@ -528,7 +546,12 @@ export class QtechService {
       // Validate gameId
       if (!gameId || isNaN(Number(gameId))) {
         console.error('Invalid gameId:', gameId);
-        throw new Error('Invalid gameId. It must be a valid number.');
+        return {
+          success: false,
+          status: HttpStatus.BAD_REQUEST,
+          message: 'Invalid gameId. It must be a valid number.',
+          data: {},
+        };
       }
 
       // Check if the game exists
@@ -554,6 +577,8 @@ export class QtechService {
         clientId,
       });
 
+      console.log('GET DEBIT WALLET', getWallet);
+
       if (!getWallet || !getWallet.status) {
         return {
           success: false,
@@ -564,9 +589,9 @@ export class QtechService {
       }
 
       const walletData =
-        typeof getWallet.data.balance === 'string'
-          ? JSON.parse(getWallet.data.balance)
-          : getWallet.data.balance;
+        typeof getWallet.data.availableBalance === 'string'
+          ? JSON.parse(getWallet.data.availableBalance)
+          : getWallet.data.availableBalance;
 
       console.log('Wallet data:', walletData);
 
@@ -586,8 +611,8 @@ export class QtechService {
         clientId,
         username: playerId,
         roundId,
-        transactionId: trx,
-        gameId,
+        transactionId: txnId,
+        gameId: gameId.toString(),
         stake: amount,
         gameName: gameExist?.title || '',
         gameNumber: gameExist?.gameId || '',
@@ -612,15 +637,26 @@ export class QtechService {
       // Debit the wallet
       const debit = await this.walletService.debit({
         userId: Number(playerId),
-        clientId,
+        clientId: 4,
         amount: amount.toString(),
-        source: gameExist?.provider?.slug || '',
+        source: gameExist?.provider?.slug || 'Casino',
         description: `Casino Bet: (${gameExist?.title}:${trx})`,
         username: playerId,
         wallet: 'balance',
         subject: 'Bet Deposit (Casino)',
         channel: 'web',
       });
+      let callback;
+
+      // eslint-disable-next-line prefer-const
+      callback = new CallbackLog();
+      callback.transactionId = txnId;
+      callback.request_type = 'Qtech-bet';
+      callback.payload = txnId;
+
+      console.log('saved-callback', callback);
+
+      await this.callbackLogRepository.save(callback);
 
       console.log('debit:', debit);
 
@@ -644,19 +680,15 @@ export class QtechService {
           ? JSON.parse(updatedWallet.data)
           : updatedWallet.data;
 
-      console.log('Updated wallet data:', updatedWalletData);
+      console.log('Updated wallet data:', updatedWalletData.availableBalance);
 
-      // Construct the response
-      const response = {
-        success: true,
-        status: HttpStatus.OK,
-        message: 'Bet placed successfully',
-        data: {
-          balance: updatedWalletData.balance,
-          referenceId: trx,
-        },
-      };
+      const balance = updatedWalletData.availableBalance;
+      const referenceId = trx;
 
+      const response = this.createSBetuccessResponse({ balance, referenceId });
+
+      console.log('THAT REAL RES', response);
+      console.log('THAT REAL RES', response.data);
       return response;
     } catch (error) {
       console.error('Error in Placing bet:', error.message);
@@ -712,11 +744,12 @@ export class QtechService {
           data: {},
         };
       }
+      console.log('GET WIN WALLET', getWallet);
 
       const walletData =
-        typeof getWallet.data.balance === 'string'
-          ? JSON.parse(getWallet.data.balance)
-          : getWallet.data.balance;
+        typeof getWallet.data === 'string'
+          ? JSON.parse(getWallet.data)
+          : getWallet.data;
 
       console.log('Wallet data:', walletData);
 
@@ -756,22 +789,18 @@ export class QtechService {
       }
 
       const updatedWalletData =
-        typeof updatedWallet.data === 'string'
-          ? JSON.parse(updatedWallet.data)
-          : updatedWallet.data;
+        typeof updatedWallet.data.availableBalance === 'string'
+          ? JSON.parse(updatedWallet.data.availableBalance)
+          : updatedWallet.data.availableBalance;
 
       console.log('Updated wallet details:', updatedWalletData);
 
-      // Construct the response
-      const response = {
-        success: true,
-        status: HttpStatus.OK,
-        message: 'Bet placed successfully',
-        data: {
-          balance: updatedWalletData.balance,
-          referenceId: trx,
-        },
-      };
+      const balance = updatedWalletData;
+      const referenceId = trx;
+
+      const response = this.createSBetuccessResponse({ balance, referenceId });
+
+      console.log('QTECH WIN', response);
 
       return response;
     } catch (error) {
@@ -811,185 +840,118 @@ export class QtechService {
     return await firstValueFrom(this.betService.cancelCasinoBet(data));
   }
 
-  async refund(clientId, player, callback, body, balanceType) {
-    console.log('Got to refund method');
-    console.log('player', player, body, balanceType);
-    let response: any;
+  async refund(Payload: QtechRollbackRequest) {
+    const { txnId, gameId, clientId, playerId } = Payload;
 
-    if (player) {
-      const reversePayload: RollbackCasinoBetRequest = {
-        transactionId: body.get('reference'),
-      };
+    console.log('reversePayload');
 
-      console.log('reversePayload', reversePayload);
+    // Find original transaction
+    const callbackLog = await this.callbackLogRepository.findOne({
+      where: { transactionId: txnId, request_type: 'Qtech-bet' },
+    });
 
-      const callbackLog = await this.callbackLogRepository.findOne({
-        where: { transactionId: body.get('reference'), request_type: 'Bet' },
-      });
-
-      if (!callbackLog) {
-        console.log('Callback log not found');
-
-        response = {
-          success: true,
-          message: 'Refund Unsuccessful',
-          status: HttpStatus.OK,
-          data: {
-            transactionId: 0,
-            error: 0,
-            description: `Unsuccessful rollback`,
-          },
-        };
-
-        // response = {
-        //   transactionId: 0,
-        //   error: 0,
-        //   description: `Unsuccessful rollback`,
-        // }
-
-        await this.callbackLogRepository.update(
-          { id: callback.id },
-          { response: JSON.stringify(response) },
-        );
-        return response;
-      }
-
-      const callbackPayload = JSON.parse(callbackLog.payload);
-
-      const gameExist = await this.gameRepository.findOne({
-        where: { gameId: callbackPayload.gameId },
-        relations: { provider: true },
-      });
-      console.log('Game retrieved from DB:', gameExist);
-
-      // // If game doesn't exist, throw an error
-      if (!gameExist) {
-        response = {
-          success: false,
-          status: HttpStatus.BAD_REQUEST,
-          message: `Game with id ${body.get('gameId')}not Found`,
-          data: {},
-        };
-
-        await this.callbackLogRepository.update(
-          { id: callback.id },
-          { response: JSON.stringify(response) },
-        );
-        return response;
-      }
-
-      // console.log('update ticket')
-      const transaction = await this.rollback(reversePayload);
-
-      // const transaction = {
-      //   success: true,
-      //   status: HttpStatus.OK,
-      //   message: 'Casino Bet Placed',
-      //   data: {
-      //     transactionId: '123456',
-      //     balance: 756,
-      //   },
-      // }
-
-      if (!transaction.success) {
-        console.log('transaction error');
-        response = {
-          success: true,
-          message: 'Refund Unsuccessful',
-          status: HttpStatus.OK,
-          data: {
-            transactionId: 0,
-            error: 0,
-            description: `Unsuccessful rollback`,
-          },
-        };
-
-        await this.callbackLogRepository.update(
-          { id: callback.id },
-          { response: JSON.stringify(response) },
-        );
-        return response;
-      }
-
-      const rollbackWalletRes = await this.walletService.credit({
-        userId: player.playerId,
-        clientId,
-        amount: callbackPayload.amount,
-        source: gameExist.provider.slug,
-        description: `Bet Cancelled: (${gameExist.title})`,
-        username: player.playerNickname,
-        wallet: balanceType,
-        subject: 'Bet refund (Casino)',
-        channel: gameExist.title,
-      });
-
-      // const rollbackWalletRes = {
-      //   success: true,
-      //   status: HttpStatus.OK,
-      //   message: 'Casino Bet Placed',
-      //   data: {
-      //     userId: 11,
-      //     balance: 11,
-      //     availableBalance: 11,
-      //     trustBalance: 11,
-      //     sportBonusBalance: 22,
-      //     virtualBonusBalance: 11,
-      //     casinoBonusBalance: 1
-      //   },
-      // }
-
-      console.log('rollbackWalletRes', rollbackWalletRes);
-
-      if (!rollbackWalletRes.success) {
-        console.log('transaction error');
-        response = {
-          success: true,
-          message: 'Refund Unsuccessful',
-          status: HttpStatus.OK,
-          data: {
-            transactionId: 0,
-            error: 0,
-            description: `Unsuccessful rollback`,
-          },
-        };
-
-        await this.callbackLogRepository.update(
-          { id: callback.id },
-          { response: JSON.stringify(response) },
-        );
-        return response;
-      }
-
-      response = {
+    if (!callbackLog) {
+      console.log('Callback log not found');
+      return {
         success: true,
-        message: 'Refund Successful',
+        message: 'Refund Unsuccessful',
         status: HttpStatus.OK,
         data: {
-          transactionId: transaction.data.transactionId,
+          transactionId: 0,
           error: 0,
-          description: 'Successful',
+          description: `Unsuccessful rollback`,
         },
       };
+    }
 
-      await this.callbackLogRepository.update(
-        { id: callback.id },
-        { response: JSON.stringify(response) },
-      );
-      return response;
-    } else {
-      response = {
+    const callbackPayload = JSON.parse(callbackLog.payload);
+
+    // Check if the game exists
+    const gameExist = await this.gameRepository.findOne({
+      where: { gameId },
+      relations: { provider: true },
+    });
+    console.log('Game retrieved from DB:', gameExist);
+
+    if (!gameExist) {
+      return {
         success: false,
         status: HttpStatus.BAD_REQUEST,
-        message: `Player with userId ${player.playerId} not found`,
+        message: `Game with id ${gameId} not Found`,
         data: {},
       };
-
-      await this.callbackLogRepository.update(
-        { id: callback.id },
-        { response: JSON.stringify(response) },
-      );
-      return response;
     }
+
+    // Perform the rollback request
+    const rollbackRequest: RollbackCasinoBetRequest = { transactionId: txnId };
+    const transaction = await this.rollback(rollbackRequest);
+
+    if (!transaction.success) {
+      console.log('Transaction error during rollback');
+      return {
+        success: true,
+        message: 'Refund Unsuccessful',
+        status: HttpStatus.OK,
+        data: {
+          transactionId: 0,
+          error: 0,
+          description: `Unsuccessful rollback`,
+        },
+      };
+    }
+
+    // Credit the wallet
+    const rollbackWalletRes = await this.walletService.credit({
+      userId: playerId,
+      clientId,
+      amount: callbackPayload.amount,
+      source: gameExist.provider.slug,
+      description: `Bet Cancelled: (${gameExist.title})`,
+      username: playerId,
+      wallet: 'balance',
+      subject: 'Bet refund (Casino)',
+      channel: gameExist.title,
+    });
+
+    const getWallet = await this.walletService.getWallet({
+      userId: Number(playerId),
+      clientId,
+    });
+
+    const walletData =
+      typeof getWallet.data === 'string'
+        ? JSON.parse(getWallet.data)
+        : getWallet.data;
+
+    console.log('Wallet data:', walletData);
+
+    console.log('rollbackWalletRes', rollbackWalletRes);
+
+    if (!rollbackWalletRes.success) {
+      console.log('Wallet credit operation failed');
+      return {
+        success: true,
+        message: 'Refund Unsuccessful',
+        status: HttpStatus.OK,
+        data: {
+          balance: walletData.data.availableBalance,
+          error: 0,
+          description: `Unsuccessful rollback`,
+        },
+      };
+    }
+
+    // Refund successful response
+    return {
+      success: true,
+      message: 'Refund Successful',
+      status: HttpStatus.OK,
+      data: {
+        transactionId: transaction.data.transactionId,
+        error: 0,
+        description: 'Successful',
+      },
+    };
   }
 
   async handleQTGamesCallback(_data: QtechCallbackRequest): Promise<any> {

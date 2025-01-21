@@ -34,6 +34,7 @@ import {
   Promotion,
   Promotions,
   QtechCallbackRequest,
+  QtechRollbackRequest,
   QtechtransactionRequest,
   SaveCategoryRequest,
   StartGameDto,
@@ -808,7 +809,14 @@ export class GamesService {
 
     return resp;
   }
-  
+
+  async handleQtechRollback(request: QtechRollbackRequest): Promise<any> {
+    console.log('Start Game service Roll back');
+
+    const resp = await this.qtechService.refund(request);
+
+    return resp;
+  }
 
   async handleQtechGetBalance(request: QtechCallbackRequest): Promise<any> {
     console.log('Get Balance');
@@ -821,7 +829,7 @@ export class GamesService {
     try {
       console.log('Bet Balance');
       const result = await this.qtechService.bet(request);
-
+      console.log('Game-Game', result);
       return result;
     } catch (error) {
       console.log('THIS', error);
@@ -831,7 +839,7 @@ export class GamesService {
   async handleQtechWin(request: QtechtransactionRequest): Promise<any> {
     console.log('Win Balance');
     const result = await this.qtechService.win(request);
-
+    console.log(result);
     return result;
   }
 
@@ -840,34 +848,22 @@ export class GamesService {
     console.log(headers);
     throw new Error('Method not implemented.');
   }
-
   async createPromotion(
     createPromotionDto: CreatePromotionDto,
   ): Promise<Promotion> {
-    console.log('createPromotionDto service', createPromotionDto);
+    console.log('createPromotionDto', createPromotionDto);
+    const newPromotion: Promotion = new PromotionEntity();
 
-    try {
-      // Create a new promotion entity and assign values
-      const newPromotion: Promotion = new PromotionEntity();
+    newPromotion.title = createPromotionDto.title;
+    newPromotion.imageUrl = createPromotionDto.imageUrl;
+    newPromotion.content = createPromotionDto.content;
+    newPromotion.type = createPromotionDto.type;
+    newPromotion.endDate = createPromotionDto.endDate;
+    newPromotion.startDate = createPromotionDto.startDate;
 
-      newPromotion.title = createPromotionDto.title;
-      newPromotion.clientId = createPromotionDto.clientId;
-      newPromotion.imageUrl = createPromotionDto.imageUrl // Assign the uploaded image URL
-      newPromotion.content = createPromotionDto.content;
-      newPromotion.type = createPromotionDto.type;
-      newPromotion.startDate = createPromotionDto.startDate;
-      newPromotion.endDate = createPromotionDto.endDate;
-      newPromotion.targetUrl = createPromotionDto.targetUrl;
-
-      // Save the promotion entity to the database
-      const savedPromotion = await this.promotionRepository.save(newPromotion);
-      console.log('Saved promotion:', savedPromotion);
-
-      return savedPromotion;
-    } catch (error) {
-      console.error('Error creating promotion:', error.message);
-      throw new Error('Failed to create promotion. Please try again later.');
-    }
+    const savedPromotion = await this.promotionRepository.save(newPromotion);
+    console.log('savedPromotion', savedPromotion);
+    return savedPromotion;
   }
 
   async findOnePromotion(request: FindOnePromotionDto): Promise<Promotion> {
@@ -892,40 +888,29 @@ export class GamesService {
   async updatePromotion(
     updatePromotionDto: CreatePromotionDto,
   ): Promise<Promotion> {
-    console.log('updatePromotionDto service', updatePromotionDto);
-    const id = updatePromotionDto.id;
-  
+    const { id } = updatePromotionDto;
+
     // Find the promotion by ID
     const promotion = await this.promotionRepository.findOneBy({ id });
 
-    console.log('promotion', promotion);
-  
     if (!promotion) {
-      throw new Error(`Promotion with ID ${id} not found`);
+      throw new Error(`Promotion with ID ${updatePromotionDto.id} not found`);
     }
-  
-    try {
-  
-      // Update fields dynamically
-      promotion.title = updatePromotionDto.title ?? promotion.title;
-      promotion.imageUrl = updatePromotionDto.imageUrl || promotion.imageUrl;
-      promotion.content = updatePromotionDto.content ?? promotion.content;
-      promotion.type = updatePromotionDto.type ?? promotion.type;
-      promotion.targetUrl = updatePromotionDto.targetUrl ?? promotion.targetUrl;
-      promotion.startDate = updatePromotionDto.startDate ?? promotion.startDate;
-      promotion.endDate = updatePromotionDto.endDate ?? promotion.endDate;
-  
-      // Save the updated promotion
-      const updatedPromotion = await this.promotionRepository.save(promotion);
-      console.log('Updated promotion:', updatedPromotion);
-  
-      return updatedPromotion;
-    } catch (error) {
-      console.error('Error updating promotion:', error.message);
-      throw new Error('Failed to update promotion. Please try again later.');
-    }
+
+    // Update fields with provided values or retain existing ones
+    // promotion.clientId = updatePromotionDto.clientId ?? promotion.clientId;
+    promotion.title = updatePromotionDto.title ?? promotion.title;
+    promotion.imageUrl = updatePromotionDto.imageUrl ?? promotion.imageUrl;
+    promotion.content = updatePromotionDto.content ?? promotion.content;
+    promotion.type = updatePromotionDto.type ?? promotion.type;
+    promotion.targetUrl = updatePromotionDto.targetUrl ?? promotion.targetUrl;
+    promotion.startDate = updatePromotionDto.startDate;
+    promotion.endDate = updatePromotionDto.endDate;
+
+    // Save the updated promotion
+    const updatedPromotion = await this.promotionRepository.save(promotion);
+    return updatedPromotion;
   }
-  
 
   async removePromotion(request: FindOnePromotionDto) {
     const { id } = request;
