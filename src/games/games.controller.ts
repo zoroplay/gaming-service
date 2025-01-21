@@ -5,6 +5,7 @@ import { GrpcMethod } from '@nestjs/microservices';
 import { Observable } from 'rxjs';
 import {
   AddGameToCategoriesDto,
+  AddGameToTournamentDto,
   CallbackGameDto,
   CommonResponse,
   CreateGameDto,
@@ -24,6 +25,8 @@ import {
   Provider,
   Providers,
   QtechCallbackRequest,
+  QtechRollbackRequest,
+  QtechtransactionRequest,
   SaveCategoryRequest,
   StartGameDto,
   SyncGameDto,
@@ -207,6 +210,16 @@ export class GamesController {
     }
   }
 
+  // @GrpcMethod(GAMING_SERVICE_NAME, 'createPromotion')
+  // async createPromotion(
+  //   payload: CreatePromotionDto,
+  // ): Promise<any> {
+  //   console.log('Received payload', payload);
+  //   // Pass the payload and file to the games service
+  //   const newPromo = await this.gamesService.createPromotion(payload);
+  //   return newPromo;
+  // }
+
   @GrpcMethod(GAMING_SERVICE_NAME, 'createPromotion')
   async createPromotion(
     payload: CreatePromotionRequest, 
@@ -218,10 +231,21 @@ export class GamesController {
   }
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'updatePromotion')
-  updatePromotion(payload: CreatePromotionRequest): Promise<any> {
-    console.log('fetch gameNames');
-    return this.gamesService.updatePromotion(payload);
+  async updatePromotion(
+    payload: CreatePromotionRequest, 
+  ): Promise<any> {
+    console.log('Received payload', payload);
+    // Pass the payload and file to the games service
+    const newPromo = await this.gamesService.updatePromotion(payload);
+    return newPromo;
   }
+
+  // @GrpcMethod(GAMING_SERVICE_NAME, 'updatePromotion')
+  // async updatePromotion(payload: CreatePromotionDto): Promise<any> {
+  //   console.log('Received payload', payload);
+  //   const updatePromotion = await this.gamesService.updatePromotion(payload);
+  //   return updatePromotion;
+  // }
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'findPromotions')
   fetchPromotions(): Promise<any> {
@@ -292,11 +316,43 @@ export class GamesController {
   // @GrpcMethod(GAMING_SERVICE_NAME, 'uploadImage')
   // uploadImage(payload: FileChunk): Promise<any> {
   //   return this.gamesService.uploadImage(payload)
-    
+
   // }
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'handleQtechCallback')
   async handleQtechCallback(payload: QtechCallbackRequest): Promise<any> {
-    return this.qtechService.handlCallbacks(payload);
+    return this.gamesService.handleQtechCallback(payload);
+  }
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'handleQtechGetBalance')
+  async handleQtechGetBalance(payload: QtechCallbackRequest): Promise<any> {
+    return this.gamesService.handleQtechGetBalance(payload);
+  }
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'handleQtechTransactionBet')
+  async handleQtechBet(payload: QtechtransactionRequest): Promise<any> {
+    return this.gamesService.handleQtechBet(payload);
+  }
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'addTournamentGame')
+  addTournamentGame(payload: AddGameToTournamentDto): Promise<any> {
+    console.log('addGameToCategories');
+    return this.gamesService.addTournamentGame(payload);
+  }
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'removeTournamentGame')
+  removeTournamentGames(payload: AddGameToTournamentDto): Promise<any> {
+    console.log('removeGameToCategories');
+    return this.gamesService.removeTournamentGames(payload);
+  }
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'handleQtechRollback')
+  async handleQtechRollback(payload: QtechRollbackRequest): Promise<any> {
+    return this.gamesService.handleQtechRollback(payload);
+  }
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'handleQtechTransactionWin')
+  async handleQtechWin(payload: QtechtransactionRequest): Promise<any> {
+    return this.gamesService.handleQtechWin(payload);
   }
 }
