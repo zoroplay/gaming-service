@@ -22,6 +22,7 @@ import {
   CommonResponseArray,
   CreateGameDto,
   CreatePromotionDto,
+  CreatePromotionRequest,
   CreateProviderDto,
   CreateTournamentDto,
   FetchGamesRequest,
@@ -848,22 +849,66 @@ export class GamesService {
     console.log(headers);
     throw new Error('Method not implemented.');
   }
+
+
+  // async createPromotion(
+  //   createPromotionDto: CreatePromotionDto,
+  // ): Promise<Promotion> {
+  //   console.log('createPromotionDto', createPromotionDto);
+  //   const newPromotion: Promotion = new PromotionEntity();
+
+  //   newPromotion.title = createPromotionDto.title;
+  //   newPromotion.imageUrl = createPromotionDto.imageUrl;
+  //   newPromotion.content = createPromotionDto.content;
+  //   newPromotion.type = createPromotionDto.type;
+  //   newPromotion.endDate = createPromotionDto.endDate;
+  //   newPromotion.startDate = createPromotionDto.startDate;
+
+  //   const savedPromotion = await this.promotionRepository.save(newPromotion);
+  //   console.log('savedPromotion', savedPromotion);
+  //   return savedPromotion;
+  // }
+
   async createPromotion(
-    createPromotionDto: CreatePromotionDto,
+    createPromotionDto: CreatePromotionRequest
   ): Promise<Promotion> {
-    console.log('createPromotionDto', createPromotionDto);
-    const newPromotion: Promotion = new PromotionEntity();
-
-    newPromotion.title = createPromotionDto.title;
-    newPromotion.imageUrl = createPromotionDto.imageUrl;
-    newPromotion.content = createPromotionDto.content;
-    newPromotion.type = createPromotionDto.type;
-    newPromotion.endDate = createPromotionDto.endDate;
-    newPromotion.startDate = createPromotionDto.startDate;
-
-    const savedPromotion = await this.promotionRepository.save(newPromotion);
-    console.log('savedPromotion', savedPromotion);
-    return savedPromotion;
+    console.log('createPromotionDto service', createPromotionDto);
+  
+  
+    // Define the folder and file name for the image in Firebase
+    const folderName = 'promotions'; // Example: folder to store promotion images
+    const fileName = `${Date.now()}_uploaded-file`; // Unique file name
+  
+    try {
+      // Upload the file to Firebase and get the public URL
+      const imageUrl = await this.firebaseService.uploadFileToFirebase(
+        folderName,
+        fileName,
+        createPromotionDto.file,
+      );
+  
+      console.log('Uploaded image URL:', imageUrl);
+  
+      // Create a new promotion entity and assign values
+      const newPromotion: Promotion = new PromotionEntity();
+  
+      newPromotion.title = createPromotionDto.metadata.title;
+      newPromotion.imageUrl = imageUrl || ''; // Assign the uploaded image URL
+      newPromotion.content = createPromotionDto.metadata.content;
+      newPromotion.type = createPromotionDto.metadata.type;
+      newPromotion.startDate = createPromotionDto.metadata.startDate;
+      newPromotion.endDate = createPromotionDto.metadata.endDate;
+      newPromotion.targetUrl = createPromotionDto.metadata.targetUrl;
+  
+      // Save the promotion entity to the database
+      const savedPromotion = await this.promotionRepository.save(newPromotion);
+      console.log('Saved promotion:', savedPromotion);
+  
+      return savedPromotion;
+    } catch (error) {
+      console.error('Error creating promotion:', error.message);
+      throw new Error('Failed to create promotion. Please try again later.');
+    }
   }
 
   async findOnePromotion(request: FindOnePromotionDto): Promise<Promotion> {
@@ -886,26 +931,46 @@ export class GamesService {
   }
 
   async updatePromotion(
-    updatePromotionDto: CreatePromotionDto,
+    updatePromotionDto: CreatePromotionRequest,
   ): Promise<Promotion> {
-    const { id } = updatePromotionDto;
+    console.log("updatePromotionDto", updatePromotionDto);
+    const { id } = updatePromotionDto.metadata;
 
     // Find the promotion by ID
     const promotion = await this.promotionRepository.findOneBy({ id });
+
+    console.log("promotion", promotion);
 
     if (!promotion) {
       throw new Error(`Promotion with ID ${updatePromotionDto.id} not found`);
     }
 
+    // Define the folder and file name for the image in Firebase
+    const folderName = 'promotions'; // Example: folder to store promotion images
+    const fileName = `${Date.now()}_uploaded-file`; // Unique file name
+
+    let imageUrl: string;
+
+    if(updatePromotionDto.file) {
+      imageUrl = await this.firebaseService.uploadFileToFirebase(
+        folderName,
+        fileName,
+        updatePromotionDto.file,
+      );
+    }
+
+    console.log('Uploaded image URL:', imageUrl);
+  
+
     // Update fields with provided values or retain existing ones
     // promotion.clientId = updatePromotionDto.clientId ?? promotion.clientId;
-    promotion.title = updatePromotionDto.title ?? promotion.title;
-    promotion.imageUrl = updatePromotionDto.imageUrl ?? promotion.imageUrl;
-    promotion.content = updatePromotionDto.content ?? promotion.content;
-    promotion.type = updatePromotionDto.type ?? promotion.type;
-    promotion.targetUrl = updatePromotionDto.targetUrl ?? promotion.targetUrl;
-    promotion.startDate = updatePromotionDto.startDate;
-    promotion.endDate = updatePromotionDto.endDate;
+    promotion.title = updatePromotionDto.metadata.title ?? promotion.title;
+    promotion.imageUrl = imageUrl ?? promotion.imageUrl;
+    promotion.content = updatePromotionDto.metadata.content ?? promotion.content;
+    promotion.type = updatePromotionDto.metadata.type ?? promotion.type;
+    promotion.targetUrl = updatePromotionDto.metadata.targetUrl ?? promotion.targetUrl;
+    promotion.startDate = updatePromotionDto.metadata.startDate;
+    promotion.endDate = updatePromotionDto.metadata.endDate;
 
     // Save the updated promotion
     const updatedPromotion = await this.promotionRepository.save(promotion);

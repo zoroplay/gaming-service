@@ -9,7 +9,7 @@ import {
   CallbackGameDto,
   CommonResponse,
   CreateGameDto,
-  CreatePromotionDto,
+  CreatePromotionRequest,
   CreateProviderDto,
   CreateTournamentDto,
   Empty,
@@ -30,7 +30,7 @@ import {
   SaveCategoryRequest,
   StartGameDto,
   SyncGameDto,
-  UpdateGameDto,
+  UpdateGameDto
 } from 'src/proto/gaming.pb';
 import { GamesService } from './games.service';
 
@@ -206,9 +206,19 @@ export class GamesController {
     }
   }
 
+  // @GrpcMethod(GAMING_SERVICE_NAME, 'createPromotion')
+  // async createPromotion(
+  //   payload: CreatePromotionDto,
+  // ): Promise<any> {
+  //   console.log('Received payload', payload);
+  //   // Pass the payload and file to the games service
+  //   const newPromo = await this.gamesService.createPromotion(payload);
+  //   return newPromo;
+  // }
+
   @GrpcMethod(GAMING_SERVICE_NAME, 'createPromotion')
   async createPromotion(
-    payload: CreatePromotionDto,
+    payload: CreatePromotionRequest, 
   ): Promise<any> {
     console.log('Received payload', payload);
     // Pass the payload and file to the games service
@@ -217,11 +227,21 @@ export class GamesController {
   }
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'updatePromotion')
-  async updatePromotion(payload: CreatePromotionDto): Promise<any> {
+  async updatePromotion(
+    payload: CreatePromotionRequest, 
+  ): Promise<any> {
     console.log('Received payload', payload);
-    const updatePromotion = await this.gamesService.updatePromotion(payload);
-    return updatePromotion;
+    // Pass the payload and file to the games service
+    const newPromo = await this.gamesService.updatePromotion(payload);
+    return newPromo;
   }
+
+  // @GrpcMethod(GAMING_SERVICE_NAME, 'updatePromotion')
+  // async updatePromotion(payload: CreatePromotionDto): Promise<any> {
+  //   console.log('Received payload', payload);
+  //   const updatePromotion = await this.gamesService.updatePromotion(payload);
+  //   return updatePromotion;
+  // }
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'findPromotions')
   fetchPromotions(): Promise<any> {
