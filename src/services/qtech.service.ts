@@ -342,7 +342,7 @@ export class QtechService {
         .toPromise();
 
       console.log('Response data:', data);
-      console.log('Response returnUrl:', data.returnUrl);
+      console.log('Response returnUrl:', data.url);
 
       // Return the game URL
       return { url: data.url };
