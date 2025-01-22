@@ -1,11 +1,23 @@
 /* eslint-disable prettier/prettier */
 import { HttpService } from '@nestjs/axios';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { Cache } from 'cache-manager';
-import * as crypto from 'crypto';
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config'; // Import your SettingService
+import { InjectRepository } from '@nestjs/typeorm';
 import { AxiosRequestConfig, AxiosResponse } from 'axios';
+import { Cache } from 'cache-manager';
+import * as crypto from 'crypto';
+import { firstValueFrom } from 'rxjs';
+import { BonusService } from 'src/bonus/bonus.service';
+import { IdentityService } from 'src/identity/identity.service';
+import {
+  CreditCasinoBetRequest,
+  PlaceCasinoBetRequest,
+  RollbackCasinoBetRequest,
+  SettleCasinoBetRequest,
+} from 'src/proto/betting.pb';
+import { Repository } from 'typeorm';
+import { BetService } from '../bet/bet.service';
 import {
   CallbackLog,
   Game as GameEntity,
@@ -13,20 +25,7 @@ import {
   // Player as PlayerEntity,
   Provider as ProviderEntity,
 } from '../entities';
-import { Repository } from 'typeorm';
-import { InjectRepository } from '@nestjs/typeorm';
 import { WalletService } from '../wallet/wallet.service';
-import { BetService } from '../bet/bet.service';
-import {
-  CreditCasinoBetRequest,
-  PlaceCasinoBetRequest,
-  RollbackCasinoBetRequest,
-  SettleCasinoBetRequest,
-} from 'src/proto/betting.pb';
-import { IdentityService } from 'src/identity/identity.service';
-import { firstValueFrom } from 'rxjs';
-import { BonusService } from 'src/bonus/bonus.service';
-import { CreateBonusRequest } from 'src/proto/bonus.pb';
 
 @Injectable()
 export class EvoPlayService {
@@ -196,7 +195,7 @@ export class EvoPlayService {
 
       const newData: any = {
         games: Array.isArray(data.gameId) ? data.gameId.join(',') : data.gameId,
-        users: Array.isArray(data.userIds) ? data.userIds.join(',') : data.userIds,
+        users: Array.isArray(data.userIds) ? data.userIds.join(',') : data.clientId,
         currency: 'NGN',
         settings: {
           expire: data.duration,
@@ -242,10 +241,10 @@ export class EvoPlayService {
         this.token,
       );
       // $url = $this->project_id."*".$this->version."*".$this->token;
-      let url = `Game/registerBonusBatch?project=${this.project}&version=${this.version}&signature=${signature}&token=${newData.token}&game=${newData.game}&currency=${newData.currency}&&extra_bonuses[bonus_spins][spins_count]=${newData.settings.extra_bonuses.bonus_spins.spins_count}&extra_bonuses[bonus_spins][bet_in_money]=${newData.settings.extra_bonuses.bonus_spins.bet_in_money}&settings[registration_id]=${newData.settings.extra_bonuses_settings.registration_id}`;
+      let url = `Game/registerBonusBatch?project=${this.project}&version=${this.version}&signature=${signature}&games=${Array.isArray(data.gameId) ? data.gameId.join(',') : data.gameId}&users=${data.clientId}&currency=${newData.currency}`;
 
       if (data.bonusType == 'free_rounds')
-        url += `&settings[extra_bonuses][bonus_spins][spins_count]=${data.casinoSpinCount}&settings[extra_bonuses][bonus_spins][bet_in_money]=${data.minimumEntryAmount}&settings[extra_bonuses_settings][registration_id]=${data.bonusId}`;
+        url += `&extra_bonuses[bonus_spins][spins_count]=${data.casinoSpinCount}&extra_bonuses[bonus_spins][bet_in_money]=${data.minimumEntryAmount}&settings[registration_id]=${data.bonusId}`;
 
       if (data.bonusType === 'feature_trigger')
         url += `&settings[extra_bonuses][freespins_on_start][freespins_count]=${data.casinoSpinCount}&settings[extra_bonuses][freespins_on_start][bet_in_money]=${data.minimumEntryAmount}&settings[extra_bonuses_settings][registration_id]=${data.bonusId}`;
