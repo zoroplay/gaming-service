@@ -1,11 +1,23 @@
 /* eslint-disable prettier/prettier */
 import { HttpService } from '@nestjs/axios';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { Cache } from 'cache-manager';
-import * as crypto from 'crypto';
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config'; // Import your SettingService
+import { InjectRepository } from '@nestjs/typeorm';
 import { AxiosRequestConfig, AxiosResponse } from 'axios';
+import { Cache } from 'cache-manager';
+import * as crypto from 'crypto';
+import { firstValueFrom } from 'rxjs';
+import { BonusService } from 'src/bonus/bonus.service';
+import { IdentityService } from 'src/identity/identity.service';
+import {
+  CreditCasinoBetRequest,
+  PlaceCasinoBetRequest,
+  RollbackCasinoBetRequest,
+  SettleCasinoBetRequest,
+} from 'src/proto/betting.pb';
+import { Repository } from 'typeorm';
+import { BetService } from '../bet/bet.service';
 import {
   CallbackLog,
   Game as GameEntity,
@@ -13,20 +25,7 @@ import {
   // Player as PlayerEntity,
   Provider as ProviderEntity,
 } from '../entities';
-import { Repository } from 'typeorm';
-import { InjectRepository } from '@nestjs/typeorm';
 import { WalletService } from '../wallet/wallet.service';
-import { BetService } from '../bet/bet.service';
-import {
-  CreditCasinoBetRequest,
-  PlaceCasinoBetRequest,
-  RollbackCasinoBetRequest,
-  SettleCasinoBetRequest,
-} from 'src/proto/betting.pb';
-import { IdentityService } from 'src/identity/identity.service';
-import { firstValueFrom } from 'rxjs';
-import { BonusService } from 'src/bonus/bonus.service';
-import { CreateBonusRequest } from 'src/proto/bonus.pb';
 
 @Injectable()
 export class EvoPlayService {
@@ -191,66 +190,49 @@ export class EvoPlayService {
   }
 
   //Register Bonus
-  async registerBonus(data, game: GameEntity) {
+  async registerBonus(data: any) {
     try {
 
       const newData: any = {
-        game: parseInt(game.gameId)
+        games: Array.isArray(data.gameId) ? data.gameId.join(',') : data.gameId,
+        users: Array.isArray(data.userIds) ? data.userIds.join(',') : data.clientId,
+        currency: 'NGN',
+        settings: {
+          expire: data.duration,
+        },
       }
 
-      if (data.isBonus && data.bonusType == 'free_rounds') {
-        newData.settings = {
+      if (data.bonusType == 'free_rounds') {
+        newData.extra_bonuses = {
           ...newData.settings, 
           extra_bonuses: {
             bonus_spins: {
-              spins_count: 5,
-              bet_in_money: 500
-            },
+              spins_count: data.casinoSpinCount,
+              bet_in_money: data.minimumEntryAmount
+            }
           },
           extra_bonuses_settings: {
-            registration_id: 'test2'
+            registration_id: data.bonusId
           }
         }
       }
 
-      const createBonusPayload: CreateBonusRequest = {
-        clientId: data.clientId,
-        bonusType: 'free_rounds',
-        creditType: data.creditType,
-        duration: data.duration,
-        minimumSelection: data.minimumSelection,
-        minimumOddsPerEvent: data.minimumOddsPerEvent,
-        minimumTotalOdds: data.minimumTotalOdds,
-        applicableBetType: data.applicableBetType,
-        maximumWinning: data.maximumWinning,
-        bonusAmount: data.bonusAmount,
-        minimumLostGames: data.minimumLostGames,
-        rolloverCount: data.rolloverCount,
-        name: data.name,
-        minimumEntryAmount: data.minimumEntryAmount,
-        maxAmount: data.maxAmount,
-        product: data.product,
-        gameId: data.gameId,
-        casinoSpinCount: data.casinoSpinCount,
-        status: 0,
-        created: '',
-        updated: '',
-        id: 0
+      if (data.bonusType == 'feature_trigger') {
+        newData.settings = {
+          ...newData.settings, 
+          extra_bonuses: {
+            freespins_on_start: {
+              freespins_count: data.spins_count,
+              bet_in_money: data.minimumEntryAmount
+            }
+          },
+          extra_bonuses_settings: {
+            registration_id: data.bonusId
+          }
+        }
       }
 
-      console.log("createBonusPayload", createBonusPayload);
-
-      const bonus = await this.bonusService.createBonus(createBonusPayload);
-
-      console.log("bonus", bonus);
-
-      if (!bonus.success) {
-        return {
-          success: false,
-          status: HttpStatus.INTERNAL_SERVER_ERROR,
-          message: 'Error creating bonus from bonus service',
-        };
-      }
+      console.log("newData", newData);
 
       const signature = this.getSignature(
         this.project,
@@ -259,97 +241,112 @@ export class EvoPlayService {
         this.token,
       );
       // $url = $this->project_id."*".$this->version."*".$this->token;
-      const url = `Game/registerBonus?project=${this.project}&version=${this.version}&signature=${signature}&token=${data.token}&game=${newData.game}&currency=NGN&extra_bonuses[bonus_spins][spins_count]=${data.casinoSpinCount}&extra_bonuses[bonus_spins][bet_in_money]=${data.minimumEntryAmount}&settings[registration_id]=${bonus.bonusId}`;
+      let url = `Game/registerBonusBatch?project=${this.project}&version=${this.version}&signature=${signature}&games=${Array.isArray(data.gameId) ? data.gameId.join(',') : data.gameId}&users=${data.clientId}&currency=${newData.currency}`;
+
+      if (data.bonusType == 'free_rounds')
+        url += `&extra_bonuses[bonus_spins][spins_count]=${data.casinoSpinCount}&extra_bonuses[bonus_spins][bet_in_money]=${data.minimumEntryAmount}&settings[registration_id]=${data.bonusId}`;
+
+      if (data.bonusType === 'feature_trigger')
+        url += `&settings[extra_bonuses][freespins_on_start][freespins_count]=${data.casinoSpinCount}&settings[extra_bonuses][freespins_on_start][bet_in_money]=${data.minimumEntryAmount}&settings[extra_bonuses_settings][registration_id]=${data.bonusId}`;
+
+      console.log("url", url);
+
       const response: AxiosResponse = await this.httpClient.axiosRef.get(
         url,
         this.requestConfig,
       );
-      // console.log(response.data.data);
+
+      console.log("response", response.data.data);
+
       return response.data.data;
     } catch (e) {
       console.error(e.message);
     }
   }
 
-  async removeBonus(data, game: GameEntity) {
-    try {
+  // async removeBonus(data, game: GameEntity) {
+  //   try {
 
-      const newData: any = {
-        game: parseInt(game.gameId)
-      }
+  //     const newData: any = {
+  //       game: parseInt(game.gameId)
+  //     }
 
-      if (data.isBonus && data.bonusType == 'free_rounds') {
-        newData.settings = {
-          ...newData.settings, 
-          extra_bonuses: {
-            bonus_spins: {
-              spins_count: 5,
-              bet_in_money: 500
-            },
-          },
-          extra_bonuses_settings: {
-            registration_id: 'test2'
-          }
-        }
-      }
+  //     if (data.isBonus && data.bonusType == 'free_rounds') {
+  //       newData.settings = {
+  //         ...newData.settings, 
+  //         extra_bonuses: {
+  //           bonus_spins: {
+  //             spins_count: 5,
+  //             bet_in_money: 500
+  //           },
+  //         },
+  //         extra_bonuses_settings: {
+  //           registration_id: 'test2'
+  //         }
+  //       }
+  //     }
 
-      const createBonusPayload: CreateBonusRequest = {
-        clientId: data.clientId,
-        bonusType: 'free_rounds',
-        creditType: data.creditType,
-        duration: data.duration,
-        minimumSelection: data.minimumSelection,
-        minimumOddsPerEvent: data.minimumOddsPerEvent,
-        minimumTotalOdds: data.minimumTotalOdds,
-        applicableBetType: data.applicableBetType,
-        maximumWinning: data.maximumWinning,
-        bonusAmount: data.bonusAmount,
-        minimumLostGames: data.minimumLostGames,
-        rolloverCount: data.rolloverCount,
-        name: data.name,
-        minimumEntryAmount: data.minimumEntryAmount,
-        maxAmount: data.maxAmount,
-        product: data.product,
-        gameId: data.gameId,
-        casinoSpinCount: data.casinoSpinCount,
-        status: 0,
-        created: '',
-        updated: '',
-        id: 0
-      }
+  //     const createBonusPayload: CreateBonusRequest = {
+  //       clientId: data.clientId,
+  //       bonusType: 'free_rounds',
+  //       creditType: data.creditType,
+  //       duration: data.duration,
+  //       minimumSelection: data.minimumSelection,
+  //       minimumOddsPerEvent: data.minimumOddsPerEvent,
+  //       minimumTotalOdds: data.minimumTotalOdds,
+  //       applicableBetType: data.applicableBetType,
+  //       maximumWinning: data.maximumWinning,
+  //       bonusAmount: data.bonusAmount,
+  //       minimumLostGames: data.minimumLostGames,
+  //       rolloverCount: data.rolloverCount,
+  //       name: data.name,
+  //       minimumEntryAmount: data.minimumEntryAmount,
+  //       maxAmount: data.maxAmount,
+  //       product: data.product,
+  //       gameId: data.gameId,
+  //       casinoSpinCount: data.casinoSpinCount,
+  //       status: 0,
+  //       created: '',
+  //       updated: '',
+  //       id: 0
+  //     }
 
-      console.log("createBonusPayload", createBonusPayload);
+  //     console.log("createBonusPayload", createBonusPayload);
 
-      const bonus = await this.bonusService.deleteBonus(createBonusPayload);
+  //     const bonus = await this.bonusService.deleteBonus(createBonusPayload);
 
-      console.log("bonus", bonus);
+  //     console.log("bonus", bonus);
 
-      if (!bonus.success) {
-        return {
-          success: false,
-          status: HttpStatus.INTERNAL_SERVER_ERROR,
-          message: 'Error creating bonus from bonus service',
-        };
-      }
+  //     if (!bonus.success) {
+  //       return {
+  //         success: false,
+  //         status: HttpStatus.INTERNAL_SERVER_ERROR,
+  //         message: 'Error creating bonus from bonus service',
+  //       };
+  //     }
 
-      const signature = this.getSignature(
-        this.project,
-        this.version,
-        newData,
-        this.token,
-      );
-      // $url = $this->project_id."*".$this->version."*".$this->token;
-      const url = `Game/registerBonus?project=${this.project}&version=${this.version}&signature=${signature}&token=${data.token}&game=${newData.game}&currency=NGN&extra_bonuses[bonus_spins][spins_count]=${data.casinoSpinCount}&extra_bonuses[bonus_spins][bet_in_money]=${data.minimumEntryAmount}&settings[registration_id]=${data.bonusId}`;
-      const response: AxiosResponse = await this.httpClient.axiosRef.get(
-        url,
-        this.requestConfig,
-      );
-      // console.log(response.data.data);
-      return response.data.data;
-    } catch (e) {
-      console.error(e.message);
-    }
-  }
+  //     const signature = this.getSignature(
+  //       this.project,
+  //       this.version,
+  //       newData,
+  //       this.token,
+  //     );
+  //     // $url = $this->project_id."*".$this->version."*".$this->token;
+  //     const url = `Game/registerBonus?project=${this.project}&version=${this.version}&signature=${signature}&token=${data.token}&game=${newData.game}&currency=NGN&extra_bonuses[bonus_spins][spins_count]=${data.casinoSpinCount}&extra_bonuses[bonus_spins][bet_in_money]=${data.minimumEntryAmount}&settings[registration_id]=${data.bonusId}`;
+  //     const response: AxiosResponse = await this.httpClient.axiosRef.get(
+  //       url,
+  //       this.requestConfig,
+  //     );
+  //     // console.log(response.data.data);
+  //     return response.data.data;
+  //   } catch (e) {
+  //     console.error(e.message);
+  //   }
+  // }
+
+
+
+
 
   // start game here
   async constructGameUrl(data, game: GameEntity) {
@@ -392,7 +389,7 @@ export class EvoPlayService {
             }
           },
           extra_bonuses_settings: {
-            registration_id: 'test2'
+            registration_id: data.bonusId
           }
         }
       }

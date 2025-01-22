@@ -7,6 +7,7 @@ import {
   AddGameToCategoriesDto,
   CallbackGameDto,
   CommonResponse,
+  CreateBonusRequest,
   CreateGameDto,
   CreatePromotionRequest,
   CreateProviderDto,

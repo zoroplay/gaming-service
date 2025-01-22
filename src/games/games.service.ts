@@ -20,6 +20,7 @@ import {
   Categories,
   CommonResponse,
   CommonResponseArray,
+  CreateBonusRequest,
   CreateGameDto,
   CreatePromotionRequest,
   CreateProviderDto,
@@ -33,12 +34,11 @@ import {
   PaginationDto,
   Promotion,
   Promotions,
-  QtechCallbackRequest,
   SaveCategoryRequest,
   StartGameDto,
   SyncGameDto,
   Tournaments,
-  UpdateGameDto,
+  UpdateGameDto
 } from 'src/proto/gaming.pb';
 import {
   C2GamingService,
@@ -47,6 +47,7 @@ import {
   TadaGamingService,
 } from 'src/services';
 
+import { TournamentGame } from 'src/entities/tournament-game.entity';
 import { EntityToProtoService } from 'src/services/entity-to-proto.service';
 import { EvoPlayService } from 'src/services/evo-play.service';
 import { PragmaticService } from 'src/services/pragmatic-play.service';
@@ -54,7 +55,6 @@ import { QtechService } from 'src/services/qtech.service';
 import { FindManyOptions, ILike, In, Repository } from 'typeorm';
 import { Game as GameEntity } from '../entities/game.entity';
 import { Provider as ProviderEntity } from '../entities/provider.entity';
-import { TournamentGame } from 'src/entities/tournament-game.entity';
 
 @Injectable()
 export class GamesService {
@@ -830,7 +830,8 @@ export class GamesService {
       newPromotion.startDate = createPromotionDto.metadata.startDate;
       newPromotion.endDate = createPromotionDto.metadata.endDate;
       newPromotion.targetUrl = createPromotionDto.metadata.targetUrl;
-
+      newPromotion.clientId = createPromotionDto.metadata.clientId;
+  
       // Save the promotion entity to the database
       const savedPromotion = await this.promotionRepository.save(newPromotion);
       console.log('Saved promotion:', savedPromotion);
@@ -1166,5 +1167,18 @@ export class GamesService {
     });
 
     return { message: 'Categories removed successfully' };
+  }
+
+
+  async HandleCasinoBonus(request: CreateBonusRequest): Promise<any> {
+    console.log('Get Balance');
+    const result = await this.evoPlayService.registerBonus(request);
+
+    return {
+      status: 1,
+      description: 'success',
+      success: true,
+      bonusId: result[0].registry_id
+    }
   }
 }
