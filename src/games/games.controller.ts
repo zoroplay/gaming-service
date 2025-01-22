@@ -8,6 +8,7 @@ import {
   AddGameToTournamentDto,
   CallbackGameDto,
   CommonResponse,
+  CreateBonusRequest,
   CreateGameDto,
   CreatePromotionRequest,
   CreateProviderDto,
@@ -25,8 +26,8 @@ import {
   Provider,
   Providers,
   QtechCallbackRequest,
-  QtechRollbackRequest,
-  QtechtransactionRequest,
+  // QtechRollbackRequest,
+  // QtechtransactionRequest,
   SaveCategoryRequest,
   StartGameDto,
   SyncGameDto,
@@ -329,10 +330,10 @@ export class GamesController {
     return this.gamesService.handleQtechGetBalance(payload);
   }
 
-  @GrpcMethod(GAMING_SERVICE_NAME, 'handleQtechTransactionBet')
-  async handleQtechBet(payload: QtechtransactionRequest): Promise<any> {
-    return this.gamesService.handleQtechBet(payload);
-  }
+  // @GrpcMethod(GAMING_SERVICE_NAME, 'handleQtechTransactionBet')
+  // async handleQtechBet(payload: QtechtransactionRequest): Promise<any> {
+  //   return this.gamesService.handleQtechBet(payload);
+  // }
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'addTournamentGame')
   addTournamentGame(payload: AddGameToTournamentDto): Promise<any> {
@@ -346,13 +347,19 @@ export class GamesController {
     return this.gamesService.removeTournamentGames(payload);
   }
 
-  @GrpcMethod(GAMING_SERVICE_NAME, 'handleQtechRollback')
-  async handleQtechRollback(payload: QtechRollbackRequest): Promise<any> {
-    return this.gamesService.handleQtechRollback(payload);
-  }
+  // @GrpcMethod(GAMING_SERVICE_NAME, 'handleQtechRollback')
+  // async handleQtechRollback(payload: QtechRollbackRequest): Promise<any> {
+  //   return this.gamesService.handleQtechRollback(payload);
+  // }
 
-  @GrpcMethod(GAMING_SERVICE_NAME, 'handleQtechTransactionWin')
-  async handleQtechWin(payload: QtechtransactionRequest): Promise<any> {
-    return this.gamesService.handleQtechWin(payload);
+  // @GrpcMethod(GAMING_SERVICE_NAME, 'handleQtechTransactionWin')
+  // async handleQtechWin(payload: QtechtransactionRequest): Promise<any> {
+  //   return this.gamesService.handleQtechWin(payload);
+  // }
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'HandleCasinoBonus')
+  HandleCasinoBonus(payload: CreateBonusRequest): Promise<any> {
+    console.log('handleProviderBonus');
+    return this.gamesService.HandleCasinoBonus(payload);
   }
 }

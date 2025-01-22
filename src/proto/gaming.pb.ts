@@ -6,6 +6,40 @@ import { Struct } from "./google/protobuf/struct.pb";
 
 export const protobufPackage = "gaming";
 
+export interface CreateBonusRequest {
+  clientId: number;
+  bonusType: string;
+  creditType: string;
+  duration: number;
+  minimumSelection: number;
+  minimumOddsPerEvent: number;
+  minimumTotalOdds: number;
+  applicableBetType: string;
+  maximumWinning: number;
+  bonusAmount: number;
+  status?: number | undefined;
+  created?: string | undefined;
+  updated?: string | undefined;
+  id?: number | undefined;
+  minimumLostGames: number;
+  rolloverCount: number;
+  name: string;
+  minimumEntryAmount: number;
+  maxAmount: number;
+  product: string;
+  gameId: string[];
+  casinoSpinCount?: number | undefined;
+  providerId?: number | undefined;
+  bonusId?: number | undefined;
+}
+
+export interface CreateBonusResponse {
+  bonusId: number;
+  status: number;
+  description: string;
+  success: boolean;
+}
+
 export interface QtechCallbackRequest {
   clientId: number;
   playerId: string;
@@ -14,70 +48,6 @@ export interface QtechCallbackRequest {
   walletSessionId: string;
   body?: string | undefined;
   action: string;
-}
-
-
-export interface QtechRollbackResponse {
-  success: boolean;
-  message: string;
-  status?: number | undefined;
-  data: { [key: string]: any } | undefined;
-}
-
-export interface QtechRollbackRequest {
-  /** Headers */
-  walletSessionId: string;
-  passKey: string;
-  /** Required Parameters */
-  betId: string;
-  txnId: string;
-  playerId: string;
-  roundId: string;
-  amount: number;
-  currency: string;
-  clientId: number;
-  gameId: string;
-  body?: string | undefined;
-}
-
-export interface QtechtransactionRequest {
-  /** Headers */
-  walletSessionId: string;
-  passKey: string;
-  /** Required Parameters */
-  txnType: string;
-  txnId: string;
-  playerId: string;
-  roundId: string;
-  amount: number;
-  currency: string;
-  clientId: number;
-  gameId: string;
-  body?: string | undefined;
-}
-
-export interface QtechDepositTransactionResponse {
-  success: boolean;
-  message: string;
-  status?: number | undefined;
-  data: { [key: string]: any } | undefined;
-}
-
-/** Rollback can use this to update wallet */
-export interface QtechWinTransactionResponse {
-  /** Headers */
-  walletSessionId: string;
-  passKey: string;
-  /** Required Parameters */
-  txnType: string;
-  txnId: string;
-  playerId: string;
-  roundId: string;
-  amount: number;
-  currency: string;
-  clientId: number;
-  gameId: string;
-  body?: string | undefined;
 }
 
 export interface AddGameToCategoriesResponse {
@@ -483,7 +453,7 @@ export interface Promotion {
   endDate: string;
   status: string;
   targetUrl?: string | undefined;
-  clientId: string;
+  clientId: number;
 }
 
 export interface CreatePromotionDto {
@@ -496,7 +466,7 @@ export interface CreatePromotionDto {
   type: string;
   targetUrl?: string | undefined;
   file?: string | undefined;
-  clientId?: string | undefined;
+  clientId: number;
 }
 
 export interface CreatePromotionRequest {
@@ -645,6 +615,8 @@ export interface GamingServiceClient {
 
   removePromotion(request: FindOnePromotionDto): Observable<Empty>;
 
+  handleCasinoBonus(request: CreateBonusRequest): Observable<CreateBonusResponse>;
+
   startGame(request: StartGameDto): Observable<StartGameResponse>;
 
   queryGames(request: Observable<PaginationDto>): Observable<Games>;
@@ -653,14 +625,6 @@ export interface GamingServiceClient {
 
   handleQtechCallback(request: QtechCallbackRequest): Observable<CallbackResponse>;
 
-  handleQtechGetBalance(request: QtechCallbackRequest): Observable<CallbackResponse>;
-
-  handleQtechTransactionBet(request: QtechtransactionRequest): Observable<QtechDepositTransactionResponse>;
-
-  handleQtechTransactionWin(request: QtechtransactionRequest): Observable<QtechDepositTransactionResponse>;
-
-  handleQtechRollback(request: QtechRollbackRequest): Observable<QtechRollbackResponse>;
-  
   xpressLogin(request: XpressRequest): Observable<XpressResponse>;
 
   xpressBalance(request: XpressRequest): Observable<XpressResponse>;
@@ -747,6 +711,10 @@ export interface GamingServiceController {
 
   removePromotion(request: FindOnePromotionDto): Promise<Empty> | Observable<Empty> | Empty;
 
+  handleCasinoBonus(
+    request: CreateBonusRequest,
+  ): Promise<CreateBonusResponse> | Observable<CreateBonusResponse> | CreateBonusResponse;
+
   startGame(request: StartGameDto): Promise<StartGameResponse> | Observable<StartGameResponse> | StartGameResponse;
 
   queryGames(request: Observable<PaginationDto>): Observable<Games>;
@@ -756,28 +724,6 @@ export interface GamingServiceController {
   handleQtechCallback(
     request: QtechCallbackRequest,
   ): Promise<CallbackResponse> | Observable<CallbackResponse> | CallbackResponse;
-
-  handleQtechGetBalance(
-    request: QtechCallbackRequest,
-  ): Promise<CallbackResponse> | Observable<CallbackResponse> | CallbackResponse;
-
-  handleQtechTransactionBet(
-    request: QtechtransactionRequest,
-  ):
-    | Promise<QtechDepositTransactionResponse>
-    | Observable<QtechDepositTransactionResponse>
-    | QtechDepositTransactionResponse;
-
-  handleQtechTransactionWin(
-    request: QtechtransactionRequest,
-  ):
-    | Promise<QtechDepositTransactionResponse>
-    | Observable<QtechDepositTransactionResponse>
-    | QtechDepositTransactionResponse;
-
-  handleQtechRollback(
-    request: QtechRollbackRequest,
-  ): Promise<QtechRollbackResponse> | Observable<QtechRollbackResponse> | QtechRollbackResponse;
 
   xpressLogin(request: XpressRequest): Promise<XpressResponse> | Observable<XpressResponse> | XpressResponse;
 
@@ -829,14 +775,10 @@ export function GamingServiceControllerMethods() {
       "findOnePromotion",
       "updatePromotion",
       "removePromotion",
+      "handleCasinoBonus",
       "startGame",
       "handleCallback",
       "handleQtechCallback",
-
-      "handleQtechGetBalance",
-      "handleQtechTransactionBet",
-      "handleQtechTransactionWin",
-      "handleQtechRollback",
       "xpressLogin",
       "xpressBalance",
       "xpressDebit",

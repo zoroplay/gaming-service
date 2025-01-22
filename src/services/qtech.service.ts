@@ -19,8 +19,8 @@ import {
 } from '../entities';
 import {
   QtechCallbackRequest,
-  QtechRollbackRequest,
-  QtechtransactionRequest,
+  // QtechRollbackRequest,
+  // QtechtransactionRequest,
   StartGameDto,
 } from 'src/proto/gaming.pb';
 import {
@@ -535,281 +535,281 @@ export class QtechService {
       console.log('Error saving callback log', e.message);
     }
   }
-  async bet(payload: QtechtransactionRequest): Promise<any> {
-    try {
-      const { playerId, amount, gameId, clientId, roundId, txnId } = payload;
+  // async bet(payload: QtechtransactionRequest): Promise<any> {
+  //   try {
+  //     const { playerId, amount, gameId, clientId, roundId, txnId } = payload;
 
-      const trx = uuidv4();
+  //     const trx = uuidv4();
 
-      console.log('gameId:', gameId);
+  //     console.log('gameId:', gameId);
 
-      // Validate gameId
-      if (!gameId || isNaN(Number(gameId))) {
-        console.error('Invalid gameId:', gameId);
-        return {
-          success: false,
-          status: HttpStatus.BAD_REQUEST,
-          message: 'Invalid gameId. It must be a valid number.',
-          data: {},
-        };
-      }
+  //     // Validate gameId
+  //     if (!gameId || isNaN(Number(gameId))) {
+  //       console.error('Invalid gameId:', gameId);
+  //       return {
+  //         success: false,
+  //         status: HttpStatus.BAD_REQUEST,
+  //         message: 'Invalid gameId. It must be a valid number.',
+  //         data: {},
+  //       };
+  //     }
 
-      // Check if the game exists
-      const gameExist = await this.gameRepository.findOne({
-        where: { id: Number(gameId) },
-        relations: { provider: true },
-      });
+  //     // Check if the game exists
+  //     const gameExist = await this.gameRepository.findOne({
+  //       where: { id: Number(gameId) },
+  //       relations: { provider: true },
+  //     });
 
-      if (!gameExist) {
-        return {
-          success: false,
-          status: HttpStatus.BAD_REQUEST,
-          message: `Game with id ${gameId} not found`,
-          data: {},
-        };
-      }
+  //     if (!gameExist) {
+  //       return {
+  //         success: false,
+  //         status: HttpStatus.BAD_REQUEST,
+  //         message: `Game with id ${gameId} not found`,
+  //         data: {},
+  //       };
+  //     }
 
-      console.log('Game found:', gameExist);
+  //     console.log('Game found:', gameExist);
 
-      // Fetch wallet details
-      const getWallet = await this.walletService.getWallet({
-        userId: Number(playerId),
-        clientId,
-      });
+  //     // Fetch wallet details
+  //     const getWallet = await this.walletService.getWallet({
+  //       userId: Number(playerId),
+  //       clientId,
+  //     });
 
-      console.log('GET DEBIT WALLET', getWallet);
+  //     console.log('GET DEBIT WALLET', getWallet);
 
-      if (!getWallet || !getWallet.status) {
-        return {
-          success: false,
-          status: HttpStatus.BAD_REQUEST,
-          message: 'Invalid auth code, please login to try again',
-          data: {},
-        };
-      }
+  //     if (!getWallet || !getWallet.status) {
+  //       return {
+  //         success: false,
+  //         status: HttpStatus.BAD_REQUEST,
+  //         message: 'Invalid auth code, please login to try again',
+  //         data: {},
+  //       };
+  //     }
 
-      const walletData =
-        typeof getWallet.data.availableBalance === 'string'
-          ? JSON.parse(getWallet.data.availableBalance)
-          : getWallet.data.availableBalance;
+  //     const walletData =
+  //       typeof getWallet.data.availableBalance === 'string'
+  //         ? JSON.parse(getWallet.data.availableBalance)
+  //         : getWallet.data.availableBalance;
 
-      console.log('Wallet data:', walletData);
+  //     console.log('Wallet data:', walletData);
 
-      // Check if the user has enough balance
-      if (walletData.availableBalance < amount) {
-        return {
-          success: false,
-          status: HttpStatus.BAD_REQUEST,
-          message: 'Insufficient balance to place this bet',
-          data: {},
-        };
-      }
+  //     // Check if the user has enough balance
+  //     if (walletData.availableBalance < amount) {
+  //       return {
+  //         success: false,
+  //         status: HttpStatus.BAD_REQUEST,
+  //         message: 'Insufficient balance to place this bet',
+  //         data: {},
+  //       };
+  //     }
 
-      // Prepare payload for placing bet
-      const placeBetPayload: PlaceCasinoBetRequest = {
-        userId: Number(playerId),
-        clientId,
-        username: playerId,
-        roundId,
-        transactionId: txnId,
-        gameId: gameId.toString(),
-        stake: amount,
-        gameName: gameExist?.title || '',
-        gameNumber: gameExist?.gameId || '',
-        source: gameExist?.provider?.slug || '',
-        winnings: 0,
-        roundDetails: parseInt(roundId, 10),
-      };
+  //     // Prepare payload for placing bet
+  //     const placeBetPayload: PlaceCasinoBetRequest = {
+  //       userId: Number(playerId),
+  //       clientId,
+  //       username: playerId,
+  //       roundId,
+  //       transactionId: txnId,
+  //       gameId: gameId.toString(),
+  //       stake: amount,
+  //       gameName: gameExist?.title || '',
+  //       gameNumber: gameExist?.gameId || '',
+  //       source: gameExist?.provider?.slug || '',
+  //       winnings: 0,
+  //       roundDetails: parseInt(roundId, 10),
+  //     };
 
-      console.log('placeBetPayload:', placeBetPayload);
+  //     console.log('placeBetPayload:', placeBetPayload);
 
-      // Place the bet
-      const place_bet = await this.placeBet(placeBetPayload);
-      if (!place_bet.success) {
-        return {
-          success: false,
-          status: HttpStatus.INTERNAL_SERVER_ERROR,
-          message: 'Place bet unsuccessful',
-          data: {},
-        };
-      }
+  //     // Place the bet
+  //     const place_bet = await this.placeBet(placeBetPayload);
+  //     if (!place_bet.success) {
+  //       return {
+  //         success: false,
+  //         status: HttpStatus.INTERNAL_SERVER_ERROR,
+  //         message: 'Place bet unsuccessful',
+  //         data: {},
+  //       };
+  //     }
 
-      // Debit the wallet
-      const debit = await this.walletService.debit({
-        userId: Number(playerId),
-        clientId: 4,
-        amount: amount.toString(),
-        source: gameExist?.provider?.slug || 'Casino',
-        description: `Casino Bet: (${gameExist?.title}:${trx})`,
-        username: playerId,
-        wallet: 'balance',
-        subject: 'Bet Deposit (Casino)',
-        channel: 'web',
-      });
-      let callback;
+  //     // Debit the wallet
+  //     const debit = await this.walletService.debit({
+  //       userId: Number(playerId),
+  //       clientId: 4,
+  //       amount: amount.toString(),
+  //       source: gameExist?.provider?.slug || 'Casino',
+  //       description: `Casino Bet: (${gameExist?.title}:${trx})`,
+  //       username: playerId,
+  //       wallet: 'balance',
+  //       subject: 'Bet Deposit (Casino)',
+  //       channel: 'web',
+  //     });
+  //     let callback;
 
-      // eslint-disable-next-line prefer-const
-      callback = new CallbackLog();
-      callback.transactionId = txnId;
-      callback.request_type = 'Qtech-bet';
-      callback.payload = txnId;
+  //     // eslint-disable-next-line prefer-const
+  //     callback = new CallbackLog();
+  //     callback.transactionId = txnId;
+  //     callback.request_type = 'Qtech-bet';
+  //     callback.payload = txnId;
 
-      console.log('saved-callback', callback);
+  //     console.log('saved-callback', callback);
 
-      await this.callbackLogRepository.save(callback);
+  //     await this.callbackLogRepository.save(callback);
 
-      console.log('debit:', debit);
+  //     console.log('debit:', debit);
 
-      if (!debit.success) {
-        return {
-          success: false,
-          status: HttpStatus.BAD_REQUEST,
-          message: 'Error debiting user wallet',
-          data: {},
-        };
-      }
+  //     if (!debit.success) {
+  //       return {
+  //         success: false,
+  //         status: HttpStatus.BAD_REQUEST,
+  //         message: 'Error debiting user wallet',
+  //         data: {},
+  //       };
+  //     }
 
-      // Fetch updated wallet details
-      const updatedWallet = await this.walletService.getWallet({
-        userId: Number(playerId),
-        clientId,
-      });
+  //     // Fetch updated wallet details
+  //     const updatedWallet = await this.walletService.getWallet({
+  //       userId: Number(playerId),
+  //       clientId,
+  //     });
 
-      const updatedWalletData =
-        typeof updatedWallet.data === 'string'
-          ? JSON.parse(updatedWallet.data)
-          : updatedWallet.data;
+  //     const updatedWalletData =
+  //       typeof updatedWallet.data === 'string'
+  //         ? JSON.parse(updatedWallet.data)
+  //         : updatedWallet.data;
 
-      console.log('Updated wallet data:', updatedWalletData.availableBalance);
+  //     console.log('Updated wallet data:', updatedWalletData.availableBalance);
 
-      const balance = updatedWalletData.availableBalance;
-      const referenceId = trx;
+  //     const balance = updatedWalletData.availableBalance;
+  //     const referenceId = trx;
 
-      const response = this.createSBetuccessResponse({ balance, referenceId });
+  //     const response = this.createSBetuccessResponse({ balance, referenceId });
 
-      console.log('THAT REAL RES', response);
-      console.log('THAT REAL RES', response.data);
-      return response;
-    } catch (error) {
-      console.error('Error in Placing bet:', error.message);
-      throw new RpcException(
-        error.response?.data?.message || 'Bet placement failed',
-      );
-    }
-  }
+  //     console.log('THAT REAL RES', response);
+  //     console.log('THAT REAL RES', response.data);
+  //     return response;
+  //   } catch (error) {
+  //     console.error('Error in Placing bet:', error.message);
+  //     throw new RpcException(
+  //       error.response?.data?.message || 'Bet placement failed',
+  //     );
+  //   }
+  // }
 
-  async win(payload: QtechtransactionRequest): Promise<any> {
-    console.log('Processing win method...');
+  // async win(payload: QtechtransactionRequest): Promise<any> {
+  //   console.log('Processing win method...');
 
-    const { playerId, amount, gameId, clientId } = payload;
-    const trx = uuidv4();
+  //   const { playerId, amount, gameId, clientId } = payload;
+  //   const trx = uuidv4();
 
-    console.log('gameId:', gameId);
+  //   console.log('gameId:', gameId);
 
-    try {
-      // Validate gameId
-      if (!gameId || isNaN(Number(gameId))) {
-        console.error('Invalid gameId:', gameId);
-        throw new Error('Invalid gameId. It must be a valid number.');
-      }
+  //   try {
+  //     // Validate gameId
+  //     if (!gameId || isNaN(Number(gameId))) {
+  //       console.error('Invalid gameId:', gameId);
+  //       throw new Error('Invalid gameId. It must be a valid number.');
+  //     }
 
-      // Check if the game exists
-      const gameExist = await this.gameRepository.findOne({
-        where: { id: Number(gameId) },
-        relations: { provider: true },
-      });
+  //     // Check if the game exists
+  //     const gameExist = await this.gameRepository.findOne({
+  //       where: { id: Number(gameId) },
+  //       relations: { provider: true },
+  //     });
 
-      if (!gameExist) {
-        return {
-          success: false,
-          status: HttpStatus.BAD_REQUEST,
-          message: `Game with id ${gameId} not found`,
-          data: {},
-        };
-      }
+  //     if (!gameExist) {
+  //       return {
+  //         success: false,
+  //         status: HttpStatus.BAD_REQUEST,
+  //         message: `Game with id ${gameId} not found`,
+  //         data: {},
+  //       };
+  //     }
 
-      console.log('Game found:', gameExist);
+  //     console.log('Game found:', gameExist);
 
-      // Fetch wallet details
-      const getWallet = await this.walletService.getWallet({
-        userId: Number(playerId),
-        clientId,
-      });
+  //     // Fetch wallet details
+  //     const getWallet = await this.walletService.getWallet({
+  //       userId: Number(playerId),
+  //       clientId,
+  //     });
 
-      if (!getWallet || !getWallet.status) {
-        return {
-          success: false,
-          status: HttpStatus.BAD_REQUEST,
-          message: 'Invalid auth code, please login to try again',
-          data: {},
-        };
-      }
-      console.log('GET WIN WALLET', getWallet);
+  //     if (!getWallet || !getWallet.status) {
+  //       return {
+  //         success: false,
+  //         status: HttpStatus.BAD_REQUEST,
+  //         message: 'Invalid auth code, please login to try again',
+  //         data: {},
+  //       };
+  //     }
+  //     console.log('GET WIN WALLET', getWallet);
 
-      const walletData =
-        typeof getWallet.data === 'string'
-          ? JSON.parse(getWallet.data)
-          : getWallet.data;
+  //     const walletData =
+  //       typeof getWallet.data === 'string'
+  //         ? JSON.parse(getWallet.data)
+  //         : getWallet.data;
 
-      console.log('Wallet data:', walletData);
+  //     console.log('Wallet data:', walletData);
 
-      // Credit winnings to the wallet
-      const creditResponse = await this.walletService.credit({
-        userId: Number(playerId),
-        clientId,
-        amount: amount,
-        source: gameExist.provider.slug,
-        description: `Casino Bet: (${gameExist.title})`,
-        username: playerId,
-        wallet: 'balance',
-        subject: 'Bet Win (Casino)',
-        channel: gameExist.type,
-      });
+  //     // Credit winnings to the wallet
+  //     const creditResponse = await this.walletService.credit({
+  //       userId: Number(playerId),
+  //       clientId,
+  //       amount: amount,
+  //       source: gameExist.provider.slug,
+  //       description: `Casino Bet: (${gameExist.title})`,
+  //       username: playerId,
+  //       wallet: 'balance',
+  //       subject: 'Bet Win (Casino)',
+  //       channel: gameExist.type,
+  //     });
 
-      if (!creditResponse.success) {
-        return this.createErrorResponse(
-          'Failed to credit winnings to the wallet',
-          HttpStatus.INTERNAL_SERVER_ERROR,
-        );
-      }
+  //     if (!creditResponse.success) {
+  //       return this.createErrorResponse(
+  //         'Failed to credit winnings to the wallet',
+  //         HttpStatus.INTERNAL_SERVER_ERROR,
+  //       );
+  //     }
 
-      console.log('Winnings credited successfully:', creditResponse);
+  //     console.log('Winnings credited successfully:', creditResponse);
 
-      // Fetch updated wallet details
-      const updatedWallet = await this.walletService.getWallet({
-        userId: Number(playerId),
-        clientId,
-      });
+  //     // Fetch updated wallet details
+  //     const updatedWallet = await this.walletService.getWallet({
+  //       userId: Number(playerId),
+  //       clientId,
+  //     });
 
-      if (!updatedWallet.success) {
-        return this.createErrorResponse(
-          'Failed to retrieve updated wallet details',
-          HttpStatus.INTERNAL_SERVER_ERROR,
-        );
-      }
+  //     if (!updatedWallet.success) {
+  //       return this.createErrorResponse(
+  //         'Failed to retrieve updated wallet details',
+  //         HttpStatus.INTERNAL_SERVER_ERROR,
+  //       );
+  //     }
 
-      const updatedWalletData =
-        typeof updatedWallet.data.availableBalance === 'string'
-          ? JSON.parse(updatedWallet.data.availableBalance)
-          : updatedWallet.data.availableBalance;
+  //     const updatedWalletData =
+  //       typeof updatedWallet.data.availableBalance === 'string'
+  //         ? JSON.parse(updatedWallet.data.availableBalance)
+  //         : updatedWallet.data.availableBalance;
 
-      console.log('Updated wallet details:', updatedWalletData);
+  //     console.log('Updated wallet details:', updatedWalletData);
 
-      const balance = updatedWalletData;
-      const referenceId = trx;
+  //     const balance = updatedWalletData;
+  //     const referenceId = trx;
 
-      const response = this.createSBetuccessResponse({ balance, referenceId });
+  //     const response = this.createSBetuccessResponse({ balance, referenceId });
 
-      console.log('QTECH WIN', response);
+  //     console.log('QTECH WIN', response);
 
-      return response;
-    } catch (error) {
-      console.error('Error in win method:', error.message);
-      throw new RpcException(
-        error.message || 'An unexpected error occurred during win processing.',
-      );
-    }
-  }
+  //     return response;
+  //   } catch (error) {
+  //     console.error('Error in win method:', error.message);
+  //     throw new RpcException(
+  //       error.message || 'An unexpected error occurred during win processing.',
+  //     );
+  //   }
+  // }
 
   private async getPlayerFromSession(walletSessionId: string): Promise<any> {
     // Fetch player details using walletSessionId
@@ -840,119 +840,119 @@ export class QtechService {
     return await firstValueFrom(this.betService.cancelCasinoBet(data));
   }
 
-  async refund(Payload: QtechRollbackRequest) {
-    const { txnId, gameId, clientId, playerId } = Payload;
+  // async refund(Payload: QtechRollbackRequest) {
+  //   const { txnId, gameId, clientId, playerId } = Payload;
 
-    console.log('reversePayload');
+  //   console.log('reversePayload');
 
-    // Find original transaction
-    const callbackLog = await this.callbackLogRepository.findOne({
-      where: { transactionId: txnId, request_type: 'Qtech-bet' },
-    });
+  //   // Find original transaction
+  //   const callbackLog = await this.callbackLogRepository.findOne({
+  //     where: { transactionId: txnId, request_type: 'Qtech-bet' },
+  //   });
 
-    if (!callbackLog) {
-      console.log('Callback log not found');
-      return {
-        success: true,
-        message: 'Refund Unsuccessful',
-        status: HttpStatus.OK,
-        data: {
-          transactionId: 0,
-          error: 0,
-          description: `Unsuccessful rollback`,
-        },
-      };
-    }
+  //   if (!callbackLog) {
+  //     console.log('Callback log not found');
+  //     return {
+  //       success: true,
+  //       message: 'Refund Unsuccessful',
+  //       status: HttpStatus.OK,
+  //       data: {
+  //         transactionId: 0,
+  //         error: 0,
+  //         description: `Unsuccessful rollback`,
+  //       },
+  //     };
+  //   }
 
-    const callbackPayload = JSON.parse(callbackLog.payload);
+  //   const callbackPayload = JSON.parse(callbackLog.payload);
 
-    // Check if the game exists
-    const gameExist = await this.gameRepository.findOne({
-      where: { gameId },
-      relations: { provider: true },
-    });
-    console.log('Game retrieved from DB:', gameExist);
+  //   // Check if the game exists
+  //   const gameExist = await this.gameRepository.findOne({
+  //     where: { gameId },
+  //     relations: { provider: true },
+  //   });
+  //   console.log('Game retrieved from DB:', gameExist);
 
-    if (!gameExist) {
-      return {
-        success: false,
-        status: HttpStatus.BAD_REQUEST,
-        message: `Game with id ${gameId} not Found`,
-        data: {},
-      };
-    }
+  //   if (!gameExist) {
+  //     return {
+  //       success: false,
+  //       status: HttpStatus.BAD_REQUEST,
+  //       message: `Game with id ${gameId} not Found`,
+  //       data: {},
+  //     };
+  //   }
 
-    // Perform the rollback request
-    const rollbackRequest: RollbackCasinoBetRequest = { transactionId: txnId };
-    const transaction = await this.rollback(rollbackRequest);
+  //   // Perform the rollback request
+  //   const rollbackRequest: RollbackCasinoBetRequest = { transactionId: txnId };
+  //   const transaction = await this.rollback(rollbackRequest);
 
-    if (!transaction.success) {
-      console.log('Transaction error during rollback');
-      return {
-        success: true,
-        message: 'Refund Unsuccessful',
-        status: HttpStatus.OK,
-        data: {
-          transactionId: 0,
-          error: 0,
-          description: `Unsuccessful rollback`,
-        },
-      };
-    }
+  //   if (!transaction.success) {
+  //     console.log('Transaction error during rollback');
+  //     return {
+  //       success: true,
+  //       message: 'Refund Unsuccessful',
+  //       status: HttpStatus.OK,
+  //       data: {
+  //         transactionId: 0,
+  //         error: 0,
+  //         description: `Unsuccessful rollback`,
+  //       },
+  //     };
+  //   }
 
-    // Credit the wallet
-    const rollbackWalletRes = await this.walletService.credit({
-      userId: playerId,
-      clientId,
-      amount: callbackPayload.amount,
-      source: gameExist.provider.slug,
-      description: `Bet Cancelled: (${gameExist.title})`,
-      username: playerId,
-      wallet: 'balance',
-      subject: 'Bet refund (Casino)',
-      channel: gameExist.title,
-    });
+  //   // Credit the wallet
+  //   const rollbackWalletRes = await this.walletService.credit({
+  //     userId: playerId,
+  //     clientId,
+  //     amount: callbackPayload.amount,
+  //     source: gameExist.provider.slug,
+  //     description: `Bet Cancelled: (${gameExist.title})`,
+  //     username: playerId,
+  //     wallet: 'balance',
+  //     subject: 'Bet refund (Casino)',
+  //     channel: gameExist.title,
+  //   });
 
-    const getWallet = await this.walletService.getWallet({
-      userId: Number(playerId),
-      clientId,
-    });
+  //   const getWallet = await this.walletService.getWallet({
+  //     userId: Number(playerId),
+  //     clientId,
+  //   });
 
-    const walletData =
-      typeof getWallet.data === 'string'
-        ? JSON.parse(getWallet.data)
-        : getWallet.data;
+  //   const walletData =
+  //     typeof getWallet.data === 'string'
+  //       ? JSON.parse(getWallet.data)
+  //       : getWallet.data;
 
-    console.log('Wallet data:', walletData);
+  //   console.log('Wallet data:', walletData);
 
-    console.log('rollbackWalletRes', rollbackWalletRes);
+  //   console.log('rollbackWalletRes', rollbackWalletRes);
 
-    if (!rollbackWalletRes.success) {
-      console.log('Wallet credit operation failed');
-      return {
-        success: true,
-        message: 'Refund Unsuccessful',
-        status: HttpStatus.OK,
-        data: {
-          balance: walletData.data.availableBalance,
-          error: 0,
-          description: `Unsuccessful rollback`,
-        },
-      };
-    }
+  //   if (!rollbackWalletRes.success) {
+  //     console.log('Wallet credit operation failed');
+  //     return {
+  //       success: true,
+  //       message: 'Refund Unsuccessful',
+  //       status: HttpStatus.OK,
+  //       data: {
+  //         balance: walletData.data.availableBalance,
+  //         error: 0,
+  //         description: `Unsuccessful rollback`,
+  //       },
+  //     };
+  //   }
 
-    // Refund successful response
-    return {
-      success: true,
-      message: 'Refund Successful',
-      status: HttpStatus.OK,
-      data: {
-        transactionId: transaction.data.transactionId,
-        error: 0,
-        description: 'Successful',
-      },
-    };
-  }
+  //   // Refund successful response
+  //   return {
+  //     success: true,
+  //     message: 'Refund Successful',
+  //     status: HttpStatus.OK,
+  //     data: {
+  //       transactionId: transaction.data.transactionId,
+  //       error: 0,
+  //       description: 'Successful',
+  //     },
+  //   };
+  // }
 
   async handleQTGamesCallback(_data: QtechCallbackRequest): Promise<any> {
     console.log('_data', _data);
