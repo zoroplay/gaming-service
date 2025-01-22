@@ -1249,7 +1249,7 @@ export class GamesService {
       status: 1,
       description: 'success',
       success: true,
-      bonusId: result.registry_id
+      bonusId: result[0].registry_id
     }
   }
 }
