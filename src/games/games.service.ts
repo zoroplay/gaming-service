@@ -21,7 +21,6 @@ import {
   CommonResponse,
   CommonResponseArray,
   CreateGameDto,
-  CreatePromotionDto,
   CreatePromotionRequest,
   CreateProviderDto,
   CreateTournamentDto,
@@ -35,8 +34,6 @@ import {
   Promotion,
   Promotions,
   QtechCallbackRequest,
-  QtechRollbackRequest,
-  QtechtransactionRequest,
   SaveCategoryRequest,
   StartGameDto,
   SyncGameDto,
@@ -762,7 +759,7 @@ export class GamesService {
   }
 
   async handleGamesCallback(_data: CallbackGameDto): Promise<any> {
-    console.log('_data', _data);
+    // console.log('_data', _data);
     switch (_data.provider) {
       case 'shack-evolution':
         return await this.handleC2Games(_data.body, _data.header);
@@ -789,10 +786,6 @@ export class GamesService {
       case 'pragmatic-play':
         console.log('using pragmatic-play');
         return await this.pragmaticPlayService.handleCallback(_data);
-
-      // case 'qtech-games':
-      //   console.log('using qtech-games');
-      //   return await this.qtechService.handleCallback(_data);
       default:
         throw new NotFoundException('Unknown provider');
     }
@@ -802,83 +795,21 @@ export class GamesService {
     // return gameList;
   }
 
-  async handleQtechCallback(request: QtechCallbackRequest): Promise<any> {
-    console.log('start-service', request);
-    // //(request);
-    const resp = await this.qtechService.handleQTGamesCallback(request);
-    console.log('resp', resp);
-
-    return resp;
-  }
-
-  async handleQtechRollback(request: QtechRollbackRequest): Promise<any> {
-    console.log('Start Game service Roll back');
-
-    const resp = await this.qtechService.refund(request);
-
-    return resp;
-  }
-
-  async handleQtechGetBalance(request: QtechCallbackRequest): Promise<any> {
-    console.log('Get Balance');
-    const result = await this.qtechService.getBalance(request);
-
-    return result;
-  }
-
-  async handleQtechBet(request: QtechtransactionRequest): Promise<any> {
-    try {
-      console.log('Bet Balance');
-      const result = await this.qtechService.bet(request);
-      console.log('Game-Game', result);
-      return result;
-    } catch (error) {
-      console.log('THIS', error);
-    }
-  }
-
-  async handleQtechWin(request: QtechtransactionRequest): Promise<any> {
-    console.log('Win Balance');
-    const result = await this.qtechService.win(request);
-    console.log(result);
-    return result;
-  }
-
   async handleC2Games(body: any, headers: any): Promise<any> {
     console.log(body);
     console.log(headers);
     throw new Error('Method not implemented.');
   }
 
-
-  // async createPromotion(
-  //   createPromotionDto: CreatePromotionDto,
-  // ): Promise<Promotion> {
-  //   console.log('createPromotionDto', createPromotionDto);
-  //   const newPromotion: Promotion = new PromotionEntity();
-
-  //   newPromotion.title = createPromotionDto.title;
-  //   newPromotion.imageUrl = createPromotionDto.imageUrl;
-  //   newPromotion.content = createPromotionDto.content;
-  //   newPromotion.type = createPromotionDto.type;
-  //   newPromotion.endDate = createPromotionDto.endDate;
-  //   newPromotion.startDate = createPromotionDto.startDate;
-
-  //   const savedPromotion = await this.promotionRepository.save(newPromotion);
-  //   console.log('savedPromotion', savedPromotion);
-  //   return savedPromotion;
-  // }
-
   async createPromotion(
-    createPromotionDto: CreatePromotionRequest
+    createPromotionDto: CreatePromotionRequest,
   ): Promise<Promotion> {
     console.log('createPromotionDto service', createPromotionDto);
-  
-  
+
     // Define the folder and file name for the image in Firebase
     const folderName = 'promotions'; // Example: folder to store promotion images
     const fileName = `${Date.now()}_uploaded-file`; // Unique file name
-  
+
     try {
       // Upload the file to Firebase and get the public URL
       const imageUrl = await this.firebaseService.uploadFileToFirebase(
@@ -886,24 +817,24 @@ export class GamesService {
         fileName,
         createPromotionDto.file,
       );
-  
+
       console.log('Uploaded image URL:', imageUrl);
-  
+
       // Create a new promotion entity and assign values
-      const newPromotion: Promotion = new PromotionEntity();
-  
+      const newPromotion: any = new PromotionEntity();
+
       newPromotion.title = createPromotionDto.metadata.title;
-      newPromotion.imageUrl = imageUrl || ''; // Assign the uploaded image URL
+      newPromotion.imageUrl = imageUrl || createPromotionDto.metadata.content; // Assign the uploaded image URL
       newPromotion.content = createPromotionDto.metadata.content;
       newPromotion.type = createPromotionDto.metadata.type;
       newPromotion.startDate = createPromotionDto.metadata.startDate;
       newPromotion.endDate = createPromotionDto.metadata.endDate;
       newPromotion.targetUrl = createPromotionDto.metadata.targetUrl;
-  
+
       // Save the promotion entity to the database
       const savedPromotion = await this.promotionRepository.save(newPromotion);
       console.log('Saved promotion:', savedPromotion);
-  
+
       return savedPromotion;
     } catch (error) {
       console.error('Error creating promotion:', error.message);
@@ -911,7 +842,7 @@ export class GamesService {
     }
   }
 
-  async findOnePromotion(request: FindOnePromotionDto): Promise<Promotion> {
+  async findOnePromotion(request: FindOnePromotionDto): Promise<any> {
     const { id } = request;
     console.log('id', id);
     const promotion = await this.promotionRepository.findOne({
@@ -924,7 +855,7 @@ export class GamesService {
     return promotion;
   }
 
-  async fetchPromotions(): Promise<Promotions> {
+  async fetchPromotions(): Promise<any> {
     const promotions = await this.promotionRepository.find();
     console.log('promotions', promotions);
     return { data: promotions };
@@ -932,51 +863,54 @@ export class GamesService {
 
   async updatePromotion(
     updatePromotionDto: CreatePromotionRequest,
-  ): Promise<Promotion> {
-    console.log("updatePromotionDto", updatePromotionDto);
-    const { id } = updatePromotionDto.metadata;
-
+  ): Promise<any> {
+    const { id } = updatePromotionDto;
+  
     // Find the promotion by ID
     const promotion = await this.promotionRepository.findOneBy({ id });
-
-    console.log("promotion", promotion);
-
-    if (!promotion) {
-      throw new Error(`Promotion with ID ${updatePromotionDto.id} not found`);
-    }
-
-    // Define the folder and file name for the image in Firebase
-    const folderName = 'promotions'; // Example: folder to store promotion images
-    const fileName = `${Date.now()}_uploaded-file`; // Unique file name
-
-    let imageUrl: string;
-
-    if(updatePromotionDto.file) {
-      imageUrl = await this.firebaseService.uploadFileToFirebase(
-        folderName,
-        fileName,
-        updatePromotionDto.file,
-      );
-    }
-
-    console.log('Uploaded image URL:', imageUrl);
   
-
-    // Update fields with provided values or retain existing ones
-    // promotion.clientId = updatePromotionDto.clientId ?? promotion.clientId;
-    promotion.title = updatePromotionDto.metadata.title ?? promotion.title;
-    promotion.imageUrl = imageUrl ?? promotion.imageUrl;
-    promotion.content = updatePromotionDto.metadata.content ?? promotion.content;
-    promotion.type = updatePromotionDto.metadata.type ?? promotion.type;
-    promotion.targetUrl = updatePromotionDto.metadata.targetUrl ?? promotion.targetUrl;
-    promotion.startDate = updatePromotionDto.metadata.startDate;
-    promotion.endDate = updatePromotionDto.metadata.endDate;
-
-    // Save the updated promotion
-    const updatedPromotion = await this.promotionRepository.save(promotion);
-    return updatedPromotion;
+    if (!promotion) {
+      throw new Error(`Promotion with ID ${id} not found`);
+    }
+  
+    try {
+      let imageUrl: string | undefined;
+  
+      if (updatePromotionDto.file) {
+        // Define folder and file name for the new image in Firebase
+        const folderName = 'promotions';
+        const fileName = `${Date.now()}_uploaded-file`;
+  
+        // Upload the new file to Firebase and get the public URL
+        imageUrl = await this.firebaseService.uploadFileToFirebase(
+          folderName,
+          fileName,
+          updatePromotionDto.file,
+        );
+  
+        console.log('Uploaded image URL:', imageUrl);
+      }
+  
+      // Update fields dynamically
+      promotion.title = updatePromotionDto.metadata.title ?? promotion.title;
+      promotion.imageUrl = imageUrl || promotion.imageUrl;
+      promotion.content = updatePromotionDto.metadata.content ?? promotion.content;
+      promotion.type = updatePromotionDto.metadata.type ?? promotion.type;
+      promotion.targetUrl = updatePromotionDto.metadata.targetUrl ?? promotion.targetUrl;
+      promotion.startDate = updatePromotionDto.metadata.startDate ?? promotion.startDate;
+      promotion.endDate = updatePromotionDto.metadata.endDate ?? promotion.endDate;
+  
+      // Save the updated promotion
+      const updatedPromotion = await this.promotionRepository.save(promotion);
+      console.log('Updated promotion:', updatedPromotion);
+  
+      return updatedPromotion;
+    } catch (error) {
+      console.error('Error updating promotion:', error.message);
+      throw new Error('Failed to update promotion. Please try again later.');
+    }
   }
-
+  
   async removePromotion(request: FindOnePromotionDto) {
     const { id } = request;
     console.log('Deleting promotion with ID:', id);
@@ -1087,14 +1021,11 @@ export class GamesService {
       image: game.imagePath,
       description: game.description,
       priority: game.priority,
-      category: game.gameCategories
-        .filter((gc) => gc.category) // Filter out null or undefined categories
-        .map((gc) => ({
-          id: gc.category.id,
-          name: gc.category.name,
-        })),
+      category: game.gameCategories.map((gc) => ({
+        id: gc.category.id,
+        name: gc.category.name,
+      })),
     }));
-
 
     // const gameDatas = {
     //   total,
@@ -1215,10 +1146,8 @@ export class GamesService {
     console.log('TournamentGames', TournamentGames);
 
     const val = await this.tournamentGameRepository.save(TournamentGames);
-    console.log('val', val);
     return val[0];
   }
-
   async removeTournamentGames(dto: AddGameToTournamentDto) {
     const games = await this.gameRepository.find({
       where: { id: In(dto.gameId) },
