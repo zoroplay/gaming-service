@@ -434,7 +434,6 @@ export class QtechService {
     }
   }
 
-
   async saveCallbackLog(data) {
     const action = data.action;
     const body = data.body ? JSON.parse(data.body) : '';
@@ -770,6 +769,50 @@ export class QtechService {
     }
   }
 
+  async reward(payload: QtechCallbackRequest, callback: CallbackLog) {
+    const { playerId, walletSessionId, gameId, clientId, body } = payload;
+    const data: any = JSON.parse(body);
+    
+    try {
+
+      // get player details
+      const player = await this.identityService.getDetails({
+        clientId,
+        userId: parseInt(playerId),
+      });
+
+      const walletRes = await this.walletService.credit({
+        userId: playerId,
+        clientId,
+        amount: data.amount.toFixed(2),
+        source: 'qtech-games',
+        description: `${data.rewardTitle} (${data.rewardType})`,
+        username: player.data.username,
+        wallet: 'main',
+        subject: 'Casino Reward',
+        channel: 'system',
+      });
+
+
+      const response = this.createSuccessResponse(HttpStatus.OK, 'Successful', {
+        balance: parseFloat(walletRes.data.balance.toFixed(2)),
+        referenceId: callback.id,
+      });
+
+      // update callback log response
+      await this.updateCallbackGameSession(callback, response, {session_id: walletSessionId}, {callback_id: callback.id}, true)
+
+      return response;
+    } catch (e) {
+      console.error('Error processing win:', e.message);
+      const response = this.createErrorResponse('UNKNOWN_ERROR', HttpStatus.INTERNAL_SERVER_ERROR, 'Unexpected error.');
+      // update callback logs, and gaming session
+      await this.updateCallbackGameSession(callback, response, {session_id: walletSessionId}, {callback_id: callback.id});
+
+      return response;
+    }
+  }
+
   // Helper to create error responses
   private createErrorResponse(code: string, status: number, message: string): any {
     return {
@@ -831,7 +874,8 @@ export class QtechService {
         return await this.win(_data, callback);
       case 'ROLLBACK':
         return await this.refund(_data, callback);
-
+      case 'BONUS-REWARD':
+        return await this.reward(_data, callback);
       default:
         return this.createErrorResponse('REQUEST_DECLINED', HttpStatus.BAD_REQUEST, 'Something went wrong. Could not be process request.')
     }
