@@ -397,24 +397,13 @@ export class QtechService {
     try {
 
       // Validate token and get user balance
-      const isValid = await this.identityService.validateToken({
+      const player = await this.identityService.getDetails({
         clientId,
-        token: walletSessionId,
+        userId: parseInt(playerId),
       });
 
-      // console.log('Validation Result:', isValid);
-
-      if (!isValid || !isValid.success) {
-        // format error response
-        const response = this.createErrorResponse('REQUEST_DECLINED', HttpStatus.BAD_REQUEST, 'Invalid player ID');
-        // update callback logs, and gaming session
-        await this.updateCallbackGameSession(callback, response, {session_id: walletSessionId}, {callback_id: callback.id});
-
-        return response;
-      }
-
-      const currency = isValid.data.currency;
-      const balance = isValid.data.balance;
+      const currency = player.data.currency;
+      const balance = player.data.availableBalance;
 
       console.log('Balance:', balance, 'Currency:', currency);
 
