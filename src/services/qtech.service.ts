@@ -402,8 +402,10 @@ export class QtechService {
         userId: parseInt(playerId),
       });
 
+      console.log(player.data)
+
       const currency = player.data.currency;
-      const balance = player.data.availableBalance;
+      const balance = parseFloat(player.data.availableBalance.toFixed(2));
 
       console.log('Balance:', balance, 'Currency:', currency);
 
