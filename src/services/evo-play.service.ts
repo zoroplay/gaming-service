@@ -26,6 +26,7 @@ import {
   Provider as ProviderEntity,
 } from '../entities';
 import { WalletService } from '../wallet/wallet.service';
+import { format } from 'date-fns';
 
 @Injectable()
 export class EvoPlayService {
@@ -163,6 +164,26 @@ export class EvoPlayService {
     };
   }
 
+
+
+
+addDaysToDate(days: number): string {
+  if (typeof days !== 'number' || isNaN(days)) {
+    throw new Error('Input must be a valid number');
+  }
+
+  // Get the current date and time
+  const currentDate = new Date();
+
+  // Add the number of days to the current date
+  const futureDate = new Date(currentDate.getTime() + days * 24 * 60 * 60 * 1000);
+
+  // Format the date to 'YYYY-MM-DD %HH:MM:SS'
+  const formattedDate = `${format(futureDate, 'yyyy-MM-dd')}%${format(futureDate, 'HH:mm:ss')}`;
+
+  return formattedDate;
+}
+
   //get games Info
   async getGameInfo(game: GameEntity) {
     try {
@@ -193,12 +214,15 @@ export class EvoPlayService {
   async registerBonus(data: any) {
     try {
 
+      const formattedDate = this.addDaysToDate(data.duration);
+      console.log("formattedDate", formattedDate);
+
       const newData: any = {
         games: Array.isArray(data.gameId) ? data.gameId.join(',') : data.gameId,
         users: Array.isArray(data.userIds) ? data.userIds.join(',') : data.clientId,
         currency: 'NGN',
         settings: {
-          expire: data.duration,
+          expire: formattedDate,
         },
       }
 
