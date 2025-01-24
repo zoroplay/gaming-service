@@ -176,7 +176,7 @@ export class EvoPlayService {
     const futureDate = dayjs().add(days, 'day');
   
     // Format the date to 'YYYY-MM-DD %HH:MM:SS'
-    const formattedDate = `${futureDate.format('YYYY-MM-DD')} %${futureDate.format('HH:mm:ss')}`;
+    const formattedDate = `${futureDate.format('YYYY-MM-DD')}%${futureDate.format('HH:mm:ss')}`;
   
     return formattedDate;
   }
@@ -229,7 +229,7 @@ export class EvoPlayService {
             }
           },
           extra_bonuses_settings: {
-            registration_id: data.bonusId
+            expire: formattedDate
           }
         }
       }
@@ -248,10 +248,13 @@ export class EvoPlayService {
         }
       }
 
+      const token = '524c6d65f331c03002f7920aae50d701';
+
       const signature = this.getSignature(
         this.project,
         this.version,
-        newData
+        newData,
+        token
       );
 
       // $url = $this->project_id."*".$this->version."*".$this->token;
