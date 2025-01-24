@@ -176,7 +176,7 @@ export class EvoPlayService {
     const futureDate = dayjs().add(days, 'day');
   
     // Format the date to 'YYYY-MM-DD %HH:MM:SS'
-    const formattedDate = `${futureDate.format('YYYY-MM-DD')} %${futureDate.format('HH:mm:ss')}`;
+    const formattedDate = `${futureDate.format('YYYY-MM-DD')}%${futureDate.format('HH:mm:ss')}`;
   
     return formattedDate;
   }
