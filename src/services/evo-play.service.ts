@@ -26,7 +26,7 @@ import {
   Provider as ProviderEntity,
 } from '../entities';
 import { WalletService } from '../wallet/wallet.service';
-import { format } from 'date-fns';
+import * as dayjs from 'dayjs';
 
 @Injectable()
 export class EvoPlayService {
@@ -179,7 +179,7 @@ addDaysToDate(days: number): string {
   const futureDate = new Date(currentDate.getTime() + days * 24 * 60 * 60 * 1000);
 
   // Format the date to 'YYYY-MM-DD %HH:MM:SS'
-  const formattedDate = `${format(futureDate, 'yyyy-MM-dd')}%${format(futureDate, 'HH:mm:ss')}`;
+  const formattedDate = `${dayjs(futureDate).format('yyyy-MM-dd')}%${dayjs(futureDate).format('HH:mm:ss')}`;
 
   return formattedDate;
 }
