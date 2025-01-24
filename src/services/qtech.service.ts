@@ -402,12 +402,10 @@ export class QtechService {
         userId: parseInt(playerId),
       });
 
-      console.log(player.data)
-
       const currency = player.data.currency;
       const balance = parseFloat(player.data.availableBalance.toFixed(2));
 
-      console.log('Balance:', balance, 'Currency:', currency);
+      // console.log('Balance:', balance, 'Currency:', currency);
 
       // Construct success response
       const response = this.createSuccessResponse(HttpStatus.OK, 'Balance retrieved', { balance, currency });
