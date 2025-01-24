@@ -256,7 +256,16 @@ export class EvoPlayService {
         this.requestConfig,
       );
 
-      console.log("response", response.data.data);
+      if(!response) {
+        return {
+          error: 0,
+          success: false,
+          message: 'Can not register evo-play bonus'
+        }
+      }
+
+      console.log("response", response);
+      console.log("response-data", response.data.data);
 
       return response.data.data;
     } catch (e) {

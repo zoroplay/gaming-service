@@ -1170,14 +1170,16 @@ export class GamesService {
 
 
   async handleCasinoBonus(request: CreateBonusRequest): Promise<any> {
-    console.log('Get Balance');
-    const result = await this.evoPlayService.registerBonus(request);
-
-    return {
-      status: 1,
-      description: 'success',
-      success: true,
-      bonusId: result[0].registry_id
+    try {
+      console.log('handleCasinoBonus');
+      return await this.evoPlayService.registerBonus(request);
+    } catch (error) {
+      console.log('error', error);
+      return {
+        error: error.message,
+        success: false
+      }
     }
-  }
+    
+}
 }
