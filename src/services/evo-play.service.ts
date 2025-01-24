@@ -229,7 +229,7 @@ export class EvoPlayService {
             }
           },
           extra_bonuses_settings: {
-            registration_id: data.bonusId
+            expire: formattedDate
           }
         }
       }
@@ -248,10 +248,13 @@ export class EvoPlayService {
         }
       }
 
+      const token = '524c6d65f331c03002f7920aae50d701';
+
       const signature = this.getSignature(
         this.project,
         this.version,
-        newData
+        newData,
+        token
       );
 
       // $url = $this->project_id."*".$this->version."*".$this->token;
