@@ -218,14 +218,10 @@ export class EvoPlayService {
         games: Array.isArray(data.gameId) ? data.gameId.join(',') : data.gameId,
         users: Array.isArray(data.userIds) ? data.userIds.join(',') : data.clientId,
         currency: 'NGN',
-        settings: {
-          expire: formattedDate,
-        },
       }
 
       if (data.bonusType == 'free_rounds') {
         newData.extra_bonuses = {
-          ...newData.settings, 
           extra_bonuses: {
             bonus_spins: {
               spins_count: data.casinoSpinCount,
@@ -239,8 +235,7 @@ export class EvoPlayService {
       }
 
       if (data.bonusType == 'feature_trigger') {
-        newData.settings = {
-          ...newData.settings, 
+        newData.extra_bonuses = {
           extra_bonuses: {
             freespins_on_start: {
               freespins_count: data.spins_count,
@@ -253,19 +248,14 @@ export class EvoPlayService {
         }
       }
 
-      const token = 'test_token'
-
-      console.log("newData", newData);
-      console.log("token", this.token);
-
       const signature = this.getSignature(
         this.project,
         this.version,
-        newData,
-        token,
+        newData
       );
+
       // $url = $this->project_id."*".$this->version."*".$this->token;
-      let url = `Game/registerBonusBatch?project=${this.project}&version=${this.version}&signature=${signature}&token=${token}&games=${Array.isArray(data.gameId) ? data.gameId.join(',') : data.gameId}&users=${data.clientId}&currency=${newData.currency}`;
+      let url = `Game/registerBonusBatch?project=${this.project}&version=${this.version}&signature=${signature}&games=${Array.isArray(data.gameId) ? data.gameId.join(',') : data.gameId}&users=${data.clientId}&currency=${newData.currency}`;
 
       if (data.bonusType == 'free_rounds')
         url += `&extra_bonuses[bonus_spins][spins_count]=${data.casinoSpinCount}&extra_bonuses[bonus_spins][bet_in_money]=${data.minimumEntryAmount}&settings[registration_id]=${data.bonusId}`;
@@ -487,7 +477,7 @@ export class EvoPlayService {
     integrationId: number,
     apiVersion: number,
     args: object,
-    integrationKey: string,
+    integrationKey?: string,
   ) {
     const compact = function (arg): string {
       if ('object' === typeof arg) {
@@ -1289,4 +1279,3 @@ export class EvoPlayService {
     }
   }
 }
-
