@@ -261,7 +261,7 @@ export class EvoPlayService {
       let url = `Game/registerBonusBatch?project=${this.project}&version=${this.version}&signature=${signature}&games=${Array.isArray(data.gameId) ? data.gameId.join(',') : data.gameId}&users=${data.clientId}&currency=${newData.currency}`;
 
       if (data.bonusType == 'free_rounds')
-        url += `&extra_bonuses[bonus_spins][spins_count]=${data.casinoSpinCount}&extra_bonuses[bonus_spins][bet_in_money]=${data.minimumEntryAmount}&settings[registration_id]=${data.bonusId}`;
+        url += `&extra_bonuses[bonus_spins][spins_count]=${data.casinoSpinCount}&extra_bonuses[bonus_spins][bet_in_money]=${data.minimumEntryAmount}&settings[expire]=${formattedDate}`;
 
       if (data.bonusType === 'feature_trigger')
         url += `&settings[extra_bonuses][freespins_on_start][freespins_count]=${data.casinoSpinCount}&settings[extra_bonuses][freespins_on_start][bet_in_money]=${data.minimumEntryAmount}&settings[extra_bonuses_settings][registration_id]=${data.bonusId}`;
