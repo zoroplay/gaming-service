@@ -5,6 +5,7 @@ import { GrpcMethod } from '@nestjs/microservices';
 import { Observable } from 'rxjs';
 import {
   AddGameToCategoriesDto,
+  AddGameToTournamentDto,
   CallbackGameDto,
   CommonResponse,
   CreateBonusRequest,
@@ -299,5 +300,43 @@ export class GamesController {
   @GrpcMethod(GAMING_SERVICE_NAME, 'handleQtechCallback')
   async handleQtechCallback(payload: QtechCallbackRequest): Promise<any> {
     return this.qtechService.handlCallbacks(payload);
+  }
+
+  // @GrpcMethod(GAMING_SERVICE_NAME, 'handleQtechGetBalance')
+  // async handleQtechGetBalance(payload: QtechCallbackRequest): Promise<any> {
+  //   return this.gamesService.handleQtechGetBalance(payload);
+  // }
+
+  // @GrpcMethod(GAMING_SERVICE_NAME, 'handleQtechTransactionBet')
+  // async handleQtechBet(payload: QtechtransactionRequest): Promise<any> {
+  //   return this.gamesService.handleQtechBet(payload);
+  // }
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'addTournamentGame')
+  addTournamentGame(payload: AddGameToTournamentDto): Promise<any> {
+    console.log('addGameToCategories');
+    return this.gamesService.addTournamentGame(payload);
+  }
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'removeTournamentGame')
+  removeTournamentGames(payload: AddGameToTournamentDto): Promise<any> {
+    console.log('removeGameToCategories');
+    return this.gamesService.removeTournamentGames(payload);
+  }
+
+  // @GrpcMethod(GAMING_SERVICE_NAME, 'handleQtechRollback')
+  // async handleQtechRollback(payload: QtechRollbackRequest): Promise<any> {
+  //   return this.gamesService.handleQtechRollback(payload);
+  // }
+
+  // @GrpcMethod(GAMING_SERVICE_NAME, 'handleQtechTransactionWin')
+  // async handleQtechWin(payload: QtechtransactionRequest): Promise<any> {
+  //   return this.gamesService.handleQtechWin(payload);
+  // }
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'handleCasinoBonus')
+  handleCasinoBonus(payload: CreateBonusRequest): Promise<any> {
+    console.log('handleCasinoBonus');
+    return this.gamesService.handleCasinoBonus(payload);
   }
 }

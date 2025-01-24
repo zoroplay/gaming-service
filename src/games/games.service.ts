@@ -1170,7 +1170,7 @@ export class GamesService {
   }
 
 
-  async HandleCasinoBonus(request: CreateBonusRequest): Promise<any> {
+  async handleCasinoBonus(request: CreateBonusRequest): Promise<any> {
     console.log('Get Balance');
     const result = await this.evoPlayService.registerBonus(request);
 
