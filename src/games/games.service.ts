@@ -33,7 +33,6 @@ import {
   Games,
   PaginationDto,
   Promotion,
-  Promotions,
   SaveCategoryRequest,
   StartGameDto,
   SyncGameDto,
