@@ -26,7 +26,7 @@ import {
   Provider as ProviderEntity,
 } from '../entities';
 import { WalletService } from '../wallet/wallet.service';
-import dayjs from 'dayjs';
+import * as dayjs from 'dayjs';
 
 @Injectable()
 export class EvoPlayService {
