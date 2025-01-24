@@ -26,8 +26,6 @@ import {
   Provider,
   Providers,
   QtechCallbackRequest,
-  // QtechRollbackRequest,
-  // QtechtransactionRequest,
   SaveCategoryRequest,
   StartGameDto,
   SyncGameDto,
@@ -211,16 +209,6 @@ export class GamesController {
     }
   }
 
-  // @GrpcMethod(GAMING_SERVICE_NAME, 'createPromotion')
-  // async createPromotion(
-  //   payload: CreatePromotionDto,
-  // ): Promise<any> {
-  //   console.log('Received payload', payload);
-  //   // Pass the payload and file to the games service
-  //   const newPromo = await this.gamesService.createPromotion(payload);
-  //   return newPromo;
-  // }
-
   @GrpcMethod(GAMING_SERVICE_NAME, 'createPromotion')
   async createPromotion(
     payload: CreatePromotionRequest, 
@@ -232,21 +220,10 @@ export class GamesController {
   }
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'updatePromotion')
-  async updatePromotion(
-    payload: CreatePromotionRequest, 
-  ): Promise<any> {
-    console.log('Received payload', payload);
-    // Pass the payload and file to the games service
-    const newPromo = await this.gamesService.updatePromotion(payload);
-    return newPromo;
+  updatePromotion(payload: CreatePromotionRequest): Promise<any> {
+    console.log('fetch gameNames');
+    return this.gamesService.updatePromotion(payload);
   }
-
-  // @GrpcMethod(GAMING_SERVICE_NAME, 'updatePromotion')
-  // async updatePromotion(payload: CreatePromotionDto): Promise<any> {
-  //   console.log('Received payload', payload);
-  //   const updatePromotion = await this.gamesService.updatePromotion(payload);
-  //   return updatePromotion;
-  // }
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'findPromotions')
   fetchPromotions(): Promise<any> {
@@ -317,18 +294,18 @@ export class GamesController {
   // @GrpcMethod(GAMING_SERVICE_NAME, 'uploadImage')
   // uploadImage(payload: FileChunk): Promise<any> {
   //   return this.gamesService.uploadImage(payload)
-
+    
   // }
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'handleQtechCallback')
   async handleQtechCallback(payload: QtechCallbackRequest): Promise<any> {
-    return this.gamesService.handleQtechCallback(payload);
+    return this.qtechService.handlCallbacks(payload);
   }
 
-  @GrpcMethod(GAMING_SERVICE_NAME, 'handleQtechGetBalance')
-  async handleQtechGetBalance(payload: QtechCallbackRequest): Promise<any> {
-    return this.gamesService.handleQtechGetBalance(payload);
-  }
+  // @GrpcMethod(GAMING_SERVICE_NAME, 'handleQtechGetBalance')
+  // async handleQtechGetBalance(payload: QtechCallbackRequest): Promise<any> {
+  //   return this.gamesService.handleQtechGetBalance(payload);
+  // }
 
   // @GrpcMethod(GAMING_SERVICE_NAME, 'handleQtechTransactionBet')
   // async handleQtechBet(payload: QtechtransactionRequest): Promise<any> {
