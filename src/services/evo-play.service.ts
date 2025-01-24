@@ -176,7 +176,7 @@ export class EvoPlayService {
     const futureDate = dayjs().add(days, 'day');
   
     // Format the date to 'YYYY-MM-DD %HH:MM:SS'
-    const formattedDate = `${futureDate.format('YYYY-MM-DD')}%${futureDate.format('HH:mm:ss')}`;
+    const formattedDate = `${futureDate.format('YYYY-MM-DD')} ${futureDate.format('HH:mm:ss')}`;
   
     return formattedDate;
   }
@@ -211,7 +211,8 @@ export class EvoPlayService {
   async registerBonus(data: any) {
     try {
 
-      const formattedDate = this.addDaysToDate(data.duration);
+      const formattedDate = this.addDaysToDate(data.duration).replace(' ', '%20');
+      const formattedDateSpace = this.addDaysToDate(data.duration);
       console.log("formattedDate", formattedDate);
 
       const newData: any = {
@@ -229,7 +230,7 @@ export class EvoPlayService {
         };
       
         newData.settings = {
-          expire: formattedDate,
+          expire: formattedDateSpace,
         };
       }
 
