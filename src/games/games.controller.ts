@@ -357,9 +357,9 @@ export class GamesController {
   //   return this.gamesService.handleQtechWin(payload);
   // }
 
-  @GrpcMethod(GAMING_SERVICE_NAME, 'HandleCasinoBonus')
-  HandleCasinoBonus(payload: CreateBonusRequest): Promise<any> {
-    console.log('handleProviderBonus');
-    return this.gamesService.HandleCasinoBonus(payload);
+  @GrpcMethod(GAMING_SERVICE_NAME, 'handleCasinoBonus')
+  handleCasinoBonus(payload: CreateBonusRequest): Promise<any> {
+    console.log('handleCasinoBonus');
+    return this.gamesService.handleCasinoBonus(payload);
   }
 }
