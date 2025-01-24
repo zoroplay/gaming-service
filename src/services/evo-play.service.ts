@@ -167,22 +167,19 @@ export class EvoPlayService {
 
 
 
-addDaysToDate(days: number): string {
-  if (typeof days !== 'number' || isNaN(days)) {
-    throw new Error('Input must be a valid number');
+  addDaysToDate(days: number): string {
+    if (typeof days !== 'number' || isNaN(days)) {
+      throw new Error('Input must be a valid number');
+    }
+  
+    // Get the current date and add the specified number of days
+    const futureDate = dayjs().add(days, 'day');
+  
+    // Format the date to 'YYYY-MM-DD %HH:MM:SS'
+    const formattedDate = `${futureDate.format('YYYY-MM-DD')} %${futureDate.format('HH:mm:ss')}`;
+  
+    return formattedDate;
   }
-
-  // Get the current date and time
-  const currentDate = new Date();
-
-  // Add the number of days to the current date
-  const futureDate = new Date(currentDate.getTime() + days * 24 * 60 * 60 * 1000);
-
-  // Format the date to 'YYYY-MM-DD %HH:MM:SS'
-  const formattedDate = `${dayjs(futureDate).format('yyyy-MM-dd')}%${dayjs(futureDate).format('HH:mm:ss')}`;
-
-  return formattedDate;
-}
 
   //get games Info
   async getGameInfo(game: GameEntity) {
@@ -256,16 +253,19 @@ addDaysToDate(days: number): string {
         }
       }
 
+      const token = 'test_token'
+
       console.log("newData", newData);
+      console.log("token", this.token);
 
       const signature = this.getSignature(
         this.project,
         this.version,
         newData,
-        this.token,
+        token,
       );
       // $url = $this->project_id."*".$this->version."*".$this->token;
-      let url = `Game/registerBonusBatch?project=${this.project}&version=${this.version}&signature=${signature}&games=${Array.isArray(data.gameId) ? data.gameId.join(',') : data.gameId}&users=${data.clientId}&currency=${newData.currency}`;
+      let url = `Game/registerBonusBatch?project=${this.project}&version=${this.version}&signature=${signature}&token=${token}&games=${Array.isArray(data.gameId) ? data.gameId.join(',') : data.gameId}&users=${data.clientId}&currency=${newData.currency}`;
 
       if (data.bonusType == 'free_rounds')
         url += `&extra_bonuses[bonus_spins][spins_count]=${data.casinoSpinCount}&extra_bonuses[bonus_spins][bet_in_money]=${data.minimumEntryAmount}&settings[registration_id]=${data.bonusId}`;
@@ -511,14 +511,14 @@ addDaysToDate(days: number): string {
     parts.push(compact(integrationKey));
 
     const str = parts.join('*')
-    // console.log(str)
+    console.log('str', str)
     const md5Hash = crypto
       .createHash('md5')
       .update(str)
       .digest('hex');
 
       // console.log('encryption hash');
-      console.log(md5Hash);
+      console.log('md5Hash', md5Hash);
       // console.log('encryption ends');
 
     return md5Hash;
