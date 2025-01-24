@@ -218,20 +218,19 @@ export class EvoPlayService {
         games: Array.isArray(data.gameId) ? data.gameId.join(',') : data.gameId,
         users: Array.isArray(data.userIds) ? data.userIds.join(',') : data.clientId,
         currency: 'NGN',
-      }
-
-      if (data.bonusType == 'free_rounds') {
+      };
+      
+      if (data.bonusType === 'free_rounds') {
         newData.extra_bonuses = {
-          extra_bonuses: {
-            bonus_spins: {
-              spins_count: data.casinoSpinCount,
-              bet_in_money: data.minimumEntryAmount
-            }
+          bonus_spins: {
+            spins_count: data.casinoSpinCount,
+            bet_in_money: data.minimumEntryAmount,
           },
-          extra_bonuses_settings: {
-            expire: formattedDate
-          }
-        }
+        };
+      
+        newData.settings = {
+          expire: formattedDate,
+        };
       }
 
       if (data.bonusType == 'feature_trigger') {
