@@ -234,18 +234,17 @@ export class EvoPlayService {
         };
       }
 
-      if (data.bonusType == 'feature_trigger') {
+      if (data.bonusType === 'feature_trigger') {
         newData.extra_bonuses = {
-          extra_bonuses: {
-            freespins_on_start: {
-              freespins_count: data.spins_count,
-              bet_in_money: data.minimumEntryAmount
-            }
+          freespins_on_start: {
+            freespins_count: data.casinoSpinCount,
+            bet_in_money: data.minimumEntryAmount,
           },
-          extra_bonuses_settings: {
-            registration_id: data.bonusId
-          }
-        }
+        };
+      
+        newData.settings = {
+          expire: formattedDateSpace,
+        };
       }
 
       const signature = this.getSignature(
@@ -262,7 +261,7 @@ export class EvoPlayService {
         url += `&extra_bonuses[bonus_spins][spins_count]=${data.casinoSpinCount}&extra_bonuses[bonus_spins][bet_in_money]=${data.minimumEntryAmount}&settings[expire]=${formattedDate}`;
 
       if (data.bonusType === 'feature_trigger')
-        url += `&settings[extra_bonuses][freespins_on_start][freespins_count]=${data.casinoSpinCount}&settings[extra_bonuses][freespins_on_start][bet_in_money]=${data.minimumEntryAmount}&settings[extra_bonuses_settings][registration_id]=${data.bonusId}`;
+        url += `&extra_bonuses[freespins_on_start][freespins_count]=${data.casinoSpinCount}&extra_bonuses[freespins_on_start][bet_in_money]=${data.minimumEntryAmount}&settings[expire]=${formattedDate}`;
 
       console.log("url", url);
 
