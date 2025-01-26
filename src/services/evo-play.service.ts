@@ -438,7 +438,7 @@ export class EvoPlayService {
           ...newData.settings, 
           extra_bonuses: {
             bonus_spins: {
-              spins_count: selectedBonus.casino_spin_count,
+              spins_count: selectedBonus.casinoSpinCount,
               bet_in_money: selectedBonus.minimumEntryAmount
             }
           },
@@ -476,10 +476,10 @@ export class EvoPlayService {
       let url = `Game/getURL?project=${this.project}&version=${this.version}&signature=${signature}&token=${newData.token}&game=${newData.game}&settings[user_id]=${newData.settings.user_id}&settings[exit_url]=${newData.settings.exit_url}&settings[https]=${newData.settings.https}`;
       
       if (data.isBonus && data.bonusType === 'free_rounds')
-        url += `&settings[extra_bonuses][bonus_spins][spins_count]=${selectedBonus.casino_spin_count}&settings[extra_bonuses][bonus_spins][bet_in_money]=${selectedBonus.minimumEntryAmount}&settings[extra_bonuses_settings][registration_id]=${data.bonusId}`;
+        url += `&settings[extra_bonuses][bonus_spins][spins_count]=${selectedBonus.casinoSpinCount}&settings[extra_bonuses][bonus_spins][bet_in_money]=${selectedBonus.minimumEntryAmount}&settings[extra_bonuses_settings][registration_id]=${data.bonusId}`;
 
       if (data.isBonus && data.bonusType === 'featured_trigger')
-        url += `&settings[extra_bonuses][freespins_on_start][freespins_count]=${selectedBonus.casino_spin_count}&settings[extra_bonuses][freespins_on_start][bet_in_money]=${selectedBonus.minimumEntryAmount}&settings[extra_bonuses_settings][registration_id]=${data.bonusId}`;
+        url += `&settings[extra_bonuses][freespins_on_start][freespins_count]=${selectedBonus.casinoSpinCount}&settings[extra_bonuses][freespins_on_start][bet_in_money]=${selectedBonus.minimumEntryAmount}&settings[extra_bonuses_settings][registration_id]=${data.bonusId}`;
 
       url += `&denomination=${newData.denomination}&currency=${newData.currency}&return_url_info=${newData.return_url_info}&callback_version=${newData.callback_version}`
 
