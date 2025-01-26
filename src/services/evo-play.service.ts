@@ -1,4 +1,6 @@
 /* eslint-disable prettier/prettier */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable prettier/prettier */
 import { HttpService } from '@nestjs/axios';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
@@ -27,6 +29,7 @@ import {
 } from '../entities';
 import { WalletService } from '../wallet/wallet.service';
 import * as dayjs from 'dayjs';
+import { GetBonusRequest } from 'src/proto/bonus.pb';
 
 @Injectable()
 export class EvoPlayService {
@@ -381,6 +384,30 @@ export class EvoPlayService {
       const token = this.token;
       const version = this.version;
 
+      // Fetch the bonus details globally
+    let bonus = [];
+    let selectedBonus = null;
+
+    if (data.bonusId) {
+      const getBonusPayload: GetBonusRequest = {
+        clientId: data.clientId,
+      };
+
+      const bonusResponse = await this.bonusService.getBonusDetails(getBonusPayload);
+
+
+      console.log('bonusResponse', bonusResponse);
+
+      bonus = bonusResponse?.bonus || [];
+
+      // Find the bonus by data.bonusId
+      selectedBonus = bonus.find((b) => b.id === data.bonusId);
+
+      if (!selectedBonus) {
+        return { message: `No bonus with ID ${data.bonusId}`, url: null }
+      }
+    }
+
       console.log('baseUrl', baseUrl);
       console.log('project', project);
       console.log('secretKey', secretKey);
@@ -402,13 +429,17 @@ export class EvoPlayService {
         callback_version: 2,
       };
 
+      console.log("selectedBonus", selectedBonus);
+
+      
+
       if (data.isBonus && data.bonusType == 'free_rounds') {
         newData.settings = {
           ...newData.settings, 
           extra_bonuses: {
             bonus_spins: {
-              spins_count: data.spins_count,
-              bet_in_money: data.bonusAmount
+              spins_count: selectedBonus.casino_spin_count,
+              bet_in_money: selectedBonus.minimumEntryAmount
             }
           },
           extra_bonuses_settings: {
@@ -422,15 +453,17 @@ export class EvoPlayService {
           ...newData.settings, 
           extra_bonuses: {
             freespins_on_start: {
-              freespins_count: data.spins_count,
-              bet_in_money: data.bonusAmount
+              freespins_count: selectedBonus.casino_spin_count,
+              bet_in_money: selectedBonus.minimumEntryAmount
             }
           },
           extra_bonuses_settings: {
-            registration_id: data.bonusID
+            registration_id: data.bonusId
           }
         }
       }
+
+      console.log("newData", newData);
 
       const signature = this.getSignature(
         this.project,
@@ -442,11 +475,11 @@ export class EvoPlayService {
       // $url = $this->project_id."*".$this->version."*".$this->token;
       let url = `Game/getURL?project=${this.project}&version=${this.version}&signature=${signature}&token=${newData.token}&game=${newData.game}&settings[user_id]=${newData.settings.user_id}&settings[exit_url]=${newData.settings.exit_url}&settings[https]=${newData.settings.https}`;
       
-      if (data.isBonus)
-        url += `&settings[extra_bonuses][bonus_spins][spins_count]=${data.spins_count}&settings[extra_bonuses][bonus_spins][bet_in_money]=${data.bonusAmount}&settings[extra_bonuses_settings][registration_id]=${data.bonusID}`;
+      if (data.isBonus && data.bonusType === 'free_rounds')
+        url += `&settings[extra_bonuses][bonus_spins][spins_count]=${selectedBonus.casino_spin_count}&settings[extra_bonuses][bonus_spins][bet_in_money]=${selectedBonus.minimumEntryAmount}&settings[extra_bonuses_settings][registration_id]=${data.bonusId}`;
 
       if (data.isBonus && data.bonusType === 'featured_trigger')
-        url += `&settings[extra_bonuses][freespins_on_start][freespins_count]=${data.spins_count}&settings[extra_bonuses][freespins_on_start][bet_in_money]=${data.bonusAmount}&settings[extra_bonuses_settings][registration_id]=${data.bonusID}`;
+        url += `&settings[extra_bonuses][freespins_on_start][freespins_count]=${selectedBonus.casino_spin_count}&settings[extra_bonuses][freespins_on_start][bet_in_money]=${selectedBonus.minimumEntryAmount}&settings[extra_bonuses_settings][registration_id]=${data.bonusId}`;
 
       url += `&denomination=${newData.denomination}&currency=${newData.currency}&return_url_info=${newData.return_url_info}&callback_version=${newData.callback_version}`
 
