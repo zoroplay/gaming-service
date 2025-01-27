@@ -96,9 +96,7 @@ export class SmartSoftService {
       await this.gameSessionRepo.save(gameSession);
 
       return {
-        // url: sessionUrl,
-        success: false,
-        message: 'Unable to launch game'
+        url: sessionUrl,
       };
     } catch (e) {
       console.error(`Error generating game link: ${e.message}`);
@@ -200,6 +198,11 @@ export class SmartSoftService {
             return response;
           }
 
+          return {
+            success: false, 
+            message: 'Insufficent balance', 
+            status: HttpStatus.INTERNAL_SERVER_ERROR
+          }
           // console.log(player)
 
           const placeBetPayload: PlaceCasinoBetRequest = {
