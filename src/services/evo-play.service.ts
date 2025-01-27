@@ -778,7 +778,7 @@ export class EvoPlayService {
           data: {
             status: "ok",
             data: {
-              balance: debit.data.availableBalance.toFixed(2),
+              balance: debit.data.balance.toFixed(2),
               currency: player.currency,
             }
           },

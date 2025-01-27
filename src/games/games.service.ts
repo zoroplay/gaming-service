@@ -1022,8 +1022,8 @@ export class GamesService {
       description: game.description,
       priority: game.priority,
       category: game.gameCategories.map((gc) => ({
-        id: gc.category.id,
-        name: gc.category.name,
+        id: gc.category?.id || '', // Safely access category.id, fallback to 0
+        name: gc.category?.name || '', // Safely access category.name, fallback to an empty string
       })),
     }));
 
