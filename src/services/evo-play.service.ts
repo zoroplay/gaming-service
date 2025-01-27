@@ -742,6 +742,8 @@ export class EvoPlayService {
           channel: game.type,
         });
 
+        console.log("debit", debit);
+
         if (!debit.success) {
           const response = {
             success: false,
