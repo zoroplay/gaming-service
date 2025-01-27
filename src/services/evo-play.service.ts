@@ -550,6 +550,7 @@ export class EvoPlayService {
   // callback handler
   async handleCallback(data: any) {
     const body = JSON.parse(data.body);
+    const version = 2;
 
     // console.log(body);
 
@@ -557,7 +558,7 @@ export class EvoPlayService {
     
     const hash = this.getSignature(
       this.project,
-      this.version,
+      version,
       body,
       this.token
     );
