@@ -96,7 +96,9 @@ export class SmartSoftService {
       await this.gameSessionRepo.save(gameSession);
 
       return {
-        url: sessionUrl,
+        // url: sessionUrl,
+        success: false,
+        message: 'Unable to launch game'
       };
     } catch (e) {
       console.error(`Error generating game link: ${e.message}`);
