@@ -31,6 +31,7 @@ import {
   FindOneTournamentDto,
   Game,
   Games,
+  GetGamesRequest,
   PaginationDto,
   Promotion,
   SaveCategoryRequest,
@@ -1001,16 +1002,66 @@ export class GamesService {
   //   };
   // }
 
-  async getGamesWithCategories(): Promise<CommonResponseArray> {
-    const [games] = await this.gameRepository
+  // async getGamesWithCategories(): Promise<CommonResponseArray> {
+  //   const [games] = await this.gameRepository
+  //     .createQueryBuilder('game')
+  //     .leftJoinAndSelect('game.gameCategories', 'gameCategory')
+  //     .leftJoinAndSelect('gameCategory.category', 'category')
+  //     .leftJoinAndSelect('game.provider', 'provider')
+  //     .getManyAndCount();
+
+  //   console.log('games', games);
+
+  //   const gameData = games.map((game) => ({
+  //     id: game.id,
+  //     status: game.status,
+  //     provider_id: game.provider ? game.provider.id : 0,
+  //     provider_name: game.provider ? game.provider.name : '',
+  //     game_id: game.gameId,
+  //     game_name: game.title,
+  //     image: game.imagePath,
+  //     description: game.description,
+  //     priority: game.priority,
+  //     category: game.gameCategories.map((gc) => ({
+  //       id: gc.category?.id || '', // Safely access category.id, fallback to 0
+  //       name: gc.category?.name || '', // Safely access category.name, fallback to an empty string
+  //     })),
+  //   }));
+
+  //   // const gameDatas = {
+  //   //   total,
+  //   //   per_page: perPage,
+  //   //   current_page: page,
+  //   //   last_page: Math.ceil(total / perPage),
+  //   //   from: skip + 1,
+  //   //   to: skip + gameData.length,
+  //   // }
+
+  //   return {
+  //     status: 200,
+  //     success: true,
+  //     message: 'Games retrieved successfully',
+  //     data: gameData,
+  //   };
+  // }
+
+  async getGamesWithCategories(payload?: GetGamesRequest): Promise<CommonResponseArray> {
+    const { gameIds } = payload;
+    const query = this.gameRepository
       .createQueryBuilder('game')
       .leftJoinAndSelect('game.gameCategories', 'gameCategory')
       .leftJoinAndSelect('gameCategory.category', 'category')
-      .leftJoinAndSelect('game.provider', 'provider')
-      .getManyAndCount();
-
+      .leftJoinAndSelect('game.provider', 'provider');
+  
+    // Add filtering by gameIds if provided
+    if (gameIds && gameIds.length > 0) {
+      query.where('game.gameId IN (:...gameIds)', { gameIds });
+    }
+  
+    const [games] = await query.getManyAndCount();
+  
     console.log('games', games);
-
+  
     const gameData = games.map((game) => ({
       id: game.id,
       status: game.status,
@@ -1026,16 +1077,7 @@ export class GamesService {
         name: gc.category?.name || '', // Safely access category.name, fallback to an empty string
       })),
     }));
-
-    // const gameDatas = {
-    //   total,
-    //   per_page: perPage,
-    //   current_page: page,
-    //   last_page: Math.ceil(total / perPage),
-    //   from: skip + 1,
-    //   to: skip + gameData.length,
-    // }
-
+  
     return {
       status: 200,
       success: true,
@@ -1043,6 +1085,7 @@ export class GamesService {
       data: gameData,
     };
   }
+  
 
   async createTournament(
     createTournamentDto: CreateTournamentDto,

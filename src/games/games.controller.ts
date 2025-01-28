@@ -22,6 +22,7 @@ import {
   Game,
   Games,
   GAMING_SERVICE_NAME,
+  GetGamesRequest,
   PaginationDto,
   Provider,
   Providers,
@@ -249,10 +250,16 @@ export class GamesController {
     return this.gamesService.removePromotion(payload);
   }
 
-  @GrpcMethod(GAMING_SERVICE_NAME, 'getGames')
-  async getGames() {
-    return this.gamesService.getGamesWithCategories();
-  }
+  // @GrpcMethod(GAMING_SERVICE_NAME, 'getGames')
+  // async getGames() {
+  //   return this.gamesService.getGamesWithCategories();
+  // }
+
+@GrpcMethod(GAMING_SERVICE_NAME, 'getGames')
+async getGames(request?: GetGamesRequest) {
+  // Call the service method with the gameIds
+  return this.gamesService.getGamesWithCategories(request);
+}
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'createTournament')
   async createTournament(payload: CreateTournamentDto): Promise<any> {
