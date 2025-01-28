@@ -493,7 +493,10 @@ export class EvoPlayService {
       gameSession.game_id = game.gameId;
       gameSession.token = data.authCode;
       gameSession.provider = game.provider.slug;
+      
       await this.gameSessionRepo.save(gameSession);
+
+      console.log("gameSession", gameSession);
 
       if(response.data.error) {
         return {success: false, message: response.data.error.message}
@@ -596,7 +599,9 @@ export class EvoPlayService {
     let balanceType = 'main';
 
     // get game session
-    const gameSession = await this.gameSessionRepo.findOne({where: {session_id: body.token}})
+    const gameSession = await this.gameSessionRepo.findOne({where: {session_id: body.token}});
+
+    console.log("gameSession", gameSession);
       
     if (gameSession.balance_type === 'bonus')
       balanceType = 'casino';
