@@ -200,11 +200,6 @@ export class SmartSoftService {
             return response;
           }
 
-          return {
-            success: false, 
-            message: 'Insufficent balance', 
-            status: HttpStatus.INTERNAL_SERVER_ERROR
-          }
           // console.log(player)
 
           const placeBetPayload: PlaceCasinoBetRequest = {
