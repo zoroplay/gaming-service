@@ -106,14 +106,11 @@ export class SmartSoftService {
   // callback handler
   async handleCallback(data: CallbackGameDto, portal: string) {
     // save callback
-    console.log(data)
-    console.log('saving callback for smart-soft')
     const callback = await this.saveCallbackLog(data);
     try {
 
       const body = data.body ? JSON.parse(data.body) : '';
       const hashStr = data.body ? data.body : '';
-      console.log('generating harsh')
       const hash =  this.generateMd5(data.method, hashStr);
 
       if (data.header['x-signature'] !== hash) {
