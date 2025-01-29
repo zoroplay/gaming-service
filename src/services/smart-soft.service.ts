@@ -106,12 +106,13 @@ export class SmartSoftService {
   // callback handler
   async handleCallback(data: CallbackGameDto, portal: string) {
     // save callback
+    console.log(data.body)
+    const callback = await this.saveCallbackLog(data);
     try {
-      const callback = await this.saveCallbackLog(data);
 
       const body = data.body ? JSON.parse(data.body) : '';
       const hashStr = data.body ? data.body : '';
-
+      console.log('generating harsh')
       const hash =  this.generateMd5(data.method, hashStr);
 
       if (data.header['x-signature'] !== hash) {
@@ -507,11 +508,29 @@ export class SmartSoftService {
             return response;
           }
         default:
-          return {success: false, message: 'Invalid request', status: HttpStatus.BAD_REQUEST};
+          const resp = {success: false, message: 'Invalid request', status: HttpStatus.BAD_REQUEST};
+  
+          // update callback log response
+          await this.callbackLogRepository.update({
+            id: callback.id,
+          },{
+            response: JSON.stringify(response)
+          });
+  
+          return resp;
       }
     } catch (e) {
-      console.log('smart soft error', e.message)
-      return {success: false, message: 'Something went wrong', status: HttpStatus.INTERNAL_SERVER_ERROR};
+      console.log('smart soft error', e.message);
+      
+      const response = {success: false, message: 'Something went wrong', status: HttpStatus.INTERNAL_SERVER_ERROR};
+      // update callback log response
+      await this.callbackLogRepository.update({
+        id: callback.id,
+      },{
+        response: JSON.stringify(response)
+      });
+
+      return response;
     }
   }
 
