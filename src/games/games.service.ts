@@ -576,7 +576,9 @@ export class GamesService {
               provider: 'smart-soft'
           }
         });
-        return await this.smartSoftService.handleCallback(_data, privateKeyQuery.value);
+        const resp = await this.smartSoftService.handleCallback(_data, privateKeyQuery.value);
+        console.log('smart-soft response',resp);
+        return resp;
       case 'evolution':
         return await this.handleC2Games(_data.body, _data.header);
       case 'evo-play':
