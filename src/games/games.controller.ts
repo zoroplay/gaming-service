@@ -142,7 +142,7 @@ export class GamesController {
     try {
       return await this.gamesService.handleGamesCallback(request);
     } catch (error) {
-      console.error('handleCallback error');
+      console.error('handleCallback error', error.message);
       console.error(error.message);
     }
   }

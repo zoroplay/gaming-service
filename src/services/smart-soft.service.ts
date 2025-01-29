@@ -106,7 +106,8 @@ export class SmartSoftService {
   // callback handler
   async handleCallback(data: CallbackGameDto, portal: string) {
     // save callback
-    console.log(data.body)
+    console.log(data)
+    console.log('saving callback for smart-soft')
     const callback = await this.saveCallbackLog(data);
     try {
 
