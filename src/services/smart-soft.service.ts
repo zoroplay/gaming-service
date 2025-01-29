@@ -510,8 +510,8 @@ export class SmartSoftService {
           return {success: false, message: 'Invalid request', status: HttpStatus.BAD_REQUEST};
       }
     } catch (e) {
-      // console.log('smart soft error', e.message)
-      return {success: false, message: 'Invalid request', status: HttpStatus.BAD_REQUEST};
+      console.log('smart soft error', e.message)
+      return {success: false, message: 'Something went wrong', status: HttpStatus.INTERNAL_SERVER_ERROR};
     }
   }
 
