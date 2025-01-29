@@ -657,7 +657,7 @@ export class SmartSoftService {
   // save callback request
   async saveCallbackLog(data) {
     try{
-      console.log('callback data', data)
+      // console.log('callback data', data)
       const action = data.action;
       const body = data.body ? JSON.parse(data.body) : '';
       const transactionId = action === 'ActivateSession' ? body.Token : action === 'GetBalance' ? data.header['x-sessionid'] : action === 'RollbackTransaction' ? body.CurrentTransactionId : body.TransactionId;
