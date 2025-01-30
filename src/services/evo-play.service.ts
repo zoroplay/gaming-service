@@ -1390,6 +1390,8 @@ export class EvoPlayService {
             channel: game.type,
           });
 
+          console.log("creditRes", creditRes);
+
           const resp = {
             success: true,
             message: 'win handled successfully',
