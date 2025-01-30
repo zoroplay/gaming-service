@@ -1,4 +1,6 @@
 /* eslint-disable prettier/prettier */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable prefer-const */
 import { HttpService } from '@nestjs/axios';
 import { HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -475,18 +477,57 @@ export class PragmaticService {
 
       console.log("dataObject", dataObject, body.get('amount'));
 
-      if(dataObject.availableBalance < body.get('amount')) {
-        response = {
-          success: false,
-          status: HttpStatus.BAD_REQUEST,
-          message: 'Insufficient balance to place this bet',
-          data: {}
-        }
+      // let {availableBalance, casinoBonusBalance } = dataObject;
+
+      // if(dataObject.availableBalance < body.get('amount')) {
+      //   response = {
+      //     success: false,
+      //     status: HttpStatus.BAD_REQUEST,
+      //     message: 'Insufficient balance to place this bet',
+      //     data: {}
+      //   }
   
-        const val = await this.callbackLogRepository.update({ id: callback.id}, { response: JSON.stringify(response)});
-        console.log("val", val);
+      //   const val = await this.callbackLogRepository.update({ id: callback.id}, { response: JSON.stringify(response)});
+      //   console.log("val", val);
   
-        return response;
+      //   return response;
+      // }
+
+      let { availableBalance, casinoBonusBalance } = dataObject;
+      const betAmount = parseFloat(body.get('amount'));
+      let usedPromo = 0;
+      let cashUsed = 0;
+
+      if (balanceType === 'bonus') {
+          if (casinoBonusBalance >= betAmount) {
+              usedPromo = betAmount;
+          } else if (casinoBonusBalance > 0 && casinoBonusBalance < betAmount && availableBalance >= (betAmount - casinoBonusBalance)) {
+              usedPromo = casinoBonusBalance;
+              cashUsed = betAmount - casinoBonusBalance;
+          } else if (availableBalance >= betAmount) {
+              cashUsed = betAmount;
+          } else {
+              response = {
+                  success: false,
+                  status: HttpStatus.BAD_REQUEST,
+                  message: 'Insufficient balance to place this bet',
+                  data: {}
+              };
+              await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
+              return response;
+          }
+      } else {
+          if (availableBalance < betAmount) {
+              response = {
+                  success: false,
+                  status: HttpStatus.BAD_REQUEST,
+                  message: 'Insufficient balance to place this bet',
+                  data: {}
+              };
+              await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
+              return response;
+          }
+          cashUsed = betAmount;
       }
 
       const placeBetPayload: PlaceCasinoBetRequest = {
@@ -609,8 +650,8 @@ export class PragmaticService {
           cash: parseFloat(getUpdatedWallet.data.availableBalance.toFixed(2)),
           transactionId: place_bet.data.transactionId,
           currency: player.currency,
-          bonus: balanceType === 'casino' ? parseFloat(getUpdatedWallet.data.casinoBonusBalance.toFixed(2)) : 0.00,
-          usedPromo: balanceType === 'casino' ? parseFloat(body.get('amount')) : 0.00,
+          bonus: balanceType === 'bonus' ? parseFloat(getUpdatedWallet.data.casinoBonusBalance.toFixed(2)) : 0.00,
+          usedPromo: balanceType === 'bonus' ? parseFloat(body.get('amount')) : 0.00,
           error: 0,
           description: 'Successful',
           },
