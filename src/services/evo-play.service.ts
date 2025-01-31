@@ -1463,7 +1463,7 @@ export class EvoPlayService {
 
           const response = {
             success: true,
-            message: 'win handled successfully',
+            message: 'win handled successfully',  
             status: HttpStatus.OK,
             data: {
               status: "ok",
@@ -1624,6 +1624,7 @@ export class EvoPlayService {
     });
 
     console.log('player res', res);
+    console.log("walletType", walletType);
 
     if (!res) {
       const response = {
