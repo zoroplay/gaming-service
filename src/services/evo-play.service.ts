@@ -1376,9 +1376,7 @@ export class EvoPlayService {
             return response;
           }
 
-          let creditRes = null;
-
-          creditRes = await this.walletService.credit({
+          const creditRes = await this.walletService.credit({
             userId: player.playerId,
             clientId: data.clientId,
             amount: amount.toFixed(2),
@@ -1444,10 +1442,24 @@ export class EvoPlayService {
           }
           
           // get player wallet
-          const creditRes = await this.walletService.getWallet({
+          // const creditRes = await this.walletService.getWallet({
+          //   userId: player.playerId,
+          //   clientId: player.clientId,
+          // });
+
+          const updateBonusWallet = await this.walletService.credit({
             userId: player.playerId,
-            clientId: player.clientId,
+            clientId: data.clientId,
+            amount: amount.toFixed(2),
+            source: game.provider.slug,
+            description: `Casino Bet: (${game.title})`,
+            username: player.playerNickname,
+            wallet: balanceType,
+            subject: 'Bet Win (Casino)',
+            channel: game.type,
           });
+
+          console.log("updateBonusWallet", updateBonusWallet);
 
           const response = {
             success: true,
@@ -1456,7 +1468,7 @@ export class EvoPlayService {
             data: {
               status: "ok",
               data: {
-                balance: creditRes.data.availableBalance.toFixed(2),
+                balance: updateBonusWallet.data.casinoBonusBalance.toFixed(2),
                 currency: player.currency,
               },
             }
@@ -1611,7 +1623,7 @@ export class EvoPlayService {
       token,
     });
 
-    // console.log('player res', res.data);
+    console.log('player res', res);
 
     if (!res) {
       const response = {
