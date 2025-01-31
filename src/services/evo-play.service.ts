@@ -1716,7 +1716,8 @@ export class EvoPlayService {
       data: {
         status: "ok",
         data: {
-          balance: walletType === 'casino' ? player.casinoBalance.toFixed(2) : player.balance.toFixed(2),
+          balance: walletType === 'casino' || walletType === 'bonus' 
+            ? player.casinoBalance.toFixed(2) : player.balance.toFixed(2),
           currency: player.currency
         }
       },
