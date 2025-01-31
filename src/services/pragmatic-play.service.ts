@@ -650,8 +650,8 @@ export class PragmaticService {
           cash: parseFloat(getUpdatedWallet.data.availableBalance.toFixed(2)),
           transactionId: place_bet.data.transactionId,
           currency: player.currency,
-          bonus: balanceType === 'bonus' ? parseFloat(getUpdatedWallet.data.casinoBonusBalance.toFixed(2)) : 0.00,
-          usedPromo: balanceType === 'bonus' ? parseFloat(body.get('amount')) : 0.00,
+          bonus: balanceType === 'bonus' || balanceType === 'casino' ? parseFloat(getUpdatedWallet.data.casinoBonusBalance.toFixed(2)) : 0.00,
+          usedPromo: balanceType === 'bonus' || balanceType === 'casino' ? parseFloat(body.get('amount')) : 0.00,
           error: 0,
           description: 'Successful',
           },
@@ -1914,9 +1914,6 @@ export class PragmaticService {
     }
   }
   
-  
-
-
   async refund(clientId, player, callback, body, balanceType) {
     console.log("Got to refund method");
     console.log("player", player, body, balanceType);
