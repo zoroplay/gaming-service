@@ -2217,7 +2217,7 @@ export class PragmaticService {
     }
 
     let player = null;
-    let balanceType = 'main';
+    let balanceType;
 
     // Handle PromoWin without token
     if (data.action === 'PromoWin') {
