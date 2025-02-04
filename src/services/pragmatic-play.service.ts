@@ -86,7 +86,7 @@ export class PragmaticService {
     try {
       const hash = this.genHash({ secureLogin: this.PRAGMATIC_SECURE_LOGIN });
       const { data } = await this.httpService
-        .post(`${this.PRAGMATIC_BASEURL}/JackpotFeeds/extended/jackpots?login=${this.PRAGMATIC_SECURE_LOGIN}&hash=${hash}`)
+        .post(`${this.PRAGMATIC_BASEURL}/JackpotFeeds/extended/winners?login=${this.PRAGMATIC_SECURE_LOGIN}&hash=${hash}`)
         .toPromise();
 
         console.log('data', data);
@@ -330,9 +330,9 @@ export class PragmaticService {
       message: "Authentication Successful",
       data: {
         userId: dataObject.playerId,
-        cash: walletType === 'casino' ? dataObject.casinoBalance.toFixed(2) : dataObject.balance.toFixed(2),
+        cash: parseFloat(dataObject.balance.toFixed(2)) || 0.00,
         currency: dataObject.currency,
-        bonus: dataObject.casinoBalance,
+        bonus: parseFloat(dataObject.casinoBalance.toFixed(2)) || 0.00,
         token: token,
         error: 0,
         description: 'Success',
@@ -647,7 +647,7 @@ export class PragmaticService {
         message: 'Bet Successful',
         status: HttpStatus.OK,
         data: {
-          cash: parseFloat(getUpdatedWallet.data.availableBalance.toFixed(2)),
+          cash: parseFloat(getUpdatedWallet.data.balance.toFixed(2)),
           transactionId: place_bet.data.transactionId,
           currency: player.currency,
           bonus: balanceType === 'bonus' || balanceType === 'casino' ? parseFloat(getUpdatedWallet.data.casinoBonusBalance.toFixed(2)) : 0.00,
@@ -1316,10 +1316,10 @@ export class PragmaticService {
         message: 'Win Successful',
         status: HttpStatus.OK,
         data: {
-          cash: parseFloat(creditResponse.data.balance.toFixed(2)),
+          cash: parseFloat(updatedWallet.data.balance.toFixed(2)) ||0.00,
           transactionId: settle_bet.data.transactionId,
           currency: player.currency,
-          bonus: parseFloat(updatedWallet.data.casinoBonusBalance.toFixed(2)),
+          bonus: parseFloat(updatedWallet.data.casinoBonusBalance.toFixed(2)) || 0.00,
           error: 0,
           description: 'Successful',
         },

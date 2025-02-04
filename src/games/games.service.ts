@@ -1235,4 +1235,52 @@ export class GamesService {
     }
     
 }
+
+async handleCasinoJackpot(): Promise<any> {
+  try {
+    console.log('HandleCasinoJackpot');
+    const value = await this.pragmaticPlayService.getActiveJackpotFeeds();
+
+    console.log("value", value);
+
+    return {
+      status: 1,
+      message: "Success",
+      success: true,
+      data: value
+    }
+
+  } catch (error) {
+    console.log('error', error);
+    return {
+      error: error.message,
+      success: false
+    }
+  }
+  
+}
+
+async handleCasinoJackpotWinners(): Promise<any> {
+  try {
+    console.log('HandleCasinoJackpotWinners');
+    const value = await this.pragmaticPlayService.getJackpotWinners();
+
+    console.log("value", value);
+
+    return {
+      status: 1,
+      message: "Success",
+      success: true,
+      data: value
+    }
+
+  } catch (error) {
+    console.log('error', error);
+    return {
+      error: error.message,
+      success: false
+    }
+  }
+  
+}
 }

@@ -622,6 +622,10 @@ export interface GamingServiceClient {
 
   handleCasinoBonus(request: CreateBonusRequest): Observable<CreateBonusResponse>;
 
+  handleCasinoJackpot(request: Empty): Observable<CommonResponse>;
+
+  handleCasinoJackpotWinners(request: Empty): Observable<CommonResponse>;
+
   startGame(request: StartGameDto): Observable<StartGameResponse>;
 
   queryGames(request: Observable<PaginationDto>): Observable<Games>;
@@ -722,6 +726,10 @@ export interface GamingServiceController {
     request: CreateBonusRequest,
   ): Promise<CreateBonusResponse> | Observable<CreateBonusResponse> | CreateBonusResponse;
 
+  handleCasinoJackpot(request: Empty): Promise<CommonResponse> | Observable<CommonResponse> | CommonResponse;
+
+  handleCasinoJackpotWinners(request: Empty): Promise<CommonResponse> | Observable<CommonResponse> | CommonResponse;
+
   startGame(request: StartGameDto): Promise<StartGameResponse> | Observable<StartGameResponse> | StartGameResponse;
 
   queryGames(request: Observable<PaginationDto>): Observable<Games>;
@@ -783,6 +791,8 @@ export function GamingServiceControllerMethods() {
       "updatePromotion",
       "removePromotion",
       "handleCasinoBonus",
+      "handleCasinoJackpot",
+      "handleCasinoJackpotWinners",
       "startGame",
       "handleCallback",
       "handleQtechCallback",

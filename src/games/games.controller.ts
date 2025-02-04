@@ -346,4 +346,16 @@ async getGames(request?: GetGamesRequest) {
     console.log('handleCasinoBonus');
     return this.gamesService.handleCasinoBonus(payload);
   }
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'handleCasinoJackpot')
+  HandleCasinoJackpot(): Promise<any> {
+    console.log('HandleCasinoJackpot');
+    return this.gamesService.handleCasinoJackpot();
+  }
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'handleCasinoJackpotWinners')
+  HandleCasinoJackpotWinners(): Promise<any> {
+    console.log('handleCasinoJackpotWinners');
+    return this.gamesService.handleCasinoJackpotWinners();
+  }
 }
