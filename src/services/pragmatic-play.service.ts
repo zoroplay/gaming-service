@@ -71,7 +71,7 @@ export class PragmaticService {
     try {
       const hash = this.genHash({ secureLogin: this.PRAGMATIC_SECURE_LOGIN });
       const { data } = await this.httpService
-        .post(`https://api.prerelease-env.biz/IntegrationService/v3/JackpotFeeds/extended/jackpots?login=${this.PRAGMATIC_SECURE_LOGIN}&hash=${hash}`)
+        .get(`https://api.prerelease-env.biz/IntegrationService/v3/JackpotFeeds/extended/jackpots?login=${this.PRAGMATIC_SECURE_LOGIN}&hash=${hash}`)
         .toPromise();
 
         console.log('data', data);
@@ -86,7 +86,7 @@ export class PragmaticService {
     try {
       const hash = this.genHash({ secureLogin: this.PRAGMATIC_SECURE_LOGIN });
       const { data } = await this.httpService
-        .post(`${this.PRAGMATIC_BASEURL}/JackpotFeeds/extended/winners?login=${this.PRAGMATIC_SECURE_LOGIN}&hash=${hash}`)
+        .get(`${this.PRAGMATIC_BASEURL}/JackpotFeeds/extended/winners?login=${this.PRAGMATIC_SECURE_LOGIN}&hash=${hash}`)
         .toPromise();
 
         console.log('data', data);
