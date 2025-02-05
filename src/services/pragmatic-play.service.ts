@@ -70,11 +70,79 @@ export class PragmaticService {
   async getActiveJackpotFeeds(): Promise<any> {
     try {
       const hash = this.genHash({ secureLogin: this.PRAGMATIC_SECURE_LOGIN });
-      const { data } = await this.httpService
-        .get(`https://api.prerelease-env.biz/IntegrationService/v3/JackpotFeeds/extended/jackpots?login=${this.PRAGMATIC_SECURE_LOGIN}&hash=${hash}`)
-        .toPromise();
+      // const { data } = await this.httpService
+      //   .get(`https://api.prerelease-env.biz/IntegrationService/v3/JackpotFeeds/extended/jackpots?login=${this.PRAGMATIC_SECURE_LOGIN}&hash=${hash}`)
+      //   .toPromise();
 
-        console.log('data', data);
+      //   console.log('data', data);
+
+        const data = {
+          "jackpots": [
+            {
+              "mainJackpotID": 459,
+              "name": "test_name",
+              "level": "B",
+              "games": "vsprg20doghouse",
+              "status": "A",
+              "tiersNumber": 4,
+              "tiers": [
+                {
+                  "jackpotTierID": 459,
+                  "tier": 0,
+                  "amount": 10
+                },
+                {
+                  "jackpotTierID": 460,
+                  "tier": 1,
+                  "amount": 200
+                }
+              ]
+            },
+            {
+              "mainJackpotID": 459,
+              "name": "test_name",
+              "level": "B",
+              "games": "vsprg20doghouse",
+              "status": "A",
+              "tiersNumber": 4,
+              "tiers": [
+                {
+                  "jackpotTierID": 459,
+                  "tier": 0,
+                  "amount": 10
+                },
+                {
+                  "jackpotTierID": 460,
+                  "tier": 1,
+                  "amount": 200
+                }
+              ]
+            },
+            {
+              "mainJackpotID": 459,
+              "name": "test_name",
+              "level": "B",
+              "games": "vsprg20doghouse",
+              "status": "A",
+              "tiersNumber": 4,
+              "tiers": [
+                {
+                  "jackpotTierID": 459,
+                  "tier": 0,
+                  "amount": 10
+                },
+                {
+                  "jackpotTierID": 460,
+                  "tier": 1,
+                  "amount": 200
+                }
+              ]
+            },
+          ],
+          "error": "0",
+          "description": "OK"
+        }
+        
 
       return data;
     } catch (e) {
