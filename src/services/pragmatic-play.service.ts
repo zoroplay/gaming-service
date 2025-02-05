@@ -69,10 +69,10 @@ export class PragmaticService {
 
   async getActiveJackpotFeeds(): Promise<any> {
     try {
-      const hash = this.genHash({ secureLogin: this.PRAGMATIC_SECURE_LOGIN });
+      const hash = this.genHash({ login: this.PRAGMATIC_SECURE_LOGIN });
       console.log('hash', hash);
       const { data } = await this.httpService
-        .get(`https://api.prerelease-env.biz/IntegrationService/v3/JackpotFeeds/extended/jackpots?login=${this.PRAGMATIC_SECURE_LOGIN}&hash=${hash}`)
+        .get(`https://api.prerelease-env.biz/IntegrationService/v3/JackpotFeeds/extended/jackpots/?login=${this.PRAGMATIC_SECURE_LOGIN}&hash=${hash}`)
         .toPromise();
 
         console.log('data', data);
