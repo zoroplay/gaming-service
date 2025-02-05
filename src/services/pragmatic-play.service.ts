@@ -86,11 +86,119 @@ export class PragmaticService {
     try {
       const hash = this.genHash({ secureLogin: this.PRAGMATIC_SECURE_LOGIN });
       console.log("hash", hash);
-      const { data } = await this.httpService
-        .get(`https://api.prerelease-env.biz/IntegrationService/v3/JackpotFeeds/extended/winners?login=${this.PRAGMATIC_SECURE_LOGIN}&hash=${hash}`)
-        .toPromise();
+      // const { data } = await this.httpService
+      //   .get(`https://api.prerelease-env.biz/IntegrationService/v3/JackpotFeeds/extended/winners?login=${this.PRAGMATIC_SECURE_LOGIN}&hash=${hash}`)
+      //   .toPromise();
 
-        console.log('data', data);
+      //   console.log('data', data);
+
+        const data = {
+          "winners": [
+            {
+              "jackpotTierID": 3924,
+              "extPlayerID": "459",
+              "winAmount": 8.60,
+              "winDate": 1620890276322,
+              "winType": "W",
+              "playSessionID": 10293633659602,
+              "currency": "USD",
+              "username": "f***g"
+            },
+            {
+              "jackpotTierID": 3925,
+              "extPlayerID": "460",
+              "winAmount": 15,
+              "winDate": 1620890648909,
+              "winType": "NW",
+              "playSessionID": 10293686600602,
+              "currency": "USD",
+              "username": "f***g"
+            },
+            {
+              "jackpotTierID": 3925,
+              "extPlayerID": "460",
+              "winAmount": 15,
+              "winDate": 1620890648909,
+              "winType": "NW",
+              "playSessionID": 10293686600602,
+              "currency": "USD",
+              "username": "f***g"
+            },
+            {
+              "jackpotTierID": 3925,
+              "extPlayerID": "460",
+              "winAmount": 15,
+              "winDate": 1620890648909,
+              "winType": "NW",
+              "playSessionID": 10293686600602,
+              "currency": "USD",
+              "username": "f***g"
+            },
+            {
+              "jackpotTierID": 3925,
+              "extPlayerID": "460",
+              "winAmount": 15,
+              "winDate": 1620890648909,
+              "winType": "NW",
+              "playSessionID": 10293686600602,
+              "currency": "USD",
+              "username": "f***g"
+            },
+            {
+              "jackpotTierID": 3925,
+              "extPlayerID": "460",
+              "winAmount": 15,
+              "winDate": 1620890648909,
+              "winType": "NW",
+              "playSessionID": 10293686600602,
+              "currency": "USD",
+              "username": "f***g"
+            },
+            {
+              "jackpotTierID": 3925,
+              "extPlayerID": "460",
+              "winAmount": 15,
+              "winDate": 1620890648909,
+              "winType": "NW",
+              "playSessionID": 10293686600602,
+              "currency": "USD",
+              "username": "f***g"
+            },
+            {
+              "jackpotTierID": 3925,
+              "extPlayerID": "460",
+              "winAmount": 15,
+              "winDate": 1620890648909,
+              "winType": "NW",
+              "playSessionID": 10293686600602,
+              "currency": "USD",
+              "username": "f***g"
+            },
+            {
+              "jackpotTierID": 3925,
+              "extPlayerID": "460",
+              "winAmount": 15,
+              "winDate": 1620890648909,
+              "winType": "NW",
+              "playSessionID": 10293686600602,
+              "currency": "USD",
+              "username": "f***g"
+            },
+            {
+              "jackpotTierID": 3925,
+              "extPlayerID": "460",
+              "winAmount": 15,
+              "winDate": 1620890648909,
+              "winType": "NW",
+              "playSessionID": 10293686600602,
+              "currency": "USD",
+              "username": "f***g"
+            }
+          ],
+          "error": "0",
+          "description": "OK"
+        }
+        
 
       return data;
     } catch (e) {
