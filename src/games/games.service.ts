@@ -20,8 +20,8 @@ import {
   Categories,
   CommonResponse,
   CommonResponseArray,
+  CreateBonusRequest,
   CreateGameDto,
-  CreatePromotionDto,
   CreatePromotionRequest,
   CreateProviderDto,
   CreateTournamentDto,
@@ -31,17 +31,14 @@ import {
   FindOneTournamentDto,
   Game,
   Games,
+  GetGamesRequest,
   PaginationDto,
   Promotion,
-  Promotions,
-  QtechCallbackRequest,
-  QtechRollbackRequest,
-  QtechtransactionRequest,
   SaveCategoryRequest,
   StartGameDto,
   SyncGameDto,
   Tournaments,
-  UpdateGameDto,
+  UpdateGameDto
 } from 'src/proto/gaming.pb';
 import {
   C2GamingService,
@@ -50,6 +47,7 @@ import {
   TadaGamingService,
 } from 'src/services';
 
+import { TournamentGame } from 'src/entities/tournament-game.entity';
 import { EntityToProtoService } from 'src/services/entity-to-proto.service';
 import { EvoPlayService } from 'src/services/evo-play.service';
 import { PragmaticService } from 'src/services/pragmatic-play.service';
@@ -57,7 +55,6 @@ import { QtechService } from 'src/services/qtech.service';
 import { FindManyOptions, ILike, In, Repository } from 'typeorm';
 import { Game as GameEntity } from '../entities/game.entity';
 import { Provider as ProviderEntity } from '../entities/provider.entity';
-import { TournamentGame } from 'src/entities/tournament-game.entity';
 
 @Injectable()
 export class GamesService {
@@ -800,83 +797,21 @@ export class GamesService {
     // return gameList;
   }
 
-  async handleQtechCallback(request: QtechCallbackRequest): Promise<any> {
-    console.log('start-service', request);
-    // //(request);
-    const resp = await this.qtechService.handleQTGamesCallback(request);
-    console.log('resp', resp);
-
-    return resp;
-  }
-
-  async handleQtechRollback(request: QtechRollbackRequest): Promise<any> {
-    console.log('Start Game service Roll back');
-
-    const resp = await this.qtechService.refund(request);
-
-    return resp;
-  }
-
-  async handleQtechGetBalance(request: QtechCallbackRequest): Promise<any> {
-    console.log('Get Balance');
-    const result = await this.qtechService.getBalance(request);
-
-    return result;
-  }
-
-  async handleQtechBet(request: QtechtransactionRequest): Promise<any> {
-    try {
-      console.log('Bet Balance');
-      const result = await this.qtechService.bet(request);
-      console.log('Game-Game', result);
-      return result;
-    } catch (error) {
-      console.log('THIS', error);
-    }
-  }
-
-  async handleQtechWin(request: QtechtransactionRequest): Promise<any> {
-    console.log('Win Balance');
-    const result = await this.qtechService.win(request);
-    console.log(result);
-    return result;
-  }
-  
   async handleC2Games(body: any, headers: any): Promise<any> {
     console.log(body);
     console.log(headers);
     throw new Error('Method not implemented.');
   }
 
-
-  // async createPromotion(
-  //   createPromotionDto: CreatePromotionDto,
-  // ): Promise<Promotion> {
-  //   console.log('createPromotionDto', createPromotionDto);
-  //   const newPromotion: Promotion = new PromotionEntity();
-
-  //   newPromotion.title = createPromotionDto.title;
-  //   newPromotion.imageUrl = createPromotionDto.imageUrl;
-  //   newPromotion.content = createPromotionDto.content;
-  //   newPromotion.type = createPromotionDto.type;
-  //   newPromotion.endDate = createPromotionDto.endDate;
-  //   newPromotion.startDate = createPromotionDto.startDate;
-
-  //   const savedPromotion = await this.promotionRepository.save(newPromotion);
-  //   console.log('savedPromotion', savedPromotion);
-  //   return savedPromotion;
-  // }
-
   async createPromotion(
-    createPromotionDto: CreatePromotionRequest
+    createPromotionDto: CreatePromotionRequest,
   ): Promise<Promotion> {
     console.log('createPromotionDto service', createPromotionDto);
-  
-  
+
     // Define the folder and file name for the image in Firebase
     const folderName = 'promotions'; // Example: folder to store promotion images
     const fileName = `${Date.now()}_uploaded-file`; // Unique file name
-  
+
     try {
       // Upload the file to Firebase and get the public URL
       const imageUrl = await this.firebaseService.uploadFileToFirebase(
@@ -884,26 +819,25 @@ export class GamesService {
         fileName,
         createPromotionDto.file,
       );
-  
+
       console.log('Uploaded image URL:', imageUrl);
-  
+
       // Create a new promotion entity and assign values
       const newPromotion: any = new PromotionEntity();
 
-      const newPromotion: Promotion = new PromotionEntity();
-  
       newPromotion.title = createPromotionDto.metadata.title;
-      newPromotion.imageUrl = imageUrl || ''; // Assign the uploaded image URL
+      newPromotion.imageUrl = imageUrl || createPromotionDto.metadata.content; // Assign the uploaded image URL
       newPromotion.content = createPromotionDto.metadata.content;
       newPromotion.type = createPromotionDto.metadata.type;
       newPromotion.startDate = createPromotionDto.metadata.startDate;
       newPromotion.endDate = createPromotionDto.metadata.endDate;
       newPromotion.targetUrl = createPromotionDto.metadata.targetUrl;
+      newPromotion.clientId = createPromotionDto.metadata.clientId;
   
       // Save the promotion entity to the database
       const savedPromotion = await this.promotionRepository.save(newPromotion);
       console.log('Saved promotion:', savedPromotion);
-  
+
       return savedPromotion;
     } catch (error) {
       console.error('Error creating promotion:', error.message);
@@ -935,50 +869,51 @@ export class GamesService {
   ): Promise<any> {
     const { id } = updatePromotionDto;
   
-  ): Promise<Promotion> {
-    console.log("updatePromotionDto", updatePromotionDto);
-    const { id } = updatePromotionDto.metadata;
-      
     // Find the promotion by ID
     const promotion = await this.promotionRepository.findOneBy({ id });
-
-    console.log("promotion", promotion);
-
+  
     if (!promotion) {
-      throw new Error(`Promotion with ID ${updatePromotionDto.id} not found`);
+      throw new Error(`Promotion with ID ${id} not found`);
     }
-
-    // Define the folder and file name for the image in Firebase
-    const folderName = 'promotions'; // Example: folder to store promotion images
-    const fileName = `${Date.now()}_uploaded-file`; // Unique file name
-
-    let imageUrl: string;
-
-    if(updatePromotionDto.file) {
-      imageUrl = await this.firebaseService.uploadFileToFirebase(
-        folderName,
-        fileName,
-        updatePromotionDto.file,
-      );
+  
+    try {
+      let imageUrl: string | undefined;
+  
+      if (updatePromotionDto.file) {
+        // Define folder and file name for the new image in Firebase
+        const folderName = 'promotions';
+        const fileName = `${Date.now()}_uploaded-file`;
+  
+        // Upload the new file to Firebase and get the public URL
+        imageUrl = await this.firebaseService.uploadFileToFirebase(
+          folderName,
+          fileName,
+          updatePromotionDto.file,
+        );
+  
+        console.log('Uploaded image URL:', imageUrl);
+      }
+  
+      // Update fields dynamically
+      promotion.title = updatePromotionDto.metadata.title ?? promotion.title;
+      promotion.imageUrl = imageUrl || promotion.imageUrl;
+      promotion.content = updatePromotionDto.metadata.content ?? promotion.content;
+      promotion.type = updatePromotionDto.metadata.type ?? promotion.type;
+      promotion.targetUrl = updatePromotionDto.metadata.targetUrl ?? promotion.targetUrl;
+      promotion.startDate = updatePromotionDto.metadata.startDate ?? promotion.startDate;
+      promotion.endDate = updatePromotionDto.metadata.endDate ?? promotion.endDate;
+  
+      // Save the updated promotion
+      const updatedPromotion = await this.promotionRepository.save(promotion);
+      console.log('Updated promotion:', updatedPromotion);
+  
+      return updatedPromotion;
+    } catch (error) {
+      console.error('Error updating promotion:', error.message);
+      throw new Error('Failed to update promotion. Please try again later.');
     }
-
-    console.log('Uploaded image URL:', imageUrl);
-
-    // Update fields with provided values or retain existing ones
-    // promotion.clientId = updatePromotionDto.clientId ?? promotion.clientId;
-    promotion.title = updatePromotionDto.metadata.title ?? promotion.title;
-    promotion.imageUrl = imageUrl ?? promotion.imageUrl;
-    promotion.content = updatePromotionDto.metadata.content ?? promotion.content;
-    promotion.type = updatePromotionDto.metadata.type ?? promotion.type;
-    promotion.targetUrl = updatePromotionDto.metadata.targetUrl ?? promotion.targetUrl;
-    promotion.startDate = updatePromotionDto.metadata.startDate;
-    promotion.endDate = updatePromotionDto.metadata.endDate;
-
-    // Save the updated promotion
-    const updatedPromotion = await this.promotionRepository.save(promotion);
-    return updatedPromotion;
   }
-
+  
   async removePromotion(request: FindOnePromotionDto) {
     const { id } = request;
     console.log('Deleting promotion with ID:', id);
@@ -1069,16 +1004,66 @@ export class GamesService {
   //   };
   // }
 
-  async getGamesWithCategories(): Promise<CommonResponseArray> {
-    const [games] = await this.gameRepository
+  // async getGamesWithCategories(): Promise<CommonResponseArray> {
+  //   const [games] = await this.gameRepository
+  //     .createQueryBuilder('game')
+  //     .leftJoinAndSelect('game.gameCategories', 'gameCategory')
+  //     .leftJoinAndSelect('gameCategory.category', 'category')
+  //     .leftJoinAndSelect('game.provider', 'provider')
+  //     .getManyAndCount();
+
+  //   console.log('games', games);
+
+  //   const gameData = games.map((game) => ({
+  //     id: game.id,
+  //     status: game.status,
+  //     provider_id: game.provider ? game.provider.id : 0,
+  //     provider_name: game.provider ? game.provider.name : '',
+  //     game_id: game.gameId,
+  //     game_name: game.title,
+  //     image: game.imagePath,
+  //     description: game.description,
+  //     priority: game.priority,
+  //     category: game.gameCategories.map((gc) => ({
+  //       id: gc.category?.id || '', // Safely access category.id, fallback to 0
+  //       name: gc.category?.name || '', // Safely access category.name, fallback to an empty string
+  //     })),
+  //   }));
+
+  //   // const gameDatas = {
+  //   //   total,
+  //   //   per_page: perPage,
+  //   //   current_page: page,
+  //   //   last_page: Math.ceil(total / perPage),
+  //   //   from: skip + 1,
+  //   //   to: skip + gameData.length,
+  //   // }
+
+  //   return {
+  //     status: 200,
+  //     success: true,
+  //     message: 'Games retrieved successfully',
+  //     data: gameData,
+  //   };
+  // }
+
+  async getGamesWithCategories(payload?: GetGamesRequest): Promise<CommonResponseArray> {
+    const { gameIds } = payload;
+    const query = this.gameRepository
       .createQueryBuilder('game')
       .leftJoinAndSelect('game.gameCategories', 'gameCategory')
       .leftJoinAndSelect('gameCategory.category', 'category')
-      .leftJoinAndSelect('game.provider', 'provider')
-      .getManyAndCount();
-
+      .leftJoinAndSelect('game.provider', 'provider');
+  
+    // Add filtering by gameIds if provided
+    if (gameIds && gameIds.length > 0) {
+      query.where('game.gameId IN (:...gameIds)', { gameIds });
+    }
+  
+    const [games] = await query.getManyAndCount();
+  
     console.log('games', games);
-
+  
     const gameData = games.map((game) => ({
       id: game.id,
       status: game.status,
@@ -1090,20 +1075,11 @@ export class GamesService {
       description: game.description,
       priority: game.priority,
       category: game.gameCategories.map((gc) => ({
-        id: gc.category.id,
-        name: gc.category.name,
+        id: gc.category?.id || '', // Safely access category.id, fallback to 0
+        name: gc.category?.name || '', // Safely access category.name, fallback to an empty string
       })),
     }));
-
-    // const gameDatas = {
-    //   total,
-    //   per_page: perPage,
-    //   current_page: page,
-    //   last_page: Math.ceil(total / perPage),
-    //   from: skip + 1,
-    //   to: skip + gameData.length,
-    // }
-
+  
     return {
       status: 200,
       success: true,
@@ -1111,6 +1087,7 @@ export class GamesService {
       data: gameData,
     };
   }
+  
 
   async createTournament(
     createTournamentDto: CreateTournamentDto,
@@ -1214,10 +1191,8 @@ export class GamesService {
     console.log('TournamentGames', TournamentGames);
 
     const val = await this.tournamentGameRepository.save(TournamentGames);
-    console.log('val', val);
     return val[0];
   }
-
   async removeTournamentGames(dto: AddGameToTournamentDto) {
     const games = await this.gameRepository.find({
       where: { id: In(dto.gameId) },
@@ -1237,4 +1212,77 @@ export class GamesService {
 
     return { message: 'Categories removed successfully' };
   }
+
+
+  async handleCasinoBonus(request: CreateBonusRequest): Promise<any> {
+    try {
+      console.log('handleCasinoBonus');
+      const value = await this.evoPlayService.registerBonus(request);
+
+      console.log("value", value);
+
+      return {
+        status: 1,
+        description: "Success",
+        success: true,
+        bonusId: value[0].registry_id
+      }
+
+    } catch (error) {
+      console.log('error', error);
+      return {
+        error: error.message,
+        success: false
+      }
+    }
+    
+}
+
+async handleCasinoJackpot(): Promise<any> {
+  try {
+    console.log('HandleCasinoJackpot');
+    const value = await this.pragmaticPlayService.getActiveJackpotFeeds();
+
+    console.log("value", value);
+
+    return {
+      status: 1,
+      message: "Success",
+      success: true,
+      data: value
+    }
+
+  } catch (error) {
+    console.log('error', error);
+    return {
+      error: error.message,
+      success: false
+    }
+  }
+  
+}
+
+async handleCasinoJackpotWinners(): Promise<any> {
+  try {
+    console.log('HandleCasinoJackpotWinners');
+    const value = await this.pragmaticPlayService.getJackpotWinners();
+
+    console.log("value", value);
+
+    return {
+      status: 1,
+      message: "Success",
+      success: true,
+      data: value
+    }
+
+  } catch (error) {
+    console.log('error', error);
+    return {
+      error: error.message,
+      success: false
+    }
+  }
+  
+}
 }

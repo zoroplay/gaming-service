@@ -8,6 +8,7 @@ import {
   AddGameToTournamentDto,
   CallbackGameDto,
   CommonResponse,
+  CreateBonusRequest,
   CreateGameDto,
   CreatePromotionRequest,
   CreateProviderDto,
@@ -21,12 +22,11 @@ import {
   Game,
   Games,
   GAMING_SERVICE_NAME,
+  GetGamesRequest,
   PaginationDto,
   Provider,
   Providers,
   QtechCallbackRequest,
-  QtechRollbackRequest,
-  QtechtransactionRequest,
   SaveCategoryRequest,
   StartGameDto,
   SyncGameDto,
@@ -210,16 +210,6 @@ export class GamesController {
     }
   }
 
-  // @GrpcMethod(GAMING_SERVICE_NAME, 'createPromotion')
-  // async createPromotion(
-  //   payload: CreatePromotionDto,
-  // ): Promise<any> {
-  //   console.log('Received payload', payload);
-  //   // Pass the payload and file to the games service
-  //   const newPromo = await this.gamesService.createPromotion(payload);
-  //   return newPromo;
-  // }
-
   @GrpcMethod(GAMING_SERVICE_NAME, 'createPromotion')
   async createPromotion(
     payload: CreatePromotionRequest, 
@@ -231,21 +221,10 @@ export class GamesController {
   }
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'updatePromotion')
-  async updatePromotion(
-    payload: CreatePromotionRequest, 
-  ): Promise<any> {
-    console.log('Received payload', payload);
-    // Pass the payload and file to the games service
-    const newPromo = await this.gamesService.updatePromotion(payload);
-    return newPromo;
+  updatePromotion(payload: CreatePromotionRequest): Promise<any> {
+    console.log('fetch gameNames');
+    return this.gamesService.updatePromotion(payload);
   }
-
-  // @GrpcMethod(GAMING_SERVICE_NAME, 'updatePromotion')
-  // async updatePromotion(payload: CreatePromotionDto): Promise<any> {
-  //   console.log('Received payload', payload);
-  //   const updatePromotion = await this.gamesService.updatePromotion(payload);
-  //   return updatePromotion;
-  // }
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'findPromotions')
   fetchPromotions(): Promise<any> {
@@ -271,10 +250,16 @@ export class GamesController {
     return this.gamesService.removePromotion(payload);
   }
 
-  @GrpcMethod(GAMING_SERVICE_NAME, 'getGames')
-  async getGames() {
-    return this.gamesService.getGamesWithCategories();
-  }
+  // @GrpcMethod(GAMING_SERVICE_NAME, 'getGames')
+  // async getGames() {
+  //   return this.gamesService.getGamesWithCategories();
+  // }
+
+@GrpcMethod(GAMING_SERVICE_NAME, 'getGames')
+async getGames(request?: GetGamesRequest) {
+  // Call the service method with the gameIds
+  return this.gamesService.getGamesWithCategories(request);
+}
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'createTournament')
   async createTournament(payload: CreateTournamentDto): Promise<any> {
@@ -316,23 +301,23 @@ export class GamesController {
   // @GrpcMethod(GAMING_SERVICE_NAME, 'uploadImage')
   // uploadImage(payload: FileChunk): Promise<any> {
   //   return this.gamesService.uploadImage(payload)
-
+    
   // }
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'handleQtechCallback')
   async handleQtechCallback(payload: QtechCallbackRequest): Promise<any> {
-    return this.gamesService.handleQtechCallback(payload);
+    return this.qtechService.handlCallbacks(payload);
   }
 
-  @GrpcMethod(GAMING_SERVICE_NAME, 'handleQtechGetBalance')
-  async handleQtechGetBalance(payload: QtechCallbackRequest): Promise<any> {
-    return this.gamesService.handleQtechGetBalance(payload);
-  }
+  // @GrpcMethod(GAMING_SERVICE_NAME, 'handleQtechGetBalance')
+  // async handleQtechGetBalance(payload: QtechCallbackRequest): Promise<any> {
+  //   return this.gamesService.handleQtechGetBalance(payload);
+  // }
 
-  @GrpcMethod(GAMING_SERVICE_NAME, 'handleQtechTransactionBet')
-  async handleQtechBet(payload: QtechtransactionRequest): Promise<any> {
-    return this.gamesService.handleQtechBet(payload);
-  }
+  // @GrpcMethod(GAMING_SERVICE_NAME, 'handleQtechTransactionBet')
+  // async handleQtechBet(payload: QtechtransactionRequest): Promise<any> {
+  //   return this.gamesService.handleQtechBet(payload);
+  // }
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'addTournamentGame')
   addTournamentGame(payload: AddGameToTournamentDto): Promise<any> {
@@ -346,13 +331,31 @@ export class GamesController {
     return this.gamesService.removeTournamentGames(payload);
   }
 
-  @GrpcMethod(GAMING_SERVICE_NAME, 'handleQtechRollback')
-  async handleQtechRollback(payload: QtechRollbackRequest): Promise<any> {
-    return this.gamesService.handleQtechRollback(payload);
+  // @GrpcMethod(GAMING_SERVICE_NAME, 'handleQtechRollback')
+  // async handleQtechRollback(payload: QtechRollbackRequest): Promise<any> {
+  //   return this.gamesService.handleQtechRollback(payload);
+  // }
+
+  // @GrpcMethod(GAMING_SERVICE_NAME, 'handleQtechTransactionWin')
+  // async handleQtechWin(payload: QtechtransactionRequest): Promise<any> {
+  //   return this.gamesService.handleQtechWin(payload);
+  // }
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'handleCasinoBonus')
+  handleCasinoBonus(payload: CreateBonusRequest): Promise<any> {
+    console.log('handleCasinoBonus');
+    return this.gamesService.handleCasinoBonus(payload);
   }
 
-  @GrpcMethod(GAMING_SERVICE_NAME, 'handleQtechTransactionWin')
-  async handleQtechWin(payload: QtechtransactionRequest): Promise<any> {
-    return this.gamesService.handleQtechWin(payload);
+  @GrpcMethod(GAMING_SERVICE_NAME, 'handleCasinoJackpot')
+  HandleCasinoJackpot(): Promise<any> {
+    console.log('HandleCasinoJackpot');
+    return this.gamesService.handleCasinoJackpot();
+  }
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'handleCasinoJackpotWinners')
+  HandleCasinoJackpotWinners(): Promise<any> {
+    console.log('handleCasinoJackpotWinners');
+    return this.gamesService.handleCasinoJackpotWinners();
   }
 }

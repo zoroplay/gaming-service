@@ -1,11 +1,25 @@
 /* eslint-disable prettier/prettier */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable prettier/prettier */
 import { HttpService } from '@nestjs/axios';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { Cache } from 'cache-manager';
-import * as crypto from 'crypto';
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config'; // Import your SettingService
+import { InjectRepository } from '@nestjs/typeorm';
 import { AxiosRequestConfig, AxiosResponse } from 'axios';
+import { Cache } from 'cache-manager';
+import * as crypto from 'crypto';
+import { firstValueFrom } from 'rxjs';
+import { BonusService } from 'src/bonus/bonus.service';
+import { IdentityService } from 'src/identity/identity.service';
+import {
+  CreditCasinoBetRequest,
+  PlaceCasinoBetRequest,
+  RollbackCasinoBetRequest,
+  SettleCasinoBetRequest,
+} from 'src/proto/betting.pb';
+import { Repository } from 'typeorm';
+import { BetService } from '../bet/bet.service';
 import {
   CallbackLog,
   Game as GameEntity,
@@ -13,20 +27,9 @@ import {
   // Player as PlayerEntity,
   Provider as ProviderEntity,
 } from '../entities';
-import { Repository } from 'typeorm';
-import { InjectRepository } from '@nestjs/typeorm';
 import { WalletService } from '../wallet/wallet.service';
-import { BetService } from '../bet/bet.service';
-import {
-  CreditCasinoBetRequest,
-  PlaceCasinoBetRequest,
-  RollbackCasinoBetRequest,
-  SettleCasinoBetRequest,
-} from 'src/proto/betting.pb';
-import { IdentityService } from 'src/identity/identity.service';
-import { firstValueFrom } from 'rxjs';
-import { BonusService } from 'src/bonus/bonus.service';
-import { CreateBonusRequest } from 'src/proto/bonus.pb';
+import * as dayjs from 'dayjs';
+import { GetBonusRequest } from 'src/proto/bonus.pb';
 
 @Injectable()
 export class EvoPlayService {
@@ -164,6 +167,23 @@ export class EvoPlayService {
     };
   }
 
+
+
+
+  addDaysToDate(days: number): string {
+    if (typeof days !== 'number' || isNaN(days)) {
+      throw new Error('Input must be a valid number');
+    }
+  
+    // Get the current date and add the specified number of days
+    const futureDate = dayjs().add(days, 'day');
+  
+    // Format the date to 'YYYY-MM-DD %HH:MM:SS'
+    const formattedDate = `${futureDate.format('YYYY-MM-DD')} ${futureDate.format('HH:mm:ss')}`;
+  
+    return formattedDate;
+  }
+
   //get games Info
   async getGameInfo(game: GameEntity) {
     try {
@@ -191,64 +211,42 @@ export class EvoPlayService {
   }
 
   //Register Bonus
-  async registerBonus(data, game: GameEntity) {
+  async registerBonus(data: any) {
     try {
 
+      const formattedDate = this.addDaysToDate(data.duration).replace(' ', '%20');
+      const formattedDateSpace = this.addDaysToDate(data.duration);
+      console.log("formattedDate", formattedDate);
+
       const newData: any = {
-        game: parseInt(game.gameId)
-      }
-
-      if (data.isBonus && data.bonusType == 'free_rounds') {
-        newData.settings = {
-          ...newData.settings, 
-          extra_bonuses: {
-            bonus_spins: {
-              spins_count: 5,
-              bet_in_money: 500
-            },
+        games: Array.isArray(data.gameId) ? data.gameId.join(',') : data.gameId,
+        users: Array.isArray(data.userIds) ? data.userIds.join(',') : data.clientId,
+        currency: 'NGN',
+      };
+      
+      if (data.bonusType === 'free_rounds') {
+        newData.extra_bonuses = {
+          bonus_spins: {
+            spins_count: data.casinoSpinCount,
+            bet_in_money: data.minimumEntryAmount,
           },
-          extra_bonuses_settings: {
-            registration_id: 'test2'
-          }
-        }
+        };
+      
+        newData.settings = {
+          expire: formattedDateSpace,
+        };
       }
 
-      const createBonusPayload: CreateBonusRequest = {
-        clientId: data.clientId,
-        bonusType: 'free_rounds',
-        creditType: data.creditType,
-        duration: data.duration,
-        minimumSelection: data.minimumSelection,
-        minimumOddsPerEvent: data.minimumOddsPerEvent,
-        minimumTotalOdds: data.minimumTotalOdds,
-        applicableBetType: data.applicableBetType,
-        maximumWinning: data.maximumWinning,
-        bonusAmount: data.bonusAmount,
-        minimumLostGames: data.minimumLostGames,
-        rolloverCount: data.rolloverCount,
-        name: data.name,
-        minimumEntryAmount: data.minimumEntryAmount,
-        maxAmount: data.maxAmount,
-        product: data.product,
-        gameId: data.gameId,
-        casinoSpinCount: data.casinoSpinCount,
-        status: 0,
-        created: '',
-        updated: '',
-        id: 0
-      }
-
-      console.log("createBonusPayload", createBonusPayload);
-
-      const bonus = await this.bonusService.createBonus(createBonusPayload);
-
-      console.log("bonus", bonus);
-
-      if (!bonus.success) {
-        return {
-          success: false,
-          status: HttpStatus.INTERNAL_SERVER_ERROR,
-          message: 'Error creating bonus from bonus service',
+      if (data.bonusType === 'feature_trigger') {
+        newData.extra_bonuses = {
+          freespins_on_start: {
+            freespins_count: data.casinoSpinCount,
+            bet_in_money: data.minimumEntryAmount,
+          },
+        };
+      
+        newData.settings = {
+          expire: formattedDateSpace,
         };
       }
 
@@ -256,100 +254,125 @@ export class EvoPlayService {
         this.project,
         this.version,
         newData,
-        this.token,
+        this.token
       );
+
       // $url = $this->project_id."*".$this->version."*".$this->token;
-      const url = `Game/registerBonus?project=${this.project}&version=${this.version}&signature=${signature}&token=${data.token}&game=${newData.game}&currency=NGN&extra_bonuses[bonus_spins][spins_count]=${data.casinoSpinCount}&extra_bonuses[bonus_spins][bet_in_money]=${data.minimumEntryAmount}&settings[registration_id]=${bonus.bonusId}`;
+      let url = `Game/registerBonusBatch?project=${this.project}&version=${this.version}&signature=${signature}&games=${Array.isArray(data.gameId) ? data.gameId.join(',') : data.gameId}&users=${data.clientId}&currency=${newData.currency}`;
+
+      if (data.bonusType == 'free_rounds')
+        url += `&extra_bonuses[bonus_spins][spins_count]=${data.casinoSpinCount}&extra_bonuses[bonus_spins][bet_in_money]=${data.minimumEntryAmount}&settings[expire]=${formattedDate}`;
+
+      if (data.bonusType === 'feature_trigger')
+        url += `&extra_bonuses[freespins_on_start][freespins_count]=${data.casinoSpinCount}&extra_bonuses[freespins_on_start][bet_in_money]=${data.minimumEntryAmount}&settings[expire]=${formattedDate}`;
+
+      console.log("url", url);
+
       const response: AxiosResponse = await this.httpClient.axiosRef.get(
         url,
         this.requestConfig,
       );
-      // console.log(response.data.data);
-      return response.data.data;
-    } catch (e) {
-      console.error(e.message);
-    }
-  }
 
-  async removeBonus(data, game: GameEntity) {
-    try {
-
-      const newData: any = {
-        game: parseInt(game.gameId)
-      }
-
-      if (data.isBonus && data.bonusType == 'free_rounds') {
-        newData.settings = {
-          ...newData.settings, 
-          extra_bonuses: {
-            bonus_spins: {
-              spins_count: 5,
-              bet_in_money: 500
-            },
-          },
-          extra_bonuses_settings: {
-            registration_id: 'test2'
-          }
+      if(!response) {
+        return {
+          error: 0,
+          success: false,
+          message: 'Can not register evo-play bonus'
         }
       }
 
-      const createBonusPayload: CreateBonusRequest = {
-        clientId: data.clientId,
-        bonusType: 'free_rounds',
-        creditType: data.creditType,
-        duration: data.duration,
-        minimumSelection: data.minimumSelection,
-        minimumOddsPerEvent: data.minimumOddsPerEvent,
-        minimumTotalOdds: data.minimumTotalOdds,
-        applicableBetType: data.applicableBetType,
-        maximumWinning: data.maximumWinning,
-        bonusAmount: data.bonusAmount,
-        minimumLostGames: data.minimumLostGames,
-        rolloverCount: data.rolloverCount,
-        name: data.name,
-        minimumEntryAmount: data.minimumEntryAmount,
-        maxAmount: data.maxAmount,
-        product: data.product,
-        gameId: data.gameId,
-        casinoSpinCount: data.casinoSpinCount,
-        status: 0,
-        created: '',
-        updated: '',
-        id: 0
-      }
+      console.log("response", response);
+      console.log("response-data", response.data.data);
 
-      console.log("createBonusPayload", createBonusPayload);
-
-      const bonus = await this.bonusService.deleteBonus(createBonusPayload);
-
-      console.log("bonus", bonus);
-
-      if (!bonus.success) {
-        return {
-          success: false,
-          status: HttpStatus.INTERNAL_SERVER_ERROR,
-          message: 'Error creating bonus from bonus service',
-        };
-      }
-
-      const signature = this.getSignature(
-        this.project,
-        this.version,
-        newData,
-        this.token,
-      );
-      // $url = $this->project_id."*".$this->version."*".$this->token;
-      const url = `Game/registerBonus?project=${this.project}&version=${this.version}&signature=${signature}&token=${data.token}&game=${newData.game}&currency=NGN&extra_bonuses[bonus_spins][spins_count]=${data.casinoSpinCount}&extra_bonuses[bonus_spins][bet_in_money]=${data.minimumEntryAmount}&settings[registration_id]=${data.bonusId}`;
-      const response: AxiosResponse = await this.httpClient.axiosRef.get(
-        url,
-        this.requestConfig,
-      );
-      // console.log(response.data.data);
       return response.data.data;
     } catch (e) {
       console.error(e.message);
     }
   }
+
+  // async removeBonus(data, game: GameEntity) {
+  //   try {
+
+  //     const newData: any = {
+  //       game: parseInt(game.gameId)
+  //     }
+
+  //     if (data.isBonus && data.bonusType == 'free_rounds') {
+  //       newData.settings = {
+  //         ...newData.settings, 
+  //         extra_bonuses: {
+  //           bonus_spins: {
+  //             spins_count: 5,
+  //             bet_in_money: 500
+  //           },
+  //         },
+  //         extra_bonuses_settings: {
+  //           registration_id: 'test2'
+  //         }
+  //       }
+  //     }
+
+  //     const createBonusPayload: CreateBonusRequest = {
+  //       clientId: data.clientId,
+  //       bonusType: 'free_rounds',
+  //       creditType: data.creditType,
+  //       duration: data.duration,
+  //       minimumSelection: data.minimumSelection,
+  //       minimumOddsPerEvent: data.minimumOddsPerEvent,
+  //       minimumTotalOdds: data.minimumTotalOdds,
+  //       applicableBetType: data.applicableBetType,
+  //       maximumWinning: data.maximumWinning,
+  //       bonusAmount: data.bonusAmount,
+  //       minimumLostGames: data.minimumLostGames,
+  //       rolloverCount: data.rolloverCount,
+  //       name: data.name,
+  //       minimumEntryAmount: data.minimumEntryAmount,
+  //       maxAmount: data.maxAmount,
+  //       product: data.product,
+  //       gameId: data.gameId,
+  //       casinoSpinCount: data.casinoSpinCount,
+  //       status: 0,
+  //       created: '',
+  //       updated: '',
+  //       id: 0
+  //     }
+
+  //     console.log("createBonusPayload", createBonusPayload);
+
+  //     const bonus = await this.bonusService.deleteBonus(createBonusPayload);
+
+  //     console.log("bonus", bonus);
+
+  //     if (!bonus.success) {
+  //       return {
+  //         success: false,
+  //         status: HttpStatus.INTERNAL_SERVER_ERROR,
+  //         message: 'Error creating bonus from bonus service',
+  //       };
+  //     }
+
+  //     const signature = this.getSignature(
+  //       this.project,
+  //       this.version,
+  //       newData,
+  //       this.token,
+  //     );
+  //     // $url = $this->project_id."*".$this->version."*".$this->token;
+  //     const url = `Game/registerBonus?project=${this.project}&version=${this.version}&signature=${signature}&token=${data.token}&game=${newData.game}&currency=NGN&extra_bonuses[bonus_spins][spins_count]=${data.casinoSpinCount}&extra_bonuses[bonus_spins][bet_in_money]=${data.minimumEntryAmount}&settings[registration_id]=${data.bonusId}`;
+  //     const response: AxiosResponse = await this.httpClient.axiosRef.get(
+  //       url,
+  //       this.requestConfig,
+  //     );
+  //     // console.log(response.data.data);
+  //     return response.data.data;
+  //   } catch (e) {
+  //     console.error(e.message);
+  //   }
+  // }
+
+
+
+
 
   // start game here
   async constructGameUrl(data, game: GameEntity) {
@@ -360,6 +383,30 @@ export class EvoPlayService {
       const secretKey = this.secretKey;
       const token = this.token;
       const version = this.version;
+
+      // Fetch the bonus details globally
+    let bonus = [];
+    let selectedBonus = null;
+
+    if (data.bonusId) {
+      const getBonusPayload: GetBonusRequest = {
+        clientId: data.clientId,
+      };
+
+      const bonusResponse = await this.bonusService.getBonusDetails(getBonusPayload);
+
+
+      console.log('bonusResponse', bonusResponse);
+
+      bonus = bonusResponse?.bonus || [];
+
+      // Find the bonus by data.bonusId
+      selectedBonus = bonus.find((b) => b.id === data.bonusId);
+
+      if (!selectedBonus) {
+        return { message: `No bonus with ID ${data.bonusId}`, url: null }
+      }
+    }
 
       console.log('baseUrl', baseUrl);
       console.log('project', project);
@@ -382,17 +429,21 @@ export class EvoPlayService {
         callback_version: 2,
       };
 
+      console.log("selectedBonus", selectedBonus);
+
+      
+
       if (data.isBonus && data.bonusType == 'free_rounds') {
         newData.settings = {
           ...newData.settings, 
           extra_bonuses: {
             bonus_spins: {
-              spins_count: data.spins_count,
-              bet_in_money: data.bonusAmount
+              spins_count: selectedBonus.casinoSpinCount,
+              bet_in_money: selectedBonus.minimumEntryAmount
             }
           },
           extra_bonuses_settings: {
-            registration_id: 'test2'
+            registration_id: data.bonusId
           }
         }
       }
@@ -402,15 +453,17 @@ export class EvoPlayService {
           ...newData.settings, 
           extra_bonuses: {
             freespins_on_start: {
-              freespins_count: data.spins_count,
-              bet_in_money: data.bonusAmount
+              freespins_count: selectedBonus.casino_spin_count,
+              bet_in_money: selectedBonus.minimumEntryAmount
             }
           },
           extra_bonuses_settings: {
-            registration_id: data.bonusID
+            registration_id: data.bonusId
           }
         }
       }
+
+      console.log("newData", newData);
 
       const signature = this.getSignature(
         this.project,
@@ -422,11 +475,11 @@ export class EvoPlayService {
       // $url = $this->project_id."*".$this->version."*".$this->token;
       let url = `Game/getURL?project=${this.project}&version=${this.version}&signature=${signature}&token=${newData.token}&game=${newData.game}&settings[user_id]=${newData.settings.user_id}&settings[exit_url]=${newData.settings.exit_url}&settings[https]=${newData.settings.https}`;
       
-      if (data.isBonus)
-        url += `&settings[extra_bonuses][bonus_spins][spins_count]=${data.spins_count}&settings[extra_bonuses][bonus_spins][bet_in_money]=${data.bonusAmount}&settings[extra_bonuses_settings][registration_id]=${data.bonusID}`;
+      if (data.isBonus && data.bonusType === 'free_rounds')
+        url += `&settings[extra_bonuses][bonus_spins][spins_count]=${selectedBonus.casinoSpinCount}&settings[extra_bonuses][bonus_spins][bet_in_money]=${selectedBonus.minimumEntryAmount}&settings[extra_bonuses_settings][registration_id]=${data.bonusId}`;
 
       if (data.isBonus && data.bonusType === 'featured_trigger')
-        url += `&settings[extra_bonuses][freespins_on_start][freespins_count]=${data.spins_count}&settings[extra_bonuses][freespins_on_start][bet_in_money]=${data.bonusAmount}&settings[extra_bonuses_settings][registration_id]=${data.bonusID}`;
+        url += `&settings[extra_bonuses][freespins_on_start][freespins_count]=${selectedBonus.casinoSpinCount}&settings[extra_bonuses][freespins_on_start][bet_in_money]=${selectedBonus.minimumEntryAmount}&settings[extra_bonuses_settings][registration_id]=${data.bonusId}`;
 
       url += `&denomination=${newData.denomination}&currency=${newData.currency}&return_url_info=${newData.return_url_info}&callback_version=${newData.callback_version}`
 
@@ -440,7 +493,10 @@ export class EvoPlayService {
       gameSession.game_id = game.gameId;
       gameSession.token = data.authCode;
       gameSession.provider = game.provider.slug;
+
       await this.gameSessionRepo.save(gameSession);
+
+      console.log("gameSession", gameSession);
 
       if(response.data.error) {
         return {success: false, message: response.data.error.message}
@@ -457,7 +513,7 @@ export class EvoPlayService {
     integrationId: number,
     apiVersion: number,
     args: object,
-    integrationKey: string,
+    integrationKey?: string,
   ) {
     const compact = function (arg): string {
       if ('object' === typeof arg) {
@@ -481,30 +537,555 @@ export class EvoPlayService {
     parts.push(compact(integrationKey));
 
     const str = parts.join('*')
-    // console.log(str)
+    console.log('str', str)
     const md5Hash = crypto
       .createHash('md5')
       .update(str)
       .digest('hex');
 
       // console.log('encryption hash');
-      console.log(md5Hash);
+      console.log('md5Hash', md5Hash);
       // console.log('encryption ends');
 
     return md5Hash;
   }
 
   // callback handler
+  // async handleCallback(data: any) {
+  //   const body = JSON.parse(data.body);
+  //   const version = 2;
+
+  //   // console.log(body);
+
+  //   const callback = await this.saveCallbackLog(body);
+    
+  //   const hash = this.getSignature(
+  //     this.project,
+  //     version,
+  //     body,
+  //     this.token
+  //   );
+
+  //   if (body.signature !== hash) {
+  //     const response = {
+  //       success: false,
+  //       data: {
+  //         status: "error",
+  //         error: {
+  //           message: 'Invalid Hash Signature',
+  //           scope: "internal",
+  //         }
+  //       },
+  //       message: 'Invalid Hash Signature',
+  //       status: HttpStatus.BAD_REQUEST
+  //     };
+
+  //     // update callback log response
+  //     await this.callbackLogRepository.update(
+  //       {
+  //         id: callback.id,
+  //       },
+  //       {
+  //         response: JSON.stringify(response),
+  //       },
+  //     );
+
+  //     return response;
+  //   }
+
+  //   let game = null;
+  //   let player = null;
+  //   let betParam, gameDetails;
+  //   let balanceType = 'main';
+
+  //   // get game session
+  //   const gameSession = await this.gameSessionRepo.findOne({where: {session_id: body.token}});
+
+  //   console.log("gameSession", gameSession);
+      
+  //   if (gameSession.balance_type === 'bonus')
+  //     balanceType = 'casino';
+
+  //   if (body.name === 'BalanceIncrease') {
+  //     return await this.BalanceIncrease(data.clientId, body.data, callback.id, balanceType);
+
+  //   } else if (body.token && body.name !== 'init') {
+  //     const res = await this.identityService.validateToken({
+  //       clientId: data.clientId,
+  //       token: body.token,
+  //     });
+
+  //     if (!res.success) {
+  //       const response = {
+  //         success: false,
+  //         message: 'Invalid Session ID',
+  //         data: {
+  //           status: "error",
+  //           error: {
+  //             message: 'Session expired. Please sign in to contiun',
+  //             scope: "user",
+  //             no_refund: "1"
+  //           }
+  //         },
+  //       };
+
+  //       // update callback log response
+  //       await this.callbackLogRepository.update(
+  //         {
+  //           id: callback.id,
+  //         },
+  //         {
+  //           response: JSON.stringify(response),
+  //         },
+  //       );
+
+  //       return response;
+  //     }
+
+  //     player = res.data;
+
+  //   }
+  //   console.log('first stage passed');
+
+  //   switch (body.name) {
+  //     case 'init':
+  //       // console.log('init');
+  //       const x = await this.activateSession(data.clientId, body.token, callback, balanceType);
+  //       return x;
+  //     case 'bet':
+  //       betParam = body.data;
+  //       gameDetails = JSON.parse(betParam.details);
+
+  //       game = await this.gameRepository.findOne({
+  //         where: {
+  //           gameId: gameDetails.game.game_id,
+  //         },
+  //         relations: {provider: true}
+  //       });
+
+  //       if (player.balance < parseFloat(betParam.amount)) {
+  //         const response = {
+  //           success: false,
+  //           message: 'Insufficent balance',
+  //           data: {
+  //             status: "error",
+  //             error: {
+  //               message: 'Insufficent balance',
+  //               scope: "user",
+  //               no_refund: "1",
+  //             }
+  //           },
+  //           status: HttpStatus.BAD_REQUEST,
+  //         };
+  //         // update callback log response
+  //         await this.callbackLogRepository.update(
+  //           {
+  //             id: callback.id,
+  //           },
+  //           {
+  //             response: JSON.stringify(response),
+  //           },
+  //         );
+
+  //         return response;
+  //       }
+        
+  //       // return await this.activateSession();
+  //       const placeBetPayload: PlaceCasinoBetRequest = {
+  //         userId: player.playerId,
+  //         clientId: data.clientId,
+  //         roundId: betParam.round_id,
+  //         transactionId: betParam.round_id,
+  //         gameId: game.gameId,
+  //         stake: parseFloat(betParam.amount),
+  //         gameName: game.title,
+  //         gameNumber: game.gameId,
+  //         source: game.provider.slug,
+  //         cashierTransactionId: data.callback_id,
+  //         winnings: 0,
+  //         username: player.playerNickname
+  //       };
+        
+  //       const place_bet = await this.placeBet(placeBetPayload);
+
+  //       if (!place_bet.success) {
+  //         const response = {
+  //           success: false,
+  //           status: HttpStatus.BAD_REQUEST,
+  //           message: place_bet.message,
+  //           data: {
+  //             status: "error",
+  //             error: {
+  //               message: place_bet.message,
+  //               scope: "internal",
+  //               no_refund: "0",
+  //             }
+  //           },
+  //         };
+  //         // update callback log response
+  //         await this.callbackLogRepository.update(
+  //           {
+  //             id: callback.id,
+  //           },
+  //           {
+  //             response: JSON.stringify(response),
+  //           },
+  //         );
+
+  //         return response;
+  //       }
+
+  //       const debit = await this.walletService.debit({
+  //         userId: player.playerId,
+  //         clientId: data.clientId,
+  //         amount: betParam.amount,
+  //         source: game.provider.slug,
+  //         description: `Casino Bet: (${game.title})`,
+  //         username: player.playerNickname,
+  //         wallet: balanceType,
+  //         subject: 'Bet Deposit (Casino)',
+  //         channel: game.type,
+  //       });
+
+  //       console.log("debit", debit);
+
+  //       if (!debit.success) {
+  //         const response = {
+  //           success: false,
+  //           status: HttpStatus.BAD_REQUEST,
+  //           message: 'Incomplete request',
+  //           data: {
+  //             status: "error",
+  //             error: {
+  //               message: 'Unable to complete request',
+  //               scope: "internal",
+  //               no_refund: "1",
+  //             }
+  //           },
+  //         };
+  //         // update callback log response
+  //         await this.callbackLogRepository.update(
+  //           {
+  //             id: callback.id,
+  //           },
+  //           {
+  //             response: JSON.stringify(response),
+  //           },
+  //         );
+
+  //         return response;
+  //       }
+
+  //       const response = {
+  //         success: true,
+  //         message: 'bet handled successfully',
+  //         status: HttpStatus.OK,
+  //         data: {
+  //           status: "ok",
+  //           data: {
+  //             balance: debit.data.balance.toFixed(2),
+  //             currency: player.currency,
+  //           }
+  //         },
+  //       };
+  //       // update callback log response
+  //       await this.callbackLogRepository.update(
+  //         {
+  //           id: callback.id,
+  //         },
+  //         {
+  //           response: JSON.stringify(response),
+  //           status: true,
+  //         },
+  //       );
+
+  //       return response;
+  //     case 'win':
+  //       betParam = body.data;
+  //       gameDetails = JSON.parse(betParam.details);
+        
+  //       const amount = parseFloat(betParam.amount);
+  //       const betId = betParam.round_id;
+
+  //       game = await this.gameRepository.findOne({
+  //         where: {
+  //           gameId: gameDetails.game.game_id,
+  //         },
+  //         relations: {provider: true}
+  //       });
+
+
+  //       if (amount > 0) {
+  //         const settlePayload: SettleCasinoBetRequest = {
+  //           transactionId: betId,
+  //           winnings: amount,
+  //           provider: 'evo-play',
+  //         };
+
+  //         const settle_bet = await this.settle(settlePayload);
+  //         // console.log(settle_bet)
+  //         if (!settle_bet.success) {
+  //           const response = {
+  //             success: false,
+  //             message: 'Unable to complete request ' + settle_bet.message,
+  //             status: HttpStatus.INTERNAL_SERVER_ERROR,
+  //             data: {
+  //               status: "error",
+  //               error: {
+  //                 message: 'Unable to complete request',
+  //                 scope: "internal",
+  //                 no_refund: "1",
+  //               }
+  //             },
+  //           };
+  //           // update callback log response
+  //           await this.callbackLogRepository.update(
+  //             {
+  //               id: callback.id,
+  //             },
+  //             {
+  //               response: JSON.stringify(response),
+  //             },
+  //           );
+
+  //           return response;
+  //         }
+
+  //         let creditRes = null;
+
+  //         creditRes = await this.walletService.credit({
+  //           userId: player.playerId,
+  //           clientId: data.clientId,
+  //           amount: amount.toFixed(2),
+  //           source: game.provider.slug,
+  //           description: `Casino Bet: (${game.title})`,
+  //           username: player.playerNickname,
+  //           wallet: balanceType,
+  //           subject: 'Bet Win (Casino)',
+  //           channel: game.type,
+  //         });
+
+  //         const resp = {
+  //           success: true,
+  //           message: 'win handled successfully',
+  //           status: HttpStatus.OK,
+  //           data: {
+  //             status: "ok",
+  //             data: {
+  //               balance: creditRes.data.availableBalance.toFixed(2),
+  //               currency: player.currency,
+  //             },
+  //           }
+  //         };
+
+  //         // update callback log response
+  //         await this.callbackLogRepository.update(
+  //           {
+  //             id: callback.id,
+  //           },
+  //           {
+  //             response: JSON.stringify(resp),
+  //             status: true,
+  //           },
+  //         );
+
+  //         return resp;
+  //       } else {
+  //         const payload: CreditCasinoBetRequest = {
+  //           transactionId: betId,
+  //           winnings: amount,
+  //         };
+
+  //         // settle won bet
+  //         const settle_bet = await this.betService.closeRound(payload);
+        
+  //         if (!settle_bet.success)  {
+
+  //           const response = {
+  //             success: false, 
+  //             message: settle_bet.message, 
+  //             status: HttpStatus.INTERNAL_SERVER_ERROR
+  //           }
+  //           // update callback log response
+  //           await this.callbackLogRepository.update({
+  //             id: callback.id,
+  //           },{
+  //             response: JSON.stringify(response)
+  //           });
+
+  //           return response;
+  //         }
+          
+  //         // get player wallet
+  //         const creditRes = await this.walletService.getWallet({
+  //           userId: player.playerId,
+  //           clientId: player.clientId,
+  //         });
+
+  //         const response = {
+  //           success: true,
+  //           message: 'win handled successfully',
+  //           status: HttpStatus.OK,
+  //           data: {
+  //             status: "ok",
+  //             data: {
+  //               balance: creditRes.data.availableBalance.toFixed(2),
+  //               currency: player.currency,
+  //             },
+  //           }
+  //         };
+  //         // update callback log response
+  //         await this.callbackLogRepository.update({
+  //           id: callback.id,
+  //         },{
+  //           response: JSON.stringify(response)
+  //         });
+
+  //         return response;
+  //       }
+  //     case 'refund':
+  //       betParam = body.data;
+  //       gameDetails = JSON.parse(betParam.details);
+
+  //       const reversePayload: RollbackCasinoBetRequest = {
+  //         transactionId: betParam.refund_round_id,
+  //       };
+  //       // get callback log
+  //       const callbackLog = await this.callbackLogRepository.findOne({
+  //         where: { transactionId: betParam.refund_callback_id },
+  //       });
+
+  //       game = await this.gameRepository.findOne({
+  //         where: {
+  //           gameId: gameDetails.game.game_id,
+  //         },
+  //         relations: {provider: true}
+  //       });
+
+  //       if (!callbackLog) {
+  //         const res = { 
+  //           success: false, 
+  //           message: 'Transaction not found',
+  //           status: HttpStatus.INTERNAL_SERVER_ERROR,
+  //           data: {
+  //             status: "error",
+  //             error: {
+  //               message: 'Unable to complete request: Callback log not found',
+  //               scope: "internal",
+  //               no_refund: "1",
+  //             }
+  //           },
+  //         };
+  //         // update callback log response
+  //         await this.callbackLogRepository.update(
+  //           {
+  //             id: callback.id,
+  //           },
+  //           {
+  //             response: JSON.stringify(res),
+  //           },
+  //         );
+
+  //         return res;
+  //       }
+
+  //       const transaction = await this.rollbackTransaction(reversePayload);
+
+  //       if (!transaction.success) {
+  //         const response = {
+  //           success: false,
+  //           message: 'Unable to complete request',
+  //           status: HttpStatus.INTERNAL_SERVER_ERROR,
+  //           data: {
+  //             status: "error",
+  //             error: {
+  //               message: 'Unable to complete request: ' + transaction.message,
+  //               scope: "internal",
+  //               no_refund: "1",
+  //             }
+  //           },
+  //         };
+  //         // update callback log response
+  //         await this.callbackLogRepository.update(
+  //           {
+  //             id: callback.id,
+  //           },
+  //           {
+  //             response: JSON.stringify(response),
+  //           },
+  //         );
+
+  //         return response;
+  //       }
+
+  //       const rollbackWalletRes = await this.walletService.credit({
+  //         userId: player.playerId,
+  //         clientId: data.clientId,
+  //         amount: betParam.amount,
+  //         source: game.provider.slug,
+  //         description: `Bet Cancelled: (${game.title})`,
+  //         username: player.playerNickname,
+  //         wallet: balanceType,
+  //         subject: 'Bet refund (Casino)',
+  //         channel: game.title,
+  //       });
+
+  //       try {
+
+  //         const response = {
+  //           success: true,
+  //           message: 'refund handled successfully',
+  //           status: HttpStatus.OK,
+  //           data: {
+  //             status: "ok",
+  //             data: {
+  //               balance: rollbackWalletRes.data.availableBalance.toFixed(2),
+  //               currency: player.currency,
+  //             },
+  //           }
+  //         };
+  //         // update callback log response
+  //         await this.callbackLogRepository.update(
+  //           {
+  //             id: callback.id,
+  //           },
+  //           {
+  //             response: JSON.stringify(response),
+  //             status: true,
+  //           },
+  //         );
+
+  //         return response;
+  //       } catch (e) {
+  //         // console.log(e.message);
+  //         return {
+  //           success: false,
+  //           message: 'Unable to complete request: ' + e.message,
+  //           status: HttpStatus.INTERNAL_SERVER_ERROR,
+  //           data: {
+  //             status: "error",
+  //             error: {
+  //               message: 'Unable to complete request',
+  //               scope: "internal",
+  //               no_refund: "1",
+  //             }
+  //           }
+  //         }
+  //       }        
+        
+  //   }
+  // }
+
   async handleCallback(data: any) {
     const body = JSON.parse(data.body);
 
-    // console.log(body);
+    console.log(body);
 
     const callback = await this.saveCallbackLog(body);
     
     const hash = this.getSignature(
       this.project,
-      this.version,
+      2,
       body,
       this.token
     );
@@ -542,7 +1123,9 @@ export class EvoPlayService {
     let balanceType = 'main';
 
     // get game session
-    const gameSession = await this.gameSessionRepo.findOne({where: {session_id: body.token}})
+    const gameSession = await this.gameSessionRepo.findOne({where: {token: body.token}});
+
+    console.log("gameSession", gameSession);
       
     if (gameSession.balance_type === 'bonus')
       balanceType = 'casino';
@@ -688,6 +1271,8 @@ export class EvoPlayService {
           channel: game.type,
         });
 
+        console.log("debit", debit);
+
         if (!debit.success) {
           const response = {
             success: false,
@@ -702,6 +1287,7 @@ export class EvoPlayService {
               }
             },
           };
+
           // update callback log response
           await this.callbackLogRepository.update(
             {
@@ -722,7 +1308,7 @@ export class EvoPlayService {
           data: {
             status: "ok",
             data: {
-              balance: debit.data.availableBalance.toFixed(2),
+              balance: debit.data.balance.toFixed(2),
               currency: player.currency,
             }
           },
@@ -790,9 +1376,7 @@ export class EvoPlayService {
             return response;
           }
 
-          let creditRes = null;
-
-          creditRes = await this.walletService.credit({
+          const creditRes = await this.walletService.credit({
             userId: player.playerId,
             clientId: data.clientId,
             amount: amount.toFixed(2),
@@ -804,6 +1388,8 @@ export class EvoPlayService {
             channel: game.type,
           });
 
+          console.log("creditRes", creditRes);
+
           const resp = {
             success: true,
             message: 'win handled successfully',
@@ -811,7 +1397,7 @@ export class EvoPlayService {
             data: {
               status: "ok",
               data: {
-                balance: creditRes.data.availableBalance.toFixed(2),
+                balance: creditRes.data.balance.toFixed(2),
                 currency: player.currency,
               },
             }
@@ -856,19 +1442,33 @@ export class EvoPlayService {
           }
           
           // get player wallet
-          const creditRes = await this.walletService.getWallet({
+          // const creditRes = await this.walletService.getWallet({
+          //   userId: player.playerId,
+          //   clientId: player.clientId,
+          // });
+
+          const updateBonusWallet = await this.walletService.credit({
             userId: player.playerId,
-            clientId: player.clientId,
+            clientId: data.clientId,
+            amount: amount.toFixed(2),
+            source: game.provider.slug,
+            description: `Casino Bet: (${game.title})`,
+            username: player.playerNickname,
+            wallet: balanceType,
+            subject: 'Bet Win (Casino)',
+            channel: game.type,
           });
+
+          console.log("updateBonusWallet", updateBonusWallet);
 
           const response = {
             success: true,
-            message: 'win handled successfully',
+            message: 'win handled successfully',  
             status: HttpStatus.OK,
             data: {
               status: "ok",
               data: {
-                balance: creditRes.data.availableBalance.toFixed(2),
+                balance: updateBonusWallet.data.balance.toFixed(2),
                 currency: player.currency,
               },
             }
@@ -978,7 +1578,7 @@ export class EvoPlayService {
             data: {
               status: "ok",
               data: {
-                balance: rollbackWalletRes.data.availableBalance.toFixed(2),
+                balance: rollbackWalletRes.data.balance.toFixed(2),
                 currency: player.currency,
               },
             }
@@ -1023,7 +1623,8 @@ export class EvoPlayService {
       token,
     });
 
-    // console.log('player res', res.data);
+    console.log('player res', res);
+    console.log("walletType", walletType);
 
     if (!res) {
       const response = {
@@ -1115,7 +1716,8 @@ export class EvoPlayService {
       data: {
         status: "ok",
         data: {
-          balance: walletType === 'casino' ? player.casinoBalance.toFixed(2) : player.balance.toFixed(2),
+          balance: walletType === 'casino' || walletType === 'bonus' 
+            ? parseFloat(player.casinoBalance.toFixed(2)) : parseFloat(player.balance.toFixed(2)),
           currency: player.currency
         }
       },
@@ -1259,4 +1861,3 @@ export class EvoPlayService {
     }
   }
 }
-
