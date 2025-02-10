@@ -25,7 +25,6 @@ export class WalletService {
   }
 
   public debit(data: DebitUserRequest) {
-    console.log(data);
     return firstValueFrom(this.svc.debitUser(data));
   }
 

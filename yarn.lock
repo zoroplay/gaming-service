@@ -5734,8 +5734,8 @@ saxes@^5.0.1:
 
 "sbe-service-proto@github:zoroplay/sbe-service-proto":
   version "1.0.0"
-  resolved "git+ssh://git@github.com/zoroplay/sbe-service-proto.git#84d7411fb517b75bbba971f870dd642842b9a8f2"
-
+  resolved "git+ssh://git@github.com/zoroplay/sbe-service-proto.git#7b63b1c8fc575dca172e0e6bad543b4f6679428f"
+  
 schema-utils@^3.1.1, schema-utils@^3.2.0:
   version "3.3.0"
   resolved "https://registry.npmjs.org/schema-utils/-/schema-utils-3.3.0.tgz"

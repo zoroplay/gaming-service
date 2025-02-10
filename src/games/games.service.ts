@@ -775,10 +775,12 @@ export class GamesService {
             provider: 'smart-soft',
           },
         });
+        
         return await this.smartSoftService.handleCallback(
           _data,
           privateKeyQuery.value,
         );
+
       case 'evolution':
         return await this.handleC2Games(_data.body, _data.header);
       case 'evo-play':
