@@ -24,8 +24,17 @@ export class Category {
   @Column({type: 'varchar'})
   slug: string;
 
-  @OneToMany(() => GameCategory, (game) => game.category)
-  games: Game[];
+  @Column({ default: 0 })
+  priority: number;
+
+  @Column({ default: 'active' })
+  status: string;
+
+  // @OneToMany(() => Game, (game) => game.categories)
+  // games: Game[];
+
+  @OneToMany(() => GameCategory, (gameCategory) => gameCategory.category)
+  gameCategories: GameCategory[];
 
   @CreateDateColumn({ type: 'timestamp' })
   created_at: Date;
@@ -33,3 +42,4 @@ export class Category {
   @UpdateDateColumn({ type: 'timestamp' })
   updated_at: Date;
 }
+

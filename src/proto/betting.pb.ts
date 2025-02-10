@@ -163,6 +163,7 @@ export interface PlaceCasinoBetRequest {
   username?: string | undefined;
   betType?: string | undefined;
   bonusId?: number | undefined;
+  roundDetails?: number | undefined;
 }
 
 export interface CreditCasinoBetRequest {
@@ -373,6 +374,11 @@ export interface BetSlipHistory {
   eventPrefix: string;
   score: string;
   htScore: string;
+  id: number;
+  currentOdds: number;
+  eventTime: string;
+  matchStatus: string;
+  isLive: number;
 }
 
 export interface BetHistory {
@@ -542,6 +548,8 @@ export interface BettingServiceClient {
   getCommissions(request: GetCommissionsRequest): Observable<CommonResponseObj>;
 
   ticketsReport(request: GetTicketsRequest): Observable<CommonResponseObj>;
+
+  getCodeHubTickets(request: GetTicketsRequest): Observable<CommonResponseObj>;
 }
 
 export interface BettingServiceController {
@@ -640,6 +648,10 @@ export interface BettingServiceController {
   ticketsReport(
     request: GetTicketsRequest,
   ): Promise<CommonResponseObj> | Observable<CommonResponseObj> | CommonResponseObj;
+
+  getCodeHubTickets(
+    request: GetTicketsRequest,
+  ): Promise<CommonResponseObj> | Observable<CommonResponseObj> | CommonResponseObj;
 }
 
 export function BettingServiceControllerMethods() {
@@ -674,6 +686,7 @@ export function BettingServiceControllerMethods() {
       "deletePlayerData",
       "getCommissions",
       "ticketsReport",
+      "getCodeHubTickets",
     ];
     for (const method of grpcMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);

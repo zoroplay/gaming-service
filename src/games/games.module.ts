@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Module } from '@nestjs/common';
 import { GamesService } from './games.service';
 import { GamesController } from './games.controller';
@@ -23,6 +24,15 @@ import { Category } from 'src/entities/category.entity';
 import { GameCategory } from 'src/entities/game.category.entity';
 import { ScheduleModule } from '@nestjs/schedule';
 import { PragmaticService } from 'src/services/pragmatic-play.service';
+import { CasinoGame } from 'src/entities/casino-game.entity';
+import { Promotion } from 'src/entities/promotion.entity';
+import { QtechService } from 'src/services/qtech.service';
+import { Tournament } from 'src/entities/tournament.entity';
+import { FirebaseService } from 'src/common/services/firebaseUpload';
+import { TournamentGame } from 'src/entities/tournament-game.entity';
+import { BonusModule } from 'src/bonus/bonus.module';
+
+
 
 @Module({
   imports: [
@@ -31,9 +41,10 @@ import { PragmaticService } from 'src/services/pragmatic-play.service';
       max: 1000,
       isGlobal: true,
     }),
-    TypeOrmModule.forFeature([GameSession, CallbackLog, Category, Game, GameCategory, GameKey, Provider]),
+    TypeOrmModule.forFeature([GameSession, CallbackLog, Category, Game, Promotion, Tournament, GameCategory, GameKey, Provider, CasinoGame, TournamentGame ]),
     HttpModule,
     IdentityModule,
+    BonusModule,
     WalletModule,
     BetModule,
     ScheduleModule.forRoot(),
@@ -48,7 +59,9 @@ import { PragmaticService } from 'src/services/pragmatic-play.service';
     SmartSoftService,
     EvoPlayService,
     VirtualService,
-    PragmaticService
+    PragmaticService,
+    QtechService,
+    FirebaseService
   ],
 })
 export class GamesModule {}

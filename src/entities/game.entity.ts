@@ -1,12 +1,16 @@
+/* eslint-disable prettier/prettier */
 import {
-  Entity,
-  PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
-  UpdateDateColumn,
+  Entity,
   ManyToOne,
+  OneToMany,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn
 } from 'typeorm';
+import { GameCategory } from './game.category.entity';
 import { Provider } from './provider.entity';
+import { TournamentGame } from './tournament-game.entity';
 
 @Entity({ name: 'games' })
 export class Game {
@@ -43,6 +47,19 @@ export class Game {
   @Column({ type: 'text', nullable: true })
   game_category_m: string;
 
+  @Column({ default: 0 })
+  priority: number;
+
+  // @ManyToMany(() => Category, (category) => category.games)
+  // @JoinTable()
+  // categories: Category[];
+
+  @OneToMany(() => GameCategory, (gameCategory) => gameCategory.game)
+  gameCategories: GameCategory[];
+
+  @OneToMany(() => TournamentGame, (tournamentGame) => tournamentGame.game)
+  tournamentGames: TournamentGame[];
+
   @ManyToOne(() => Provider, (provider) => provider.games)
   provider: Provider;
 
@@ -52,4 +69,3 @@ export class Game {
   @UpdateDateColumn({ type: 'timestamp' })
   updatedAt: Date;
 }
-

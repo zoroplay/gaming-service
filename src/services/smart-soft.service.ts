@@ -10,22 +10,24 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config'; // Import your SettingService
-import {
-  CallbackLog,
-  Game as GameEntity,
-  GameSession,
-  Provider as ProviderEntity,
-} from '../entities';
-import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { WalletService } from '../wallet/wallet.service';
-import { BetService } from '../bet/bet.service';
+import { firstValueFrom } from 'rxjs';
+import { IdentityService } from 'src/identity/identity.service';
 import {
   CreditCasinoBetRequest,
   PlaceCasinoBetRequest,
   RollbackCasinoBetRequest,
 } from 'src/proto/betting.pb';
 import { CallbackGameDto } from 'src/proto/gaming.pb';
+import { Repository } from 'typeorm';
+import { BetService } from '../bet/bet.service';
+import {
+  CallbackLog,
+  Game as GameEntity,
+  GameSession,
+  Provider as ProviderEntity,
+} from '../entities';
+import { WalletService } from '../wallet/wallet.service';
 import { IdentityService } from 'src/identity/identity.service';
 import { firstValueFrom } from 'rxjs';
 
