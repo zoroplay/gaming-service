@@ -996,10 +996,10 @@ export class PragmaticService {
         message: 'Win Successful',
         status: HttpStatus.OK,
         data: {
-          cash: parseFloat(updatedWallet.data.availableBalance.toFixed(2)) ||0.00,
+          cash: parseFloat(updatedWallet.data.availableBalance.toFixed(2)),
           transactionId: settle_bet.data.transactionId,
           currency: player.currency,
-          bonus: parseFloat(updatedWallet.data.casinoBonusBalance.toFixed(2)) || 0.00,
+          bonus: parseFloat(updatedWallet.data.casinoBonusBalance.toFixed(2)),
           error: 0,
           description: 'Successful',
         },
@@ -1593,56 +1593,58 @@ export class PragmaticService {
         console.log("existingRequest", existingRequest);
         console.log("existingResponse", existingResponse);
 
-        if (existingRequest?.userId) {
-          // Get userId from the response
+        return existingResponse;
 
-          console.log("Got to the updated wallet block");
-          const userId = existingRequest.userId;
+      //   if (existingRequest?.userId) {
+      //     // Get userId from the response
+
+      //     console.log("Got to the updated wallet block");
+      //     const userId = existingRequest.userId;
     
-          try {
-              // Fetch the wallet details for the user
-              const getWallet = await this.walletService.getWallet({
-                userId,
-                clientId: data.clientId
-              });
+      //     try {
+      //         // Fetch the wallet details for the user
+      //         const getWallet = await this.walletService.getWallet({
+      //           userId,
+      //           clientId: data.clientId
+      //         });
 
-              console.log("getWallet", getWallet);
+      //         console.log("getWallet", getWallet);
 
 
-              if(!getWallet || !getWallet.status) {
-                response = {
-                  success: false,
-                  status: HttpStatus.BAD_REQUEST,
-                  message: 'Invalid auth code, please login to try again',
-                  data: {}
-                }
+      //         if(!getWallet || !getWallet.status) {
+      //           response = {
+      //             success: false,
+      //             status: HttpStatus.BAD_REQUEST,
+      //             message: 'Invalid auth code, please login to try again',
+      //             data: {}
+      //           }
           
-                const val = await this.callbackLogRepository.update({ id: callback.id}, { response: JSON.stringify(response)});
-                console.log("val", val);
+      //           const val = await this.callbackLogRepository.update({ id: callback.id}, { response: JSON.stringify(response)});
+      //           console.log("val", val);
           
-                return response;
-              } 
+      //           return response;
+      //         } 
     
-              if (getWallet && getWallet.data.availableBalance !== undefined) {
-                  // Update the cash field with the updated balance
-                  existingResponse.data.cash = getWallet.data.availableBalance;
+      //         if (getWallet && getWallet.data.availableBalance !== undefined) {
+      //             // Update the cash field with the updated balance
+      //             existingResponse.data.cash = getWallet.data.availableBalance;
     
-                  // Save the updated response back to the log
-                  await this.callbackLogRepository.update(
-                      { id: callback.id },
-                      { response: JSON.stringify(existingResponse) }
-                  );
+      //             // Save the updated response back to the log
+      //             await this.callbackLogRepository.update(
+      //                 { id: callback.id },
+      //                 { response: JSON.stringify(existingResponse) }
+      //             );
     
-                  console.log("Updated response with wallet balance:", existingResponse);
-                  return existingResponse;
-              }
-          } catch (error) {
-              console.error("Error fetching wallet details or updating response:", error);
-              // Handle errors if needed, e.g., log or return the original response
-          }
-      }  else {
-        return JSON.parse(callback.response);
-      }
+      //             console.log("Updated response with wallet balance:", existingResponse);
+      //             return existingResponse;
+      //         }
+      //     } catch (error) {
+      //         console.error("Error fetching wallet details or updating response:", error);
+      //         // Handle errors if needed, e.g., log or return the original response
+      //     }
+      // }  else {
+      //   return JSON.parse(callback.response);
+      // }
   
     } 
     // Parse the body if it exists
@@ -1882,9 +1884,12 @@ export class PragmaticService {
       if (action !== 'Balance' && action !== 'Authenticate') {
         console.log("Got in this box");
         // Check for an existing callback for actions other than Authenticate
+        console.log("transactionId", transactionId);
         callback = await this.callbackLogRepository.findOne({
           where: { transactionId, request_type: action },
         });
+
+        console.log("callback-idem", callback);
   
         if (callback) return callback;
       }
