@@ -153,120 +153,129 @@ export class PragmaticService {
 
   async getJackpotWinners(): Promise<any> {
     try {
-      const hash = this.genHash({ secureLogin: this.PRAGMATIC_SECURE_LOGIN });
+
+      const getDate = Date.now();
+      
+      console.log('getDate', getDate);
+
+      const hash = this.genHash({ 
+        login: this.PRAGMATIC_SECURE_LOGIN,
+        startTimepoint: getDate,
+        endTimepoint: getDate,
+       });
       console.log("hash", hash);
-      // const { data } = await this.httpService
-      //   .get(`https://api.prerelease-env.biz/IntegrationService/v3/JackpotFeeds/extended/winners?login=${this.PRAGMATIC_SECURE_LOGIN}&hash=${hash}`)
-      //   .toPromise();
+      const { data } = await this.httpService
+        .get(`https://api.prerelease-env.biz/IntegrationService/v3/JackpotFeeds/extended/winners?login=${this.PRAGMATIC_SECURE_LOGIN}&hash=${hash}&startTimepoint=${getDate}&endTimepoint=${getDate}`)
+        .toPromise();
 
-      //   console.log('data', data);
+        console.log('data', data);
 
-        const data = {
-          "winners": [
-            {
-              "jackpotTierID": 3924,
-              "extPlayerID": "459",
-              "winAmount": 8.60,
-              "winDate": 1620890276322,
-              "winType": "W",
-              "playSessionID": 10293633659602,
-              "currency": "USD",
-              "username": "f***g"
-            },
-            {
-              "jackpotTierID": 3925,
-              "extPlayerID": "460",
-              "winAmount": 15,
-              "winDate": 1620890648909,
-              "winType": "NW",
-              "playSessionID": 10293686600602,
-              "currency": "USD",
-              "username": "f***g"
-            },
-            {
-              "jackpotTierID": 3925,
-              "extPlayerID": "460",
-              "winAmount": 15,
-              "winDate": 1620890648909,
-              "winType": "NW",
-              "playSessionID": 10293686600602,
-              "currency": "USD",
-              "username": "f***g"
-            },
-            {
-              "jackpotTierID": 3925,
-              "extPlayerID": "460",
-              "winAmount": 15,
-              "winDate": 1620890648909,
-              "winType": "NW",
-              "playSessionID": 10293686600602,
-              "currency": "USD",
-              "username": "f***g"
-            },
-            {
-              "jackpotTierID": 3925,
-              "extPlayerID": "460",
-              "winAmount": 15,
-              "winDate": 1620890648909,
-              "winType": "NW",
-              "playSessionID": 10293686600602,
-              "currency": "USD",
-              "username": "f***g"
-            },
-            {
-              "jackpotTierID": 3925,
-              "extPlayerID": "460",
-              "winAmount": 15,
-              "winDate": 1620890648909,
-              "winType": "NW",
-              "playSessionID": 10293686600602,
-              "currency": "USD",
-              "username": "f***g"
-            },
-            {
-              "jackpotTierID": 3925,
-              "extPlayerID": "460",
-              "winAmount": 15,
-              "winDate": 1620890648909,
-              "winType": "NW",
-              "playSessionID": 10293686600602,
-              "currency": "USD",
-              "username": "f***g"
-            },
-            {
-              "jackpotTierID": 3925,
-              "extPlayerID": "460",
-              "winAmount": 15,
-              "winDate": 1620890648909,
-              "winType": "NW",
-              "playSessionID": 10293686600602,
-              "currency": "USD",
-              "username": "f***g"
-            },
-            {
-              "jackpotTierID": 3925,
-              "extPlayerID": "460",
-              "winAmount": 15,
-              "winDate": 1620890648909,
-              "winType": "NW",
-              "playSessionID": 10293686600602,
-              "currency": "USD",
-              "username": "f***g"
-            },
-            {
-              "jackpotTierID": 3925,
-              "extPlayerID": "460",
-              "winAmount": 15,
-              "winDate": 1620890648909,
-              "winType": "NW",
-              "playSessionID": 10293686600602,
-              "currency": "USD",
-              "username": "f***g"
-            }
-          ],
-          "error": "0",
-          "description": "OK"
-        }
+        // const data = {
+        //   "winners": [
+        //     {
+        //       "jackpotTierID": 3924,
+        //       "extPlayerID": "459",
+        //       "winAmount": 8.60,
+        //       "winDate": 1620890276322,
+        //       "winType": "W",
+        //       "playSessionID": 10293633659602,
+        //       "currency": "USD",
+        //       "username": "f***n"
+        //     },
+        //     {
+        //       "jackpotTierID": 3925,
+        //       "extPlayerID": "460",
+        //       "winAmount": 15,
+        //       "winDate": 1620890648909,
+        //       "winType": "NW",
+        //       "playSessionID": 10293686600602,
+        //       "currency": "USD",
+        //       "username": "p***g"
+        //     },
+        //     {
+        //       "jackpotTierID": 3925,
+        //       "extPlayerID": "460",
+        //       "winAmount": 15,
+        //       "winDate": 1620890648909,
+        //       "winType": "NW",
+        //       "playSessionID": 10293686600602,
+        //       "currency": "USD",
+        //       "username": "s***v"
+        //     },
+        //     {
+        //       "jackpotTierID": 3925,
+        //       "extPlayerID": "460",
+        //       "winAmount": 15,
+        //       "winDate": 1620890648909,
+        //       "winType": "NW",
+        //       "playSessionID": 10293686600602,
+        //       "currency": "USD",
+        //       "username": "o***m"
+        //     },
+        //     {
+        //       "jackpotTierID": 3925,
+        //       "extPlayerID": "460",
+        //       "winAmount": 15,
+        //       "winDate": 1620890648909,
+        //       "winType": "NW",
+        //       "playSessionID": 10293686600602,
+        //       "currency": "USD",
+        //       "username": "t***u"
+        //     },
+        //     {
+        //       "jackpotTierID": 3925,
+        //       "extPlayerID": "460",
+        //       "winAmount": 15,
+        //       "winDate": 1620890648909,
+        //       "winType": "NW",
+        //       "playSessionID": 10293686600602,
+        //       "currency": "USD",
+        //       "username": "a***g"
+        //     },
+        //     {
+        //       "jackpotTierID": 3925,
+        //       "extPlayerID": "460",
+        //       "winAmount": 15,
+        //       "winDate": 1620890648909,
+        //       "winType": "NW",
+        //       "playSessionID": 10293686600602,
+        //       "currency": "USD",
+        //       "username": "o***g"
+        //     },
+        //     {
+        //       "jackpotTierID": 3925,
+        //       "extPlayerID": "460",
+        //       "winAmount": 15,
+        //       "winDate": 1620890648909,
+        //       "winType": "NW",
+        //       "playSessionID": 10293686600602,
+        //       "currency": "USD",
+        //       "username": "b***k"
+        //     },
+        //     {
+        //       "jackpotTierID": 3925,
+        //       "extPlayerID": "460",
+        //       "winAmount": 15,
+        //       "winDate": 1620890648909,
+        //       "winType": "NW",
+        //       "playSessionID": 10293686600602,
+        //       "currency": "USD",
+        //       "username": "f***d"
+        //     },
+        //     {
+        //       "jackpotTierID": 3925,
+        //       "extPlayerID": "460",
+        //       "winAmount": 15,
+        //       "winDate": 1620890648909,
+        //       "winType": "NW",
+        //       "playSessionID": 10293686600602,
+        //       "currency": "USD",
+        //       "username": "l***p"
+        //     }
+        //   ],
+        //   "error": "0",
+        //   "description": "OK"
+        // }
         
 
       return data;
