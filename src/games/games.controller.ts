@@ -28,6 +28,7 @@ import {
   Providers,
   QtechCallbackRequest,
   SaveCategoryRequest,
+  StartDto,
   StartGameDto,
   SyncGameDto,
   UpdateGameDto
@@ -186,6 +187,18 @@ export class GamesController {
     console.log('startGame', request);
     try {
       const resp = await this.gamesService.start(request);
+      return resp;
+    } catch (error) {
+      console.error('grpc error');
+      console.error(error);
+    }
+  }
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'startSmatGame')
+  async startSmatGame(request: StartDto): Promise<any> {
+    console.log('startGame', request);
+    try {
+      const resp = await this.gamesService.startSmatGames(request);
       return resp;
     } catch (error) {
       console.error('grpc error');

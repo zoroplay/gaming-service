@@ -11,6 +11,12 @@ export interface GetGamesRequest {
   gameIds: number[];
 }
 
+export interface StartDto {
+  clientId: number;
+  userId: number;
+  token: string;
+}
+
 export interface CreateBonusRequest {
   clientId: number;
   bonusType: string;
@@ -645,6 +651,8 @@ export interface GamingServiceClient {
   xpressRollback(request: XpressRequest): Observable<XpressResponse>;
 
   xpressLogout(request: XpressRequest): Observable<XpressResponse>;
+
+  startSmatGame(request: StartDto): Observable<StartGameResponse>;
 }
 
 export interface GamingServiceController {
@@ -751,6 +759,8 @@ export interface GamingServiceController {
   xpressRollback(request: XpressRequest): Promise<XpressResponse> | Observable<XpressResponse> | XpressResponse;
 
   xpressLogout(request: XpressRequest): Promise<XpressResponse> | Observable<XpressResponse> | XpressResponse;
+
+  startSmatGame(request: StartDto): Promise<StartGameResponse> | Observable<StartGameResponse> | StartGameResponse;
 }
 
 export function GamingServiceControllerMethods() {
@@ -802,6 +812,7 @@ export function GamingServiceControllerMethods() {
       "xpressCredit",
       "xpressRollback",
       "xpressLogout",
+      "startSmatGame",
     ];
     for (const method of grpcMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
