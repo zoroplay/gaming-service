@@ -35,6 +35,7 @@ import {
   PaginationDto,
   Promotion,
   SaveCategoryRequest,
+  StartDto,
   StartGameDto,
   SyncGameDto,
   Tournaments,
@@ -55,6 +56,7 @@ import { QtechService } from 'src/services/qtech.service';
 import { FindManyOptions, ILike, In, Repository } from 'typeorm';
 import { Game as GameEntity } from '../entities/game.entity';
 import { Provider as ProviderEntity } from '../entities/provider.entity';
+import { SmatVirtualService } from 'src/services/smatvirtual.service';
 
 @Injectable()
 export class GamesService {
@@ -85,6 +87,7 @@ export class GamesService {
     private readonly identityService: IdentityService,
     private readonly qtechService: QtechService,
     private readonly firebaseService: FirebaseService,
+    private readonly smatVirtualService: SmatVirtualService,
   ) {}
 
   async createProvider(
@@ -516,6 +519,11 @@ export class GamesService {
         throw new NotFoundException('Unknown provider');
         break;
     }
+  }
+
+  async startSmatGames(payload: StartDto): Promise<Game[] | any> {
+    // Fetch the game list from your API (adjust the method name and params accordingly)
+    return await this.smatVirtualService.activateSession(payload);
   }
 
   async sync(syncGameDto: SyncGameDto): Promise<any> {
