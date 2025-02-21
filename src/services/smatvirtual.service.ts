@@ -190,11 +190,6 @@ export class SmatVirtualService {
     //       group: null,
     //     }
     //   }
-
-
-    const hash = await this.decrypt('U2FsdGVkX1%2BVtLHRn7DpU%2BV1iah4XFIwsdxFpdlebhycowYaKJij85EAMRCXdMgkFHorM1%2FrY%2Bdac9sjtDLo7SkHcDGMUXlc%2B0ZjfpDa5PRyypoBclC7mABdXuzYR6cGqAI31GxdzmQLFM2sa7bMt7p8WI9LQd3IZtNwLZgtsbWjFjv7%2Bar4DpbSEEvR2SFZS6UiClzI7%2FGF53SoxE5E%2FA%3D%3D', this.SMATVIRTUAL_ENCRYPTION_KEY);
-
-    console.log("hash", hash);
     
     console.log("isValid", isValid);
     let response: any;
