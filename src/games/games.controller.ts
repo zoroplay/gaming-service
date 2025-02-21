@@ -28,6 +28,7 @@ import {
   Providers,
   QtechCallbackRequest,
   SaveCategoryRequest,
+  SmatVirtualCallbackRequest,
   StartDto,
   StartGameDto,
   SyncGameDto,
@@ -35,12 +36,14 @@ import {
 } from 'src/proto/gaming.pb';
 import { GamesService } from './games.service';
 import { QtechService } from 'src/services';
+import { SmatVirtualService } from 'src/services/smatvirtual.service';
 
 @Controller()
 export class GamesController {
   constructor(
     private readonly gamesService: GamesService,
-    private readonly qtechService: QtechService
+    private readonly qtechService: QtechService,
+    private readonly smatVirtualService: SmatVirtualService,
   ) {}
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'createProvider')
@@ -321,6 +324,12 @@ async getGames(request?: GetGamesRequest) {
   async handleQtechCallback(payload: QtechCallbackRequest): Promise<any> {
     return this.qtechService.handlCallbacks(payload);
   }
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'handleSmatVirtualCallback')
+  async handleSmatVirtualCallback(payload: SmatVirtualCallbackRequest): Promise<any> {
+    return this.smatVirtualService.handleCallback(payload);
+  }
+
 
   // @GrpcMethod(GAMING_SERVICE_NAME, 'handleQtechGetBalance')
   // async handleQtechGetBalance(payload: QtechCallbackRequest): Promise<any> {
