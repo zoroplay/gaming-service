@@ -4,30 +4,29 @@ import { HttpStatus, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
+import * as CryptoJS from 'crypto-js';
 import { BetService } from 'src/bet/bet.service';
 import { CasinoGame } from 'src/entities/casino-game.entity';
 import { IdentityService } from 'src/identity/identity.service';
 import { WalletService } from 'src/wallet/wallet.service';
 import { Repository } from 'typeorm';
-import * as CryptoJS from 'crypto-js';
 
+import { firstValueFrom } from 'rxjs';
+import {
+  CreditCasinoBetRequest,
+  PlaceCasinoBetRequest,
+  RollbackCasinoBetRequest,
+} from 'src/proto/betting.pb';
+import {
+  SmatVirtualCallbackRequest,
+  StartDto
+} from 'src/proto/gaming.pb';
 import {
   CallbackLog,
   Game as GameEntity,
   GameSession,
   Provider as ProviderEntity,
 } from '../entities';
-import {
-  QtechCallbackRequest,
-  StartDto,
-  StartGameDto,
-} from 'src/proto/gaming.pb';
-import {
-  CreditCasinoBetRequest,
-  PlaceCasinoBetRequest,
-  RollbackCasinoBetRequest,
-} from 'src/proto/betting.pb';
-import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class SmatVirtualService {
@@ -62,29 +61,30 @@ export class SmatVirtualService {
 
   async activateSession(payload: StartDto): Promise<any> {
     try {
-      const { userId, clientId, token } = payload;
+      const { userId, token } = payload;
       const ClientExternalId = 'AITvERsv';
 
-      const res = await this.identityService.validateToken({ clientId, token });
-      console.log("res", res);
-      let response;
+      // const res = await this.identityService.validateToken({ clientId, token });
+      // console.log("res", res);
+      // let response;
 
-      if (!res.success) {
-        response = {
-            success: false,
-            message: 'Invalid Session ID',
-            status: HttpStatus.NOT_FOUND
-        };
+      // if (!res.success) {
+      //   response = {
+      //       success: false,
+      //       message: 'Invalid Session ID',
+      //       status: HttpStatus.NOT_FOUND
+      //   };
 
-        // await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
-        return response;
-      }
+      //   // await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
+      //   return response;
+      // }
 
       const hash = await this.encrypt(
         JSON.stringify({
           clientId: ClientExternalId,
           userId: userId.toString(),
           publicKey: this.SMATVIRTUAL_PUBLIC_KEY,
+          sessionId: token
         }),
         this.SMATVIRTUAL_ENCRYPTION_KEY
       );
@@ -169,77 +169,95 @@ export class SmatVirtualService {
     }
   }
 
-  async verifySession(payload: QtechCallbackRequest, callback: CallbackLog): Promise<any> {
-    const { walletSessionId, clientId } = payload;
-    try {
-      // Validate token
-      const auth = await this.identityService.validateToken({
-        clientId,
-        token: walletSessionId,
-      });
-      
-      // console.log('Validation Result:', auth);
+  async authenticate(clientId, token, callback) {
+    console.log("Got to authenticate method");
+    const isValid = await this.identityService.validateToken({ clientId, token });
 
-      if (!auth || !auth.success) {
-        const response = this.createErrorResponse('INVALID_TOKEN', HttpStatus.BAD_REQUEST, 'Missing, invalid or expired player (wallet) session token.');
-        // update callback logs, and gaming session
-        await this.updateCallbackGameSession(callback, response, {session_id: walletSessionId}, {callback_id: callback.id})
+    //  const isValid = {
+    //     success: true,
+    //     status: HttpStatus.OK,
+    //     message: 'Success',
+    //     data: {
+    //       playerId: '1',
+    //       clientId: '4',
+    //       playerNickname: 'frank',
+    //       casinoBalance: 0.0,
+    //       sessionId: '123',
+    //       balance: 100.0,
+    //       virtualBalance: 0.0,
+    //       currency: 'NGN',
+    //       group: null,
+    //     }
+    //   }
+    
+    console.log("isValid", isValid);
+    let response: any;
+    const dataObject = typeof isValid.data === 'string' ? JSON.parse(isValid.data) : isValid.data;
 
-        return response;
+    console.log("dataObject", dataObject);
+
+    if(!isValid || !isValid.status) {
+      response = {
+        success: false,
+        status: HttpStatus.BAD_REQUEST,
+        message: 'Invalid auth code, please login to try again',
+        data: {}
       }
 
-      const currency = auth.data.currency;
-      const balance = auth.data.balance;
-
-      console.log('Currency:', currency, 'Balance:', balance);
-
-      // Construct success response
-      const response = this.createSuccessResponse(HttpStatus.OK, 'Success', { balance, currency });
-       // update callback logs, and gaming session
-      await this.updateCallbackGameSession(callback, response, {session_id: walletSessionId}, {callback_id: callback.id})
+      const val = await this.callbackLogRepository.update({ id: callback.id}, { response: JSON.stringify(response)});
+      console.log("val", val);
 
       return response;
-      
-    } catch (error) {
-      console.error('Error in verifySession:', error.message);
-      const response = this.createErrorResponse('UNKNOWN_ERROR', HttpStatus.INTERNAL_SERVER_ERROR, 'Unexpected error.');
-      // update callback logs, and gaming session
-      await this.updateCallbackGameSession(callback, response, {session_id: walletSessionId}, {callback_id: callback.id})
-      return response;
+    } 
+
+    response = {
+      success: true,
+      status: HttpStatus.OK,
+      message: "Authentication Successful",
+      data: {
+        playerId: dataObject.playerId,
+        balance: parseFloat(dataObject.balance.toFixed(2)) || 0.00,
+        currency: dataObject.currency,
+      }
     }
+
+    await this.callbackLogRepository.update({ id: callback.id}, { response: JSON.stringify(response)});
+
+    return response;
+
   }
 
-  async getBalance(payload: QtechCallbackRequest, callback: CallbackLog): Promise<any> {
-    const { walletSessionId, clientId, playerId } = payload;
+  // async getBalance(payload: QtechCallbackRequest, callback: CallbackLog): Promise<any> {
+  //   const { walletSessionId, clientId, playerId } = payload;
 
-    try {
+  //   try {
 
-      // Validate token and get user balance
-      const player = await this.identityService.getDetails({
-        clientId,
-        userId: parseInt(playerId),
-      });
+  //     // Validate token and get user balance
+  //     const player = await this.identityService.getDetails({
+  //       clientId,
+  //       userId: parseInt(playerId),
+  //     });
 
-      const currency = player.data.currency;
-      const balance = parseFloat(player.data.availableBalance.toFixed(2));
+  //     const currency = player.data.currency;
+  //     const balance = parseFloat(player.data.availableBalance.toFixed(2));
 
-      // console.log('Balance:', balance, 'Currency:', currency);
+  //     // console.log('Balance:', balance, 'Currency:', currency);
 
-      // Construct success response
-      const response = this.createSuccessResponse(HttpStatus.OK, 'Balance retrieved', { balance, currency });
-      // update callback logs, and gaming session
-      await this.updateCallbackGameSession(callback, response, {session_id: walletSessionId}, {callback_id: callback.id});
+  //     // Construct success response
+  //     const response = this.createSuccessResponse(HttpStatus.OK, 'Balance retrieved', { balance, currency });
+  //     // update callback logs, and gaming session
+  //     await this.updateCallbackGameSession(callback, response, {session_id: walletSessionId}, {callback_id: callback.id});
 
-      return response;
+  //     return response;
 
-    } catch (error) {
-      console.error('Error in getBalance:', error.message);
-      const response = this.createErrorResponse('UNKNOWN_ERROR', HttpStatus.INTERNAL_SERVER_ERROR, 'Unexpected error.');
-      // update callback logs, and gaming session
-      await this.updateCallbackGameSession(callback, response, {session_id: walletSessionId}, {callback_id: callback.id})
-      return response;
-    }
-  }
+  //   } catch (error) {
+  //     console.error('Error in getBalance:', error.message);
+  //     const response = this.createErrorResponse('UNKNOWN_ERROR', HttpStatus.INTERNAL_SERVER_ERROR, 'Unexpected error.');
+  //     // update callback logs, and gaming session
+  //     await this.updateCallbackGameSession(callback, response, {session_id: walletSessionId}, {callback_id: callback.id})
+  //     return response;
+  //   }
+  // }
 
   async saveCallbackLog(data) {
     const action = data.action;
@@ -263,384 +281,319 @@ export class SmatVirtualService {
     }
   }
 
-  async bet(payload: QtechCallbackRequest, callback: CallbackLog): Promise<any> {
-    const { clientId, playerId, walletSessionId, gameId, body } = payload;
-    const debitData: any = JSON.parse(body);
-    // console.log('Debit request', debitData)
-    try {
-      let game = null;
-      let amount = debitData.amount;
-      let balanceType = 'main';
-      let gameSession;
-      // get game session
-      gameSession = await this.gameSessionRepo.findOne({where: {session_id: walletSessionId}})
+  // async bet(payload: QtechCallbackRequest, callback: CallbackLog): Promise<any> {
+  //   const { clientId, playerId, walletSessionId, gameId, body } = payload;
+  //   const debitData: any = JSON.parse(body);
+  //   // console.log('Debit request', debitData)
+  //   try {
+  //     let game = null;
+  //     let amount = debitData.amount;
+  //     let balanceType = 'main';
+  //     let gameSession;
+  //     // get game session
+  //     gameSession = await this.gameSessionRepo.findOne({where: {session_id: walletSessionId}})
       
-      if (gameSession && gameSession.balance_type === 'bonus')
-        balanceType = 'casino';
+  //     if (gameSession && gameSession.balance_type === 'bonus')
+  //       balanceType = 'casino';
       
-      // Check if the game exists
-      game = await this.gameRepository.findOne({
-        where: { gameId },
-        relations: { provider: true },
-      });
+  //     // Check if the game exists
+  //     game = await this.gameRepository.findOne({
+  //       where: { gameId },
+  //       relations: { provider: true },
+  //     });
 
-      if (!game) {
-        // format error response
-        const response = this.createErrorResponse('REQUEST_DECLINED', HttpStatus.BAD_REQUEST, 'Game does not exist.');
-        // update callback logs, and gaming session
-        await this.updateCallbackGameSession(callback, response, {session_id: walletSessionId}, {callback_id: callback.id});
+  //     if (!game) {
+  //       // format error response
+  //       const response = this.createErrorResponse('REQUEST_DECLINED', HttpStatus.BAD_REQUEST, 'Game does not exist.');
+  //       // update callback logs, and gaming session
+  //       await this.updateCallbackGameSession(callback, response, {session_id: walletSessionId}, {callback_id: callback.id});
 
-        return response;
-      }
+  //       return response;
+  //     }
 
-      const gameName = game.title;
+  //     const gameName = game.title;
         
-      // Validate token
-      const auth = await this.identityService.validateToken({
-        clientId,
-        token: walletSessionId,
-      });
+  //     // Validate token
+  //     const auth = await this.identityService.validateToken({
+  //       clientId,
+  //       token: walletSessionId,
+  //     });
 
-      if (!auth || !auth.success) {
-        const response = this.createErrorResponse('INVALID_TOKEN', HttpStatus.BAD_REQUEST, 'Missing, invalid or expired player (wallet) session token.');
-        // update callback logs, and gaming session
-        await this.updateCallbackGameSession(callback, response, {session_id: walletSessionId}, {callback_id: callback.id})
+  //     if (!auth || !auth.success) {
+  //       const response = this.createErrorResponse('INVALID_TOKEN', HttpStatus.BAD_REQUEST, 'Missing, invalid or expired player (wallet) session token.');
+  //       // update callback logs, and gaming session
+  //       await this.updateCallbackGameSession(callback, response, {session_id: walletSessionId}, {callback_id: callback.id})
 
-        return response;
-      }
+  //       return response;
+  //     }
     
-      if(auth.data.balance < debitData.amount) {
-        const response = this.createErrorResponse('INSUFFICIENT_FUNDS', HttpStatus.BAD_REQUEST, 'Insufficient balance');
-        // update callback log response and game session with callback id
-        await this.updateCallbackGameSession(callback, response, {session_id: walletSessionId}, {callback_id: callback.id})
+  //     if(auth.data.balance < debitData.amount) {
+  //       const response = this.createErrorResponse('INSUFFICIENT_FUNDS', HttpStatus.BAD_REQUEST, 'Insufficient balance');
+  //       // update callback log response and game session with callback id
+  //       await this.updateCallbackGameSession(callback, response, {session_id: walletSessionId}, {callback_id: callback.id})
 
-        return response;
-      }
+  //       return response;
+  //     }
 
-      const placeBetPayload: PlaceCasinoBetRequest = {
-        userId: parseInt(playerId),
-        clientId,
-        roundId: debitData.roundId,
-        transactionId: debitData.txnId,
-        gameId: debitData.gameId,
-        stake: debitData.amount,
-        gameName: game.title,
-        gameNumber: gameId,
-        source: game.provider.slug,
-        cashierTransactionId: debitData.clientRoundId,
-        winnings: 0,
-        username: auth.data.playerNickname,
-        bonusId: gameSession?.bonus_id || null
-      };
+  //     const placeBetPayload: PlaceCasinoBetRequest = {
+  //       userId: parseInt(playerId),
+  //       clientId,
+  //       roundId: debitData.roundId,
+  //       transactionId: debitData.txnId,
+  //       gameId: debitData.gameId,
+  //       stake: debitData.amount,
+  //       gameName: game.title,
+  //       gameNumber: gameId,
+  //       source: game.provider.slug,
+  //       cashierTransactionId: debitData.clientRoundId,
+  //       winnings: 0,
+  //       username: auth.data.playerNickname,
+  //       bonusId: gameSession?.bonus_id || null
+  //     };
 
-      const place_bet = await this.placeBet(placeBetPayload);
-      // console.log(place_bet)
-      if (!place_bet.success) {
-        const response = this.createErrorResponse('REQUEST_DECLINED', HttpStatus.BAD_REQUEST, 'Unable to place bet.');
+  //     const place_bet = await this.placeBet(placeBetPayload);
+  //     // console.log(place_bet)
+  //     if (!place_bet.success) {
+  //       const response = this.createErrorResponse('REQUEST_DECLINED', HttpStatus.BAD_REQUEST, 'Unable to place bet.');
 
-        // update callback log response and game session with callback id
-        await this.updateCallbackGameSession(callback, response, {session_id: walletSessionId}, {callback_id: callback.id})
+  //       // update callback log response and game session with callback id
+  //       await this.updateCallbackGameSession(callback, response, {session_id: walletSessionId}, {callback_id: callback.id})
 
-        return response;
-      }
+  //       return response;
+  //     }
 
-      const debit = await this.walletService.debit({
-        userId: parseInt(playerId),
-        clientId,
-        amount: debitData.amount.toFixed(2),
-        source: game.provider.slug,
-        description: `Casino Bet: (${gameName}:${debitData.gameId})`,
-        username: auth.data.playerNickname,
-        wallet: balanceType,
-        subject: 'Bet Deposit (Casino)',
-        channel: gameName,
-      });
+  //     const debit = await this.walletService.debit({
+  //       userId: parseInt(playerId),
+  //       clientId,
+  //       amount: debitData.amount.toFixed(2),
+  //       source: game.provider.slug,
+  //       description: `Casino Bet: (${gameName}:${debitData.gameId})`,
+  //       username: auth.data.playerNickname,
+  //       wallet: balanceType,
+  //       subject: 'Bet Deposit (Casino)',
+  //       channel: gameName,
+  //     });
 
-      console.log(debit)
+  //     console.log(debit)
 
-      if (!debit.success) {
-        const response = this.createErrorResponse('REQUEST_DECLINED', HttpStatus.BAD_REQUEST, 'Unable to place bet. Something went wrong');
-        // update callback log response and game session with callback id
-        await this.updateCallbackGameSession(callback, response, {session_id: walletSessionId}, {callback_id: callback.id})
+  //     if (!debit.success) {
+  //       const response = this.createErrorResponse('REQUEST_DECLINED', HttpStatus.BAD_REQUEST, 'Unable to place bet. Something went wrong');
+  //       // update callback log response and game session with callback id
+  //       await this.updateCallbackGameSession(callback, response, {session_id: walletSessionId}, {callback_id: callback.id})
 
-        return response;
-      }
+  //       return response;
+  //     }
       
-      const response = this.createSuccessResponse(HttpStatus.OK, 'Debit, Successful', { 
-        balance: parseFloat(debit.data.balance.toFixed(2)),
-        referenceId: place_bet.data.transactionId,        
-      });
+  //     const response = this.createSuccessResponse(HttpStatus.OK, 'Debit, Successful', { 
+  //       balance: parseFloat(debit.data.balance.toFixed(2)),
+  //       referenceId: place_bet.data.transactionId,        
+  //     });
 
-      // update callback log response
-      await this.updateCallbackGameSession(callback, response, {session_id: walletSessionId}, {callback_id: callback.id}, true)
+  //     // update callback log response
+  //     await this.updateCallbackGameSession(callback, response, {session_id: walletSessionId}, {callback_id: callback.id}, true)
 
-      return response;
-    } catch (error) {
-      console.error('Error placing bet:', error.message);
-      const response = this.createErrorResponse('UNKNOWN_ERROR', HttpStatus.INTERNAL_SERVER_ERROR, 'Unexpected error.');
-      // update callback logs, and gaming session
-      await this.updateCallbackGameSession(callback, response, {session_id: walletSessionId}, {callback_id: callback.id})
-      return response;
-    }
-  }
+  //     return response;
+  //   } catch (error) {
+  //     console.error('Error placing bet:', error.message);
+  //     const response = this.createErrorResponse('UNKNOWN_ERROR', HttpStatus.INTERNAL_SERVER_ERROR, 'Unexpected error.');
+  //     // update callback logs, and gaming session
+  //     await this.updateCallbackGameSession(callback, response, {session_id: walletSessionId}, {callback_id: callback.id})
+  //     return response;
+  //   }
+  // }
 
-  async win(payload: QtechCallbackRequest, callback: CallbackLog): Promise<any> {
-    console.log('Processing win method...');
+  // async win(payload: QtechCallbackRequest, callback: CallbackLog): Promise<any> {
+  //   console.log('Processing win method...');
 
-    const { walletSessionId, gameId, clientId, body, playerId } = payload;
+  //   const { walletSessionId, gameId, clientId, body, playerId } = payload;
 
-    try {
-      const creditData: any = JSON.parse(body);
+  //   try {
+  //     const creditData: any = JSON.parse(body);
 
-      // Validate gameId
-      let game = null;
-      let balanceType = 'main';
-      let amount = creditData.amount;
-      let gameSession;
+  //     // Validate gameId
+  //     let game = null;
+  //     let balanceType = 'main';
+  //     let amount = creditData.amount;
+  //     let gameSession;
 
-      // Check if the game exists
-      game = await this.gameRepository.findOne({
-        where: { gameId },
-        relations: { provider: true },
-      });
+  //     // Check if the game exists
+  //     game = await this.gameRepository.findOne({
+  //       where: { gameId },
+  //       relations: { provider: true },
+  //     });
 
-      // get game session
-      gameSession = await this.gameSessionRepo.findOne({where: {session_id: walletSessionId}})
+  //     // get game session
+  //     gameSession = await this.gameSessionRepo.findOne({where: {session_id: walletSessionId}})
       
-      if ((gameSession && gameSession.balance_type === 'bonus') || creditData.bonusType)
-        balanceType = 'casino';
+  //     if ((gameSession && gameSession.balance_type === 'bonus') || creditData.bonusType)
+  //       balanceType = 'casino';
       
-      // Validate token
-      const player = await this.identityService.getDetails({
-        clientId,
-        userId: parseInt(playerId),
-      });
+  //     // Validate token
+  //     const player = await this.identityService.getDetails({
+  //       clientId,
+  //       userId: parseInt(playerId),
+  //     });
 
-      // check if transaction ID exist and return user balance
-      if (callback.transactionId === creditData.txnId && callback.status === true) {
-        console.log('transaction completed')
-        const walletRes = await this.walletService.getWallet({
-          userId: parseInt(playerId), 
-          clientId
-        });
+  //     // check if transaction ID exist and return user balance
+  //     if (callback.transactionId === creditData.txnId && callback.status === true) {
+  //       console.log('transaction completed')
+  //       const walletRes = await this.walletService.getWallet({
+  //         userId: parseInt(playerId), 
+  //         clientId
+  //       });
 
-        const response = this.createSuccessResponse(HttpStatus.OK, 'Successful', {
-          balance: walletRes.data.availableBalance,
-          referenceId: callback.id,
-        })
+  //       const response = this.createSuccessResponse(HttpStatus.OK, 'Successful', {
+  //         balance: walletRes.data.availableBalance,
+  //         referenceId: callback.id,
+  //       })
 
-        return response;
-      }
+  //       return response;
+  //     }
 
-      let creditRes = null;
+  //     let creditRes = null;
           
-      const settlePayload: CreditCasinoBetRequest = {
-        transactionId: creditData.betId,
-        winnings: creditData.amount,
-      };
+  //     const settlePayload: CreditCasinoBetRequest = {
+  //       transactionId: creditData.betId,
+  //       winnings: creditData.amount,
+  //     };
 
-      // settle won bet
-      const settle_bet = await this.result(settlePayload);
+  //     // settle won bet
+  //     const settle_bet = await this.result(settlePayload);
 
-      if (!settle_bet.success)  {
-        const response = this.createErrorResponse('REQUEST_DECLINED', HttpStatus.BAD_GATEWAY, 'Unable  to process request')
-        // update callback log response
-        await this.updateCallbackGameSession(callback, response, {session_id: walletSessionId}, {callback_id: callback.id})
+  //     if (!settle_bet.success)  {
+  //       const response = this.createErrorResponse('REQUEST_DECLINED', HttpStatus.BAD_GATEWAY, 'Unable  to process request')
+  //       // update callback log response
+  //       await this.updateCallbackGameSession(callback, response, {session_id: walletSessionId}, {callback_id: callback.id})
 
-        return response;
-      }
-      // close round if completed is true
-      if (creditData.completed === "true") {
-        const payload: CreditCasinoBetRequest = {
-          transactionId: creditData.roundId,
-          winnings: creditData.amount,
-        };
-        // settle won bet
-        await this.betService.closeRound(payload);
-      }
+  //       return response;
+  //     }
+  //     // close round if completed is true
+  //     if (creditData.completed === "true") {
+  //       const payload: CreditCasinoBetRequest = {
+  //         transactionId: creditData.roundId,
+  //         winnings: creditData.amount,
+  //       };
+  //       // settle won bet
+  //       await this.betService.closeRound(payload);
+  //     }
 
-      // console.log(settle_bet, 'settlebet response')
-      creditRes = await this.walletService.credit({
-        userId: playerId,
-        clientId,
-        amount: creditData.amount.toFixed(2),
-        source: game.provider.slug,
-        description: `Casino Bet: (${game.title}:${gameId})`,
-        username: player.data.username,
-        wallet: balanceType,
-        subject: 'Bet Win (Casino)',
-        channel: creditData.device,
-      });
+  //     // console.log(settle_bet, 'settlebet response')
+  //     creditRes = await this.walletService.credit({
+  //       userId: playerId,
+  //       clientId,
+  //       amount: creditData.amount.toFixed(2),
+  //       source: game.provider.slug,
+  //       description: `Casino Bet: (${game.title}:${gameId})`,
+  //       username: player.data.username,
+  //       wallet: balanceType,
+  //       subject: 'Bet Win (Casino)',
+  //       channel: creditData.device,
+  //     });
 
-      const response = this.createSuccessResponse(HttpStatus.OK, 'Credit, Successful', { 
-        balance: parseFloat(creditRes.data.balance.toFixed(2)),
-        referenceId: callback.id,        
-      });      
-      // update callback log response
-      await this.updateCallbackGameSession(callback, response, {session_id: walletSessionId}, {callback_id: callback.id}, true)
+  //     const response = this.createSuccessResponse(HttpStatus.OK, 'Credit, Successful', { 
+  //       balance: parseFloat(creditRes.data.balance.toFixed(2)),
+  //       referenceId: callback.id,        
+  //     });      
+  //     // update callback log response
+  //     await this.updateCallbackGameSession(callback, response, {session_id: walletSessionId}, {callback_id: callback.id}, true)
 
-      return response;
+  //     return response;
         
-    } catch (error) {
-      console.error('Error processing win:', error.message);
-      const response = this.createErrorResponse('UNKNOWN_ERROR', HttpStatus.INTERNAL_SERVER_ERROR, 'Unexpected error.');
-      // update callback logs, and gaming session
-      await this.updateCallbackGameSession(callback, response, {session_id: walletSessionId}, {callback_id: callback.id})
-      return response;
-    }
-  }
+  //   } catch (error) {
+  //     console.error('Error processing win:', error.message);
+  //     const response = this.createErrorResponse('UNKNOWN_ERROR', HttpStatus.INTERNAL_SERVER_ERROR, 'Unexpected error.');
+  //     // update callback logs, and gaming session
+  //     await this.updateCallbackGameSession(callback, response, {session_id: walletSessionId}, {callback_id: callback.id})
+  //     return response;
+  //   }
+  // }
 
-  async refund(payload: QtechCallbackRequest, callback: CallbackLog) {
-    const { playerId, walletSessionId, gameId, clientId, body } = payload;
-    const data: any = JSON.parse(body);
+  // async refund(payload: QtechCallbackRequest, callback: CallbackLog) {
+  //   const { playerId, walletSessionId, gameId, clientId, body } = payload;
+  //   const data: any = JSON.parse(body);
     
-    try {
-      // Validate gameId
-      let game = null;
-      let balanceType = 'main';
-      let gameSession;
+  //   try {
+  //     // Validate gameId
+  //     let game = null;
+  //     let balanceType = 'main';
+  //     let gameSession;
 
-      // Check if the game exists
-      game = await this.gameRepository.findOne({
-        where: { gameId },
-        relations: { provider: true },
-      });
+  //     // Check if the game exists
+  //     game = await this.gameRepository.findOne({
+  //       where: { gameId },
+  //       relations: { provider: true },
+  //     });
 
-      const reversePayload: RollbackCasinoBetRequest = {
-        transactionId: data.betId,
-      };
+  //     const reversePayload: RollbackCasinoBetRequest = {
+  //       transactionId: data.betId,
+  //     };
 
-      console.log('Processing Rollback')
-      // get callback log
-      const callbackLog = await this.callbackLogRepository.findOne({where: {transactionId: reversePayload.transactionId }})
+  //     console.log('Processing Rollback')
+  //     // get callback log
+  //     const callbackLog = await this.callbackLogRepository.findOne({where: {transactionId: reversePayload.transactionId }})
 
-      // get player details
-      const player = await this.identityService.getDetails({
-        clientId,
-        userId: parseInt(playerId),
-      });
+  //     // get player details
+  //     const player = await this.identityService.getDetails({
+  //       clientId,
+  //       userId: parseInt(playerId),
+  //     });
 
-      if (!callbackLog) {
-        console.log('Callback log found')
+  //     if (!callbackLog) {
+  //       console.log('Callback log found')
 
-        const response = this.createSuccessResponse(HttpStatus.OK, 'Transaction not found', {balance: player.data.availableBalance});
+  //       const response = this.createSuccessResponse(HttpStatus.OK, 'Transaction not found', {balance: player.data.availableBalance});
         
-        await this.updateCallbackGameSession(callback, response, {session_id: walletSessionId}, {callback_id: callback.id})
+  //       await this.updateCallbackGameSession(callback, response, {session_id: walletSessionId}, {callback_id: callback.id})
 
-        return response;
-      }
+  //       return response;
+  //     }
 
-      // const transactionPayload = JSON.parse(callbackLog.payload);
-      // console.log(transactionPayload)
-      // const transactionResponse = JSON.parse(callbackLog.response);
-      const transaction = await this.rollback(reversePayload);
+  //     // const transactionPayload = JSON.parse(callbackLog.payload);
+  //     // console.log(transactionPayload)
+  //     // const transactionResponse = JSON.parse(callbackLog.response);
+  //     const transaction = await this.rollback(reversePayload);
 
-      if (!transaction.success)  {
-        console.log('ticket update not successful')
-        const response = this.createErrorResponse('REQUEST_DECLINED', HttpStatus.BAD_REQUEST, 'Unable to process request.')
-        // update callback log response
-        await this.updateCallbackGameSession(callback, response, {session_id: walletSessionId}, {callback_id: callback.id})
+  //     if (!transaction.success)  {
+  //       console.log('ticket update not successful')
+  //       const response = this.createErrorResponse('REQUEST_DECLINED', HttpStatus.BAD_REQUEST, 'Unable to process request.')
+  //       // update callback log response
+  //       await this.updateCallbackGameSession(callback, response, {session_id: walletSessionId}, {callback_id: callback.id})
 
-        return response;
-      }
+  //       return response;
+  //     }
 
-      const rollbackWalletRes = await this.walletService.credit({
-        userId: playerId,
-        clientId,
-        amount: data.amount.toFixed(2),
-        source: gameId,
-        description: `Bet Cancelled: (${game.title}:${data.gameId})`,
-        username: player.data.username,
-        wallet: balanceType,
-        subject: 'Bet Rollback (Casino)',
-        channel: data.device,
-      });
+  //     const rollbackWalletRes = await this.walletService.credit({
+  //       userId: playerId,
+  //       clientId,
+  //       amount: data.amount.toFixed(2),
+  //       source: gameId,
+  //       description: `Bet Cancelled: (${game.title}:${data.gameId})`,
+  //       username: player.data.username,
+  //       wallet: balanceType,
+  //       subject: 'Bet Rollback (Casino)',
+  //       channel: data.device,
+  //     });
 
-      console.log('credit wallet respons', rollbackWalletRes)
+  //     console.log('credit wallet respons', rollbackWalletRes)
 
-      const response = this.createSuccessResponse(HttpStatus.OK, 'Successful', {
-        balance: parseFloat(rollbackWalletRes.data.balance.toFixed(2)),
-        referenceId: callback.id,
-      })
-      // update callback log response
-      await this.updateCallbackGameSession(callback, response, {session_id: walletSessionId}, {callback_id: callback.id}, true)
+  //     const response = this.createSuccessResponse(HttpStatus.OK, 'Successful', {
+  //       balance: parseFloat(rollbackWalletRes.data.balance.toFixed(2)),
+  //       referenceId: callback.id,
+  //     })
+  //     // update callback log response
+  //     await this.updateCallbackGameSession(callback, response, {session_id: walletSessionId}, {callback_id: callback.id}, true)
 
-      return response;
-    } catch (e) {
-      console.error('Error processing win:', e.message);
-      const response = this.createErrorResponse('UNKNOWN_ERROR', HttpStatus.INTERNAL_SERVER_ERROR, 'Unexpected error.');
-      // update callback logs, and gaming session
-      await this.updateCallbackGameSession(callback, response, {session_id: walletSessionId}, {callback_id: callback.id});
+  //     return response;
+  //   } catch (e) {
+  //     console.error('Error processing win:', e.message);
+  //     const response = this.createErrorResponse('UNKNOWN_ERROR', HttpStatus.INTERNAL_SERVER_ERROR, 'Unexpected error.');
+  //     // update callback logs, and gaming session
+  //     await this.updateCallbackGameSession(callback, response, {session_id: walletSessionId}, {callback_id: callback.id});
 
-      return response;
-    }
-  }
+  //     return response;
+  //   }
+  // }
 
-  async reward(payload: QtechCallbackRequest, callback: CallbackLog) {
-    const { playerId, walletSessionId, gameId, clientId, body } = payload;
-    const data: any = JSON.parse(body);
-    
-    try {
-
-      // get player details
-      const player = await this.identityService.getDetails({
-        clientId,
-        userId: parseInt(playerId),
-      });
-
-      const walletRes = await this.walletService.credit({
-        userId: playerId,
-        clientId,
-        amount: data.amount.toFixed(2),
-        source: 'qtech-games',
-        description: `${data.rewardTitle} (${data.rewardType})`,
-        username: player.data.username,
-        wallet: 'main',
-        subject: 'Casino Reward',
-        channel: 'system',
-      });
-
-
-      const response = this.createSuccessResponse(HttpStatus.OK, 'Successful', {
-        balance: parseFloat(walletRes.data.balance.toFixed(2)),
-        referenceId: callback.id,
-      });
-
-      // update callback log response
-      await this.updateCallbackGameSession(callback, response, {session_id: walletSessionId}, {callback_id: callback.id}, true)
-
-      return response;
-    } catch (e) {
-      console.error('Error processing win:', e.message);
-      const response = this.createErrorResponse('UNKNOWN_ERROR', HttpStatus.INTERNAL_SERVER_ERROR, 'Unexpected error.');
-      // update callback logs, and gaming session
-      await this.updateCallbackGameSession(callback, response, {session_id: walletSessionId}, {callback_id: callback.id});
-
-      return response;
-    }
-  }
-
-  // Helper to create error responses
-  private createErrorResponse(code: string, status: number, message: string): any {
-    return {
-      success: false,
-      status,
-      data: {
-        code,
-        message,
-      },
-    };
-  }
-
-  // Helper to create success responses
-  private createSuccessResponse(status, message, data): any {
-    return {
-      success: true,
-      status,
-      message,
-      data,
-    };
-  }
 
   async placeBet(data: PlaceCasinoBetRequest) {
     return firstValueFrom(this.betService.placeCasinoBet(data));
@@ -654,52 +607,42 @@ export class SmatVirtualService {
     return await firstValueFrom(this.betService.cancelCasinoBet(data));
   }
 
-  async handlCallbacks(_data: QtechCallbackRequest): Promise<any> {
-    // console.log('_data', _data);
-    //const balanceType = 'main';
-    // console.log('using qtech-games');
+  
+  async handleCallback(data: SmatVirtualCallbackRequest) {
+    console.log("_data", data);
 
-    const callback = await this.saveCallbackLog(_data);
-    
-    // verify pass key, if not valid, return error
-    if (_data.passkey !== process.env.QTECH_PASS_KEY)
-      return this.createErrorResponse('LOGIN_FAILED', HttpStatus.UNAUTHORIZED, 'The given pass-key is incorrect.');
+    const callback = await this.saveCallbackLog(data);
+    console.log("callback-4", callback);
 
-    // console.log('callback-4', callback);
+    // Return response if already logged
+    if (callback?.response != null) {
+        console.log("Existing callback response found. Processing it.");
 
-    switch (_data.action) {
-      case 'verifySession':
-        return await this.verifySession(_data, callback);
-      case 'getBalance':
-        return await this.getBalance(
-         _data,
-         callback
-        );
-      case 'DEBIT':
-        return await this.bet(_data, callback);
-      case 'CREDIT':
-        return await this.win(_data, callback);
-      case 'ROLLBACK':
-        return await this.refund(_data, callback);
-      case 'BONUS-REWARD':
-        return await this.reward(_data, callback);
-      default:
-        return this.createErrorResponse('REQUEST_DECLINED', HttpStatus.BAD_REQUEST, 'Something went wrong. Could not be process request.')
+        const existingRequest = JSON.parse(callback.payload);
+        const existingResponse = JSON.parse(callback.response);
+
+        console.log("existingRequest", existingRequest);
+        console.log("existingResponse", existingResponse);
+
+        return existingResponse;
+  
+    } 
+
+    // Handle game actions
+    switch (data.action) {
+        case 'player-information':
+            console.log("using smat virtual authenticate");
+            return await this.authenticate(data.clientId, data.sessionId, callback);
+        // case 'Balance':
+        //     return await this.getBalance(data.clientId, player, callback, balanceType);
+        // case 'Bet':
+        //     return await this.bet(data.clientId, player, callback, body, balanceType);
+        // case 'Result':
+        //     return await this.win(data.clientId, player, callback, body, balanceType);
+        default:
+            return { success: false, message: 'Invalid request', status: HttpStatus.BAD_REQUEST };
     }
-  }
-
-  async updateCallbackGameSession(callback, response, where, data, status = false) {
-    // update callback log response and game session with callback id
-    await Promise.all([
-      this.callbackLogRepository.update({
-      id: callback.id,
-      },{
-        response: JSON.stringify(response),
-        status
-      }),
-      await this.gameSessionRepo.update(where, data)
-    ]);
-  }
+}
 
   private encrypt(message: string, key: string): string {
     try {
@@ -714,4 +657,6 @@ export class SmatVirtualService {
       throw error;
     }
   }
+
+
 }
