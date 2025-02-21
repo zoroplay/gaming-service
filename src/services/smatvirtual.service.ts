@@ -171,6 +171,7 @@ export class SmatVirtualService {
 
   async authenticate(clientId, token, callback) {
     console.log("Got to authenticate method");
+    console.log("Auth", clientId, token, callback);
     const isValid = await this.identityService.validateToken({ clientId, token });
 
     //  const isValid = {
@@ -213,10 +214,10 @@ export class SmatVirtualService {
     response = {
       success: true,
       status: HttpStatus.OK,
-      message: "Authentication Successful",
       data: {
         playerId: dataObject.playerId,
         balance: parseFloat(dataObject.balance.toFixed(2)) || 0.00,
+        sessionId: token,
         currency: dataObject.currency,
       }
     }
