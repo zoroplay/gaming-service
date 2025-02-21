@@ -960,7 +960,6 @@ export class GamesService {
       })),
     };
 
-    console.log('Response:', response); // Log the response in a readable format
     return response;
   }
 
@@ -978,8 +977,6 @@ export class GamesService {
     }
   
     const [games] = await query.getManyAndCount();
-  
-    console.log('games', games);
   
     const gameData = games.map((game) => ({
       id: game.id,
