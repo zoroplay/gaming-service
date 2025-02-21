@@ -259,28 +259,6 @@ export class SmatVirtualService {
   //   }
   // }
 
-  async saveCallbackLog(data) {
-    const action = data.action;
-    const body = data.body ? JSON.parse(data.body) : '';
-    const transactionId = action === 'verifySession' ? data.walletSessionId : action === 'getBalance' ? `${data.walletSessionId}-${data.playerId}` : body.txnId;
-    try{
-
-      let callback = await this.callbackLogRepository.findOne({where: {transactionId}});
-      
-      if (callback) return callback;
-      
-      callback = new CallbackLog();
-      callback.transactionId = transactionId;
-      callback.request_type = action;
-      callback.payload = JSON.stringify(body);
-
-      return await this.callbackLogRepository.save(callback);
-
-    } catch(e) {
-      console.log('Error saving callback log', e.message)
-    }
-  }
-
   // async bet(payload: QtechCallbackRequest, callback: CallbackLog): Promise<any> {
   //   const { clientId, playerId, walletSessionId, gameId, body } = payload;
   //   const debitData: any = JSON.parse(body);
@@ -614,20 +592,6 @@ export class SmatVirtualService {
     const callback = await this.saveCallbackLog(data);
     console.log("callback-4", callback);
 
-    // Return response if already logged
-    if (callback?.response != null) {
-        console.log("Existing callback response found. Processing it.");
-
-        const existingRequest = JSON.parse(callback.payload);
-        const existingResponse = JSON.parse(callback.response);
-
-        console.log("existingRequest", existingRequest);
-        console.log("existingResponse", existingResponse);
-
-        return existingResponse;
-  
-    } 
-
     // Handle game actions
     switch (data.action) {
         case 'player-information':
@@ -642,6 +606,29 @@ export class SmatVirtualService {
         default:
             return { success: false, message: 'Invalid request', status: HttpStatus.BAD_REQUEST };
     }
+}
+
+
+async saveCallbackLog(data) {
+  const action = data.action;
+  const body = data.body ? JSON.parse(data.body) : '';
+  const transactionId = action === 'player-information' ? data.sessionId : data.sessionId
+  try{
+
+    let callback = await this.callbackLogRepository.findOne({where: {transactionId}});
+    
+    if (callback) return callback;
+    
+    callback = new CallbackLog();
+    callback.transactionId = transactionId;
+    callback.request_type = action;
+    callback.payload = JSON.stringify(body);
+
+    return await this.callbackLogRepository.save(callback);
+
+  } catch(e) {
+    console.log('Error saving callback log', e.message)
+  }
 }
 
   private encrypt(message: string, key: string): string {
