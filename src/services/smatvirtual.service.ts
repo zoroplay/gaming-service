@@ -89,7 +89,7 @@ export class SmatVirtualService {
         this.SMATVIRTUAL_ENCRYPTION_KEY
       );
 
-      return { url: `${this.SMATVIRTUAL_BASEURL}?clientId=${ClientExternalId}&cesload=${hash}` };
+      return { url: `${this.SMATVIRTUAL_BASEURL}?clientId=${ClientExternalId}&cesLoad=${hash}` };
 
 
 
@@ -640,6 +640,22 @@ async saveCallbackLog(data) {
       ).toString();
 
       return encodeURIComponent(cipher);
+    } catch (error) {
+      console.log("error", error);
+      throw error;
+    }
+  }
+
+
+  private decrypt(hash: string, key?: string): string {
+    try {
+      const bytes = CryptoJS.AES.decrypt(
+        decodeURIComponent(hash),
+        key
+      );
+      const originalText = bytes.toString(CryptoJS.enc.Utf8);
+
+      return originalText;
     } catch (error) {
       console.log("error", error);
       throw error;
