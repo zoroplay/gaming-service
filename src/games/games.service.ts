@@ -467,7 +467,7 @@ export class GamesService {
 
     console.log('game', game);
 
-    switch (game.provider.parentProvider) {
+    switch (game.provider.slug) {
       case 'shack-evolution':
       // return await this.smartSoftService.constructGameUrl(
       //   startGameDto,
@@ -540,15 +540,12 @@ export class GamesService {
       case 'evo-play':
         console.log('syncing here');
         return await this.evoPlayService.syncGames();
-        break;
       case 'pragmatic-play':
         console.log('pragmatic syncing here');
         return await this.pragmaticPlayService.syncGames();
-        break;
       case 'qtech-games':
         console.log('qtech syncing here');
         return await this.qtechService.syncGames();
-        break;
       default:
         throw new NotFoundException(
           'Specified provider does not support sync feature',
