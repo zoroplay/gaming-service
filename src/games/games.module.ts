@@ -31,6 +31,7 @@ import { Tournament } from 'src/entities/tournament.entity';
 import { FirebaseService } from 'src/common/services/firebaseUpload';
 import { TournamentGame } from 'src/entities/tournament-game.entity';
 import { BonusModule } from 'src/bonus/bonus.module';
+import { SmatVirtualService } from 'src/services/smatvirtual.service';
 
 
 
@@ -61,7 +62,8 @@ import { BonusModule } from 'src/bonus/bonus.module';
     VirtualService,
     PragmaticService,
     QtechService,
-    FirebaseService
+    FirebaseService,
+    SmatVirtualService
   ],
 })
 export class GamesModule {}

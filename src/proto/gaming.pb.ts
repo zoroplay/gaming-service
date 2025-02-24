@@ -11,6 +11,20 @@ export interface GetGamesRequest {
   gameIds: number[];
 }
 
+export interface StartDto {
+  clientId: number;
+  userId: number;
+  token: string;
+}
+
+export interface SmatVirtualCallbackRequest {
+  clientId: number;
+  action?: string | undefined;
+  body?: string | undefined;
+  playerId?: string | undefined;
+  sessionId?: string | undefined;
+}
+
 export interface CreateBonusRequest {
   clientId: number;
   bonusType: string;
@@ -634,6 +648,8 @@ export interface GamingServiceClient {
 
   handleQtechCallback(request: QtechCallbackRequest): Observable<CallbackResponse>;
 
+  handleSmatVirtualCallback(request: SmatVirtualCallbackRequest): Observable<CallbackResponse>;
+
   xpressLogin(request: XpressRequest): Observable<XpressResponse>;
 
   xpressBalance(request: XpressRequest): Observable<XpressResponse>;
@@ -645,6 +661,8 @@ export interface GamingServiceClient {
   xpressRollback(request: XpressRequest): Observable<XpressResponse>;
 
   xpressLogout(request: XpressRequest): Observable<XpressResponse>;
+
+  startSmatGame(request: StartDto): Observable<StartGameResponse>;
 }
 
 export interface GamingServiceController {
@@ -740,6 +758,10 @@ export interface GamingServiceController {
     request: QtechCallbackRequest,
   ): Promise<CallbackResponse> | Observable<CallbackResponse> | CallbackResponse;
 
+  handleSmatVirtualCallback(
+    request: SmatVirtualCallbackRequest,
+  ): Promise<CallbackResponse> | Observable<CallbackResponse> | CallbackResponse;
+
   xpressLogin(request: XpressRequest): Promise<XpressResponse> | Observable<XpressResponse> | XpressResponse;
 
   xpressBalance(request: XpressRequest): Promise<XpressResponse> | Observable<XpressResponse> | XpressResponse;
@@ -751,6 +773,8 @@ export interface GamingServiceController {
   xpressRollback(request: XpressRequest): Promise<XpressResponse> | Observable<XpressResponse> | XpressResponse;
 
   xpressLogout(request: XpressRequest): Promise<XpressResponse> | Observable<XpressResponse> | XpressResponse;
+
+  startSmatGame(request: StartDto): Promise<StartGameResponse> | Observable<StartGameResponse> | StartGameResponse;
 }
 
 export function GamingServiceControllerMethods() {
@@ -796,12 +820,14 @@ export function GamingServiceControllerMethods() {
       "startGame",
       "handleCallback",
       "handleQtechCallback",
+      "handleSmatVirtualCallback",
       "xpressLogin",
       "xpressBalance",
       "xpressDebit",
       "xpressCredit",
       "xpressRollback",
       "xpressLogout",
+      "startSmatGame",
     ];
     for (const method of grpcMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
