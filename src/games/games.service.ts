@@ -467,7 +467,7 @@ export class GamesService {
 
     console.log('game', game);
 
-    switch (game.provider.slug) {
+    switch (game.provider.parentProvider) {
       case 'shack-evolution':
       // return await this.smartSoftService.constructGameUrl(
       //   startGameDto,
