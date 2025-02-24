@@ -35,6 +35,7 @@ import {
   PaginationDto,
   Promotion,
   SaveCategoryRequest,
+  StartDto,
   StartGameDto,
   SyncGameDto,
   Tournaments,
@@ -55,6 +56,7 @@ import { QtechService } from 'src/services/qtech.service';
 import { FindManyOptions, ILike, In, Repository } from 'typeorm';
 import { Game as GameEntity } from '../entities/game.entity';
 import { Provider as ProviderEntity } from '../entities/provider.entity';
+import { SmatVirtualService } from 'src/services/smatvirtual.service';
 
 @Injectable()
 export class GamesService {
@@ -85,6 +87,7 @@ export class GamesService {
     private readonly identityService: IdentityService,
     private readonly qtechService: QtechService,
     private readonly firebaseService: FirebaseService,
+    private readonly smatVirtualService: SmatVirtualService,
   ) {}
 
   async createProvider(
@@ -516,6 +519,11 @@ export class GamesService {
         throw new NotFoundException('Unknown provider');
         break;
     }
+  }
+
+  async startSmatGames(payload: StartDto): Promise<Game[] | any> {
+    // Fetch the game list from your API (adjust the method name and params accordingly)
+    return await this.smatVirtualService.activateSession(payload);
   }
 
   async sync(syncGameDto: SyncGameDto): Promise<any> {
@@ -952,100 +960,8 @@ export class GamesService {
       })),
     };
 
-    console.log('Response:', response); // Log the response in a readable format
     return response;
   }
-
-  // async getGameCategories(
-  //   page = 1,
-  //   perPage = 50,
-  // ): Promise<any> {
-  //   const skip = (page - 1) * perPage;
-
-  //   // Fetch games with their related categories
-  //   const [games, total] = await this.gameRepository
-  //     .createQueryBuilder('game')
-  //     .leftJoinAndSelect('game.provider', 'provider')
-  //     .leftJoinAndSelect('game.categories', 'gameCategory')
-  //     .leftJoinAndSelect('gameCategory.category', 'category')
-  //     .take(perPage)
-  //     .skip(skip)
-  //     .getManyAndCount();
-
-  //     console.log("games", games);
-
-  //   // Transform games with categories into the required response structure
-  //   const data = games.map((game) => ({
-  //     id: game.id,
-  //     status: game.status,
-  //     provider_id: game.provider?.id || 0,
-  //     provider_name: game.provider?.name || '',
-  //     game_id: game.gameId,
-  //     game_name: game.title,
-  //     image: game.imagePath,
-  //     description: game.description || '',
-  //     // priority: game.priority || 0,
-  //     // category: game.categories.map((gc) => ({
-  //     //   id: gc.id,
-  //     //   category_id: gc.category.id,
-  //     //   name: gc.category.name,
-  //     // })),
-  //   }));
-
-  //   // Return paginated response
-  //   return {
-  //     total,
-  //     per_page: perPage,
-  //     current_page: page,
-  //     last_page: Math.ceil(total / perPage),
-  //     from: skip + 1,
-  //     to: skip + data.length,
-  //     data,
-  //   };
-  // }
-
-  // async getGamesWithCategories(): Promise<CommonResponseArray> {
-  //   const [games] = await this.gameRepository
-  //     .createQueryBuilder('game')
-  //     .leftJoinAndSelect('game.gameCategories', 'gameCategory')
-  //     .leftJoinAndSelect('gameCategory.category', 'category')
-  //     .leftJoinAndSelect('game.provider', 'provider')
-  //     .getManyAndCount();
-
-  //   console.log('games', games);
-
-  //   const gameData = games.map((game) => ({
-  //     id: game.id,
-  //     status: game.status,
-  //     provider_id: game.provider ? game.provider.id : 0,
-  //     provider_name: game.provider ? game.provider.name : '',
-  //     game_id: game.gameId,
-  //     game_name: game.title,
-  //     image: game.imagePath,
-  //     description: game.description,
-  //     priority: game.priority,
-  //     category: game.gameCategories.map((gc) => ({
-  //       id: gc.category?.id || '', // Safely access category.id, fallback to 0
-  //       name: gc.category?.name || '', // Safely access category.name, fallback to an empty string
-  //     })),
-  //   }));
-
-  //   // const gameDatas = {
-  //   //   total,
-  //   //   per_page: perPage,
-  //   //   current_page: page,
-  //   //   last_page: Math.ceil(total / perPage),
-  //   //   from: skip + 1,
-  //   //   to: skip + gameData.length,
-  //   // }
-
-  //   return {
-  //     status: 200,
-  //     success: true,
-  //     message: 'Games retrieved successfully',
-  //     data: gameData,
-  //   };
-  // }
 
   async getGamesWithCategories(payload?: GetGamesRequest): Promise<CommonResponseArray> {
     const { gameIds } = payload;
@@ -1061,8 +977,6 @@ export class GamesService {
     }
   
     const [games] = await query.getManyAndCount();
-  
-    console.log('games', games);
   
     const gameData = games.map((game) => ({
       id: game.id,
