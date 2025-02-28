@@ -56,6 +56,7 @@ export class VirtualService {
           fingerprint: '',
         };
 
+        console.log(data);
         const hashStr = `${data.playerId}${data.currency}${data.balance}${data.sessionId}${data.group}${data.timestamp}${data.requestId}${privateKeyQuery.value}`;
 
         console.log(hashStr);
