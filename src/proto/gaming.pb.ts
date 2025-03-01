@@ -101,6 +101,7 @@ export interface Empty {
 
 export interface SyncGameDto {
   provider: string;
+  clientId?: number | undefined;
 }
 
 export interface CallbackGameDto {
@@ -636,9 +637,9 @@ export interface GamingServiceClient {
 
   handleCasinoBonus(request: CreateBonusRequest): Observable<CreateBonusResponse>;
 
-  handleCasinoJackpot(request: Empty): Observable<CommonResponse>;
+  handleCasinoJackpot(request: SyncGameDto): Observable<CommonResponse>;
 
-  handleCasinoJackpotWinners(request: Empty): Observable<CommonResponse>;
+  handleCasinoJackpotWinners(request: SyncGameDto): Observable<CommonResponse>;
 
   startGame(request: StartGameDto): Observable<StartGameResponse>;
 
@@ -744,9 +745,11 @@ export interface GamingServiceController {
     request: CreateBonusRequest,
   ): Promise<CreateBonusResponse> | Observable<CreateBonusResponse> | CreateBonusResponse;
 
-  handleCasinoJackpot(request: Empty): Promise<CommonResponse> | Observable<CommonResponse> | CommonResponse;
+  handleCasinoJackpot(request: SyncGameDto): Promise<CommonResponse> | Observable<CommonResponse> | CommonResponse;
 
-  handleCasinoJackpotWinners(request: Empty): Promise<CommonResponse> | Observable<CommonResponse> | CommonResponse;
+  handleCasinoJackpotWinners(
+    request: SyncGameDto,
+  ): Promise<CommonResponse> | Observable<CommonResponse> | CommonResponse;
 
   startGame(request: StartGameDto): Promise<StartGameResponse> | Observable<StartGameResponse> | StartGameResponse;
 

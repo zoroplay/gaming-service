@@ -53,10 +53,10 @@ import { EntityToProtoService } from 'src/services/entity-to-proto.service';
 import { EvoPlayService } from 'src/services/evo-play.service';
 import { PragmaticService } from 'src/services/pragmatic-play.service';
 import { QtechService } from 'src/services/qtech.service';
+import { SmatVirtualService } from 'src/services/smatvirtual.service';
 import { FindManyOptions, ILike, In, Repository } from 'typeorm';
 import { Game as GameEntity } from '../entities/game.entity';
 import { Provider as ProviderEntity } from '../entities/provider.entity';
-import { SmatVirtualService } from 'src/services/smatvirtual.service';
 
 @Injectable()
 export class GamesService {
@@ -543,7 +543,7 @@ export class GamesService {
         break;
       case 'pragmatic-play':
         console.log('pragmatic syncing here');
-        return await this.pragmaticPlayService.syncGames();
+        return await this.pragmaticPlayService.syncGames(syncGameDto);
         break;
       case 'qtech-games':
         console.log('qtech syncing here');
@@ -759,11 +759,11 @@ export class GamesService {
     // return savedGames;
   }
 
-  async syncPragmaticPlayGames(): Promise<Game[] | any> {
+  async syncPragmaticPlayGames(clientId: number): Promise<Game[] | any> {
     // Fetch the game list from your API (adjust the method name and params accordingly)
-    const gameList = await this.pragmaticPlayService.getCasinoGames();
+    // const gameList = await this.pragmaticPlayService.getCasinoGames(clientId);
 
-    return gameList;
+   console.log("clientId"), clientId
   }
 
   async handleGamesCallback(_data: CallbackGameDto): Promise<any> {
@@ -1152,10 +1152,10 @@ export class GamesService {
     
 }
 
-async handleCasinoJackpot(): Promise<any> {
+async handleCasinoJackpot(payload: SyncGameDto): Promise<any> {
   try {
     console.log('HandleCasinoJackpot');
-    const value = await this.pragmaticPlayService.getActiveJackpotFeeds();
+    const value = await this.pragmaticPlayService.getActiveJackpotFeeds(payload);
 
     console.log("value", value);
 
@@ -1176,10 +1176,10 @@ async handleCasinoJackpot(): Promise<any> {
   
 }
 
-async handleCasinoJackpotWinners(): Promise<any> {
+async handleCasinoJackpotWinners(payload: SyncGameDto): Promise<any> {
   try {
-    console.log('HandleCasinoJackpotWinners');
-    const value = await this.pragmaticPlayService.getJackpotWinners();
+
+    const value = await this.pragmaticPlayService.getJackpotWinners(payload);
 
     console.log("value", value);
 
