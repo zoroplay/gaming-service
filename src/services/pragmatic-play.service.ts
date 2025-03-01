@@ -1672,7 +1672,7 @@ export class PragmaticService {
     const gameKeys = await this.gameKeyRepository.find({
       where: {
           client_id: data.clientId,
-          provider: 'Pragmatic Play',
+          provider: 'pragmatic Play',
       },
   });
 
