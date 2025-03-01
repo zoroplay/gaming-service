@@ -13,9 +13,8 @@ import { Repository } from 'typeorm';
 
 import { firstValueFrom } from 'rxjs';
 import {
-  CreditCasinoBetRequest,
   PlaceCasinoBetRequest,
-  RollbackCasinoBetRequest,
+  RollbackCasinoBetRequest
 } from 'src/proto/betting.pb';
 import {
   SmatVirtualCallbackRequest,
@@ -23,9 +22,7 @@ import {
 } from 'src/proto/gaming.pb';
 import {
   CallbackLog,
-  Game as GameEntity,
   GameSession,
-  Provider as ProviderEntity,
 } from '../entities';
 
 @Injectable()
@@ -35,12 +32,8 @@ export class SmatVirtualService {
   private readonly SMATVIRTUAL_PUBLIC_KEY: string;
 
   constructor(
-    @InjectRepository(ProviderEntity)
-    private providerRepository: Repository<ProviderEntity>,
     @InjectRepository(CallbackLog)
     private callbackLogRepository: Repository<CallbackLog>,
-    @InjectRepository(GameEntity)
-    private gameRepository: Repository<GameEntity>,
     @InjectRepository(GameSession)
     private gameSessionRepo: Repository<GameSession>,
     @InjectRepository(CasinoGame)
@@ -215,7 +208,7 @@ export class SmatVirtualService {
       success: true,
       status: HttpStatus.OK,
       data: {
-        playerId: dataObject.playerId,
+        playerId: dataObject.playerId.toString(),
         balance: parseFloat(dataObject.balance.toFixed(2)) || 0.00,
         sessionId: token,
         currency: dataObject.currency,
@@ -260,71 +253,58 @@ export class SmatVirtualService {
   //   }
   // }
 
-  // async bet(payload: QtechCallbackRequest, callback: CallbackLog): Promise<any> {
-  //   const { clientId, playerId, walletSessionId, gameId, body } = payload;
+  // async bet(payload: SmatVirtualCallbackRequest, callback: CallbackLog): Promise<any> {
+  //   const { clientId, playerId, sessionId, body } = payload;
   //   const debitData: any = JSON.parse(body);
+  //   let response;
   //   // console.log('Debit request', debitData)
   //   try {
-  //     let game = null;
-  //     let amount = debitData.amount;
   //     let balanceType = 'main';
-  //     let gameSession;
+
   //     // get game session
-  //     gameSession = await this.gameSessionRepo.findOne({where: {session_id: walletSessionId}})
+  //     const gameSession = await this.gameSessionRepo.findOne({where: {session_id: sessionId}})
       
   //     if (gameSession && gameSession.balance_type === 'bonus')
   //       balanceType = 'casino';
-      
-  //     // Check if the game exists
-  //     game = await this.gameRepository.findOne({
-  //       where: { gameId },
-  //       relations: { provider: true },
-  //     });
-
-  //     if (!game) {
-  //       // format error response
-  //       const response = this.createErrorResponse('REQUEST_DECLINED', HttpStatus.BAD_REQUEST, 'Game does not exist.');
-  //       // update callback logs, and gaming session
-  //       await this.updateCallbackGameSession(callback, response, {session_id: walletSessionId}, {callback_id: callback.id});
-
-  //       return response;
-  //     }
-
-  //     const gameName = game.title;
         
   //     // Validate token
   //     const auth = await this.identityService.validateToken({
   //       clientId,
-  //       token: walletSessionId,
+  //       token: sessionId,
   //     });
 
   //     if (!auth || !auth.success) {
-  //       const response = this.createErrorResponse('INVALID_TOKEN', HttpStatus.BAD_REQUEST, 'Missing, invalid or expired player (wallet) session token.');
-  //       // update callback logs, and gaming session
-  //       await this.updateCallbackGameSession(callback, response, {session_id: walletSessionId}, {callback_id: callback.id})
+  //       response = {
+  //         success: false,
+  //         message: 'Invalid Session ID',
+  //         status: HttpStatus.NOT_FOUND
+  //     };
 
-  //       return response;
+  //     await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
+  //     return response;
   //     }
     
   //     if(auth.data.balance < debitData.amount) {
-  //       const response = this.createErrorResponse('INSUFFICIENT_FUNDS', HttpStatus.BAD_REQUEST, 'Insufficient balance');
-  //       // update callback log response and game session with callback id
-  //       await this.updateCallbackGameSession(callback, response, {session_id: walletSessionId}, {callback_id: callback.id})
-
-  //       return response;
+  //       response = {
+  //         success: false,
+  //         status: HttpStatus.BAD_REQUEST,
+  //         message: 'Insufficient balance to place this bet',
+  //         data: {}
+  //     };
+  //     await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
+  //     return response;
   //     }
 
   //     const placeBetPayload: PlaceCasinoBetRequest = {
   //       userId: parseInt(playerId),
   //       clientId,
   //       roundId: debitData.roundId,
-  //       transactionId: debitData.txnId,
+  //       transactionId: debitData.roundId,
   //       gameId: debitData.gameId,
-  //       stake: debitData.amount,
-  //       gameName: game.title,
-  //       gameNumber: gameId,
-  //       source: game.provider.slug,
-  //       cashierTransactionId: debitData.clientRoundId,
+  //       stake: debitData.stakeAmount,
+  //       gameName: debitData.gameName,
+  //       source: 'smat-virtual',
+  //       cashierTransactionId: debitData.roundId,
   //       winnings: 0,
   //       username: auth.data.playerNickname,
   //       bonusId: gameSession?.bonus_id || null
@@ -333,11 +313,15 @@ export class SmatVirtualService {
   //     const place_bet = await this.placeBet(placeBetPayload);
   //     // console.log(place_bet)
   //     if (!place_bet.success) {
-  //       const response = this.createErrorResponse('REQUEST_DECLINED', HttpStatus.BAD_REQUEST, 'Unable to place bet.');
+  //       response = {
+  //         success: false,
+  //         status: HttpStatus.INTERNAL_SERVER_ERROR,
+  //         message: 'Place bet unsuccessful',
+  //       };
 
-  //       // update callback log response and game session with callback id
-  //       await this.updateCallbackGameSession(callback, response, {session_id: walletSessionId}, {callback_id: callback.id})
-
+  //       const val = await this.callbackLogRepository.update({ id: callback.id}, { response: JSON.stringify(response)});
+  //       console.log("val", val);
+  
   //       return response;
   //     }
 
@@ -345,38 +329,170 @@ export class SmatVirtualService {
   //       userId: parseInt(playerId),
   //       clientId,
   //       amount: debitData.amount.toFixed(2),
-  //       source: game.provider.slug,
-  //       description: `Casino Bet: (${gameName}:${debitData.gameId})`,
+  //       source: 'smat-virtual',
+  //       description: `Virtual Bet: (${debitData.gameName})`,
   //       username: auth.data.playerNickname,
   //       wallet: balanceType,
   //       subject: 'Bet Deposit (Casino)',
-  //       channel: gameName,
+  //       channel: debitData.gameName,
   //     });
 
   //     console.log(debit)
 
   //     if (!debit.success) {
-  //       const response = this.createErrorResponse('REQUEST_DECLINED', HttpStatus.BAD_REQUEST, 'Unable to place bet. Something went wrong');
-  //       // update callback log response and game session with callback id
-  //       await this.updateCallbackGameSession(callback, response, {session_id: walletSessionId}, {callback_id: callback.id})
+  //       response = {
+  //         success: false,
+  //         status: HttpStatus.BAD_REQUEST,
+  //         message: 'Error debiting user wallet',
+  //       };
 
+  //       const val = await this.callbackLogRepository.update({ id: callback.id}, { response: JSON.stringify(response)});
+  //       console.log("val", val);
+  
   //       return response;
   //     }
       
-  //     const response = this.createSuccessResponse(HttpStatus.OK, 'Debit, Successful', { 
-  //       balance: parseFloat(debit.data.balance.toFixed(2)),
-  //       referenceId: place_bet.data.transactionId,        
-  //     });
+  //     response = {
+  //       success: true,
+  //       message: 'Bet Successful',
+  //       status: HttpStatus.OK,
+  //       data: {
+  //         balance: parseFloat(debit.data.balance.toFixed(2))
+  //         },
+  //     };
 
   //     // update callback log response
-  //     await this.updateCallbackGameSession(callback, response, {session_id: walletSessionId}, {callback_id: callback.id}, true)
+  //     await this.callbackLogRepository.update({ id: callback.id}, { response: JSON.stringify(response)});
+
+  //     console.log("bet-response", response);
 
   //     return response;
   //   } catch (error) {
   //     console.error('Error placing bet:', error.message);
-  //     const response = this.createErrorResponse('UNKNOWN_ERROR', HttpStatus.INTERNAL_SERVER_ERROR, 'Unexpected error.');
-  //     // update callback logs, and gaming session
-  //     await this.updateCallbackGameSession(callback, response, {session_id: walletSessionId}, {callback_id: callback.id})
+
+  //     response = {
+  //       success: true,
+  //       message: 'Unknown Error',
+  //       status: HttpStatus.INTERNAL_SERVER_ERROR,
+  //       data: {},
+  //     };
+
+  //     // update callback log response
+  //     await this.callbackLogRepository.update({ id: callback.id}, { response: JSON.stringify(response)});
+
+  //     return response;
+  //   }
+  // }
+
+  // async win(payload: SmatVirtualCallbackRequest, callback: CallbackLog): Promise<any> {
+  //   const { clientId, playerId, sessionId, body } = payload;
+  //   const creditData: any = JSON.parse(body);
+  //   let response;
+  //   // console.log('Debit request', debitData)
+  //   try {
+  //     let balanceType = 'main';
+
+  //     // get game session
+  //     const gameSession = await this.gameSessionRepo.findOne({where: {session_id: sessionId}})
+      
+  //     if (gameSession && gameSession.balance_type === 'bonus')
+  //       balanceType = 'casino';
+        
+  //     // Validate token
+  //     const auth = await this.identityService.getDetails({
+  //       clientId,
+  //       userId: parseInt(playerId),
+  //     });
+
+  //     if (callback.transactionId === creditData.txnId && callback.status === true) {
+  //       response = {
+  //         success: false,
+  //         message: 'Invalid Session ID',
+  //         status: HttpStatus.NOT_FOUND
+  //     };
+
+  //     await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
+  //     return response;
+  //     }
+
+  //     let creditRes = null;
+    
+
+  //     const settlePayload: CreditCasinoBetRequest = {
+  //       transactionId: creditData.betId,
+  //       winnings: creditData.amount,
+  //     };
+
+  //     const place_bet = await this.placeBet(placeBetPayload);
+  //     // console.log(place_bet)
+  //     if (!place_bet.success) {
+  //       response = {
+  //         success: false,
+  //         status: HttpStatus.INTERNAL_SERVER_ERROR,
+  //         message: 'Place bet unsuccessful',
+  //       };
+
+  //       const val = await this.callbackLogRepository.update({ id: callback.id}, { response: JSON.stringify(response)});
+  //       console.log("val", val);
+  
+  //       return response;
+  //     }
+
+  //     const debit = await this.walletService.debit({
+  //       userId: parseInt(playerId),
+  //       clientId,
+  //       amount: debitData.amount.toFixed(2),
+  //       source: 'smat-virtual',
+  //       description: `Virtual Bet: (${debitData.gameName})`,
+  //       username: auth.data.playerNickname,
+  //       wallet: balanceType,
+  //       subject: 'Bet Deposit (Casino)',
+  //       channel: debitData.gameName,
+  //     });
+
+  //     console.log(debit)
+
+  //     if (!debit.success) {
+  //       response = {
+  //         success: false,
+  //         status: HttpStatus.BAD_REQUEST,
+  //         message: 'Error debiting user wallet',
+  //       };
+
+  //       const val = await this.callbackLogRepository.update({ id: callback.id}, { response: JSON.stringify(response)});
+  //       console.log("val", val);
+  
+  //       return response;
+  //     }
+      
+  //     response = {
+  //       success: true,
+  //       message: 'Bet Successful',
+  //       status: HttpStatus.OK,
+  //       data: {
+  //         balance: parseFloat(debit.data.balance.toFixed(2))
+  //         },
+  //     };
+
+  //     // update callback log response
+  //     await this.callbackLogRepository.update({ id: callback.id}, { response: JSON.stringify(response)});
+
+  //     console.log("bet-response", response);
+
+  //     return response;
+  //   } catch (error) {
+  //     console.error('Error placing bet:', error.message);
+
+  //     response = {
+  //       success: true,
+  //       message: 'Unknown Error',
+  //       status: HttpStatus.INTERNAL_SERVER_ERROR,
+  //       data: {},
+  //     };
+
+  //     // update callback log response
+  //     await this.callbackLogRepository.update({ id: callback.id}, { response: JSON.stringify(response)});
+
   //     return response;
   //   }
   // }
@@ -573,14 +689,13 @@ export class SmatVirtualService {
   //   }
   // }
 
-
   async placeBet(data: PlaceCasinoBetRequest) {
     return firstValueFrom(this.betService.placeCasinoBet(data));
   }
 
-  async result(data: CreditCasinoBetRequest) {
-    return await firstValueFrom(this.betService.settleCasinoBet(data));
-  }
+  // async result(data: CreditCasinoBetRequest) {
+  //   return await firstValueFrom(this.betService.settleCasinoBet(data));
+  // }
 
   async rollback(data: RollbackCasinoBetRequest) {
     return await firstValueFrom(this.betService.cancelCasinoBet(data));
@@ -598,12 +713,12 @@ export class SmatVirtualService {
         case 'player-information':
             console.log("using smat virtual authenticate");
             return await this.authenticate(data.clientId, data.sessionId, callback);
-        // case 'Balance':
-        //     return await this.getBalance(data.clientId, player, callback, balanceType);
-        // case 'Bet':
-        //     return await this.bet(data.clientId, player, callback, body, balanceType);
-        // case 'Result':
-        //     return await this.win(data.clientId, player, callback, body, balanceType);
+        // case 'bet':
+        //     return await this.bet(data, callback);
+        // // case 'Bet':
+        // //     return await this.bet(data.clientId, player, callback, body, balanceType);
+        // case 'win':
+        //     return await this.win(data, callback);
         default:
             return { success: false, message: 'Invalid request', status: HttpStatus.BAD_REQUEST };
     }
@@ -613,7 +728,12 @@ export class SmatVirtualService {
 async saveCallbackLog(data) {
   const action = data.action;
   const body = data.body ? JSON.parse(data.body) : '';
-  const transactionId = action === 'player-information' ? data.sessionId : data.sessionId
+  const transactionId = 
+    action === 'player-information' ? data.sessionId
+    : action === 'bet' ? data.roundId
+    : action === 'win' ? data.roundId
+    : data.roundId
+
   try{
 
     let callback = await this.callbackLogRepository.findOne({where: {transactionId}});
@@ -645,7 +765,6 @@ async saveCallbackLog(data) {
       throw error;
     }
   }
-
 
   private decrypt(hash: string, key?: string): string {
     try {

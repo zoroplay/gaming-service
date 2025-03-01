@@ -10,10 +10,10 @@ import * as crypto from 'crypto';
 import { firstValueFrom, lastValueFrom } from 'rxjs';
 import { BetService } from 'src/bet/bet.service';
 import { generateTrxNo } from 'src/common';
-import { CasinoGame } from 'src/entities/casino-game.entity';
+import { GameKey } from 'src/entities/game-key.entity';
 import { IdentityService } from 'src/identity/identity.service';
 import { CreditCasinoBetRequest, PlaceCasinoBetRequest, RollbackCasinoBetRequest, SettleCasinoBetRequest } from 'src/proto/betting.pb';
-import { CallbackGameDto, StartGameDto } from 'src/proto/gaming.pb';
+import { CallbackGameDto, StartGameDto, SyncGameDto } from 'src/proto/gaming.pb';
 import { WalletService } from 'src/wallet/wallet.service';
 import { Raw, Repository } from 'typeorm';
 import { CallbackLog, Game as GameEntity, GameSession, Provider as ProviderEntity } from '../entities';
@@ -36,8 +36,8 @@ export class PragmaticService {
     private gameRepository: Repository<GameEntity>,
     @InjectRepository(GameSession)
     private gameSessionRepo: Repository<GameSession>,
-    @InjectRepository(CasinoGame)
-    private casinoGameRepository: Repository<CasinoGame>,
+    @InjectRepository(GameKey)
+    private gameKeyRepository: Repository<GameKey>,
     private readonly betService: BetService,
     private readonly walletService: WalletService,
     private readonly identityService: IdentityService,
@@ -52,98 +52,51 @@ export class PragmaticService {
   }
 
   // Get Casino Games
-  async getCasinoGames(): Promise<any> {
+  async getCasinoGames(baseUrl, secureLogin, pragmaticKey): Promise<any> {
     try {
-      const hash = this.genHash({ secureLogin: this.PRAGMATIC_SECURE_LOGIN });
-      const { data } = await this.httpService
-        .post(`${this.PRAGMATIC_BASEURL}/getCasinoGames?secureLogin=${this.PRAGMATIC_SECURE_LOGIN}&hash=${hash}`)
-        .toPromise();
+        // Generate hash
+        const hash = this.genHash({ secureLogin }, pragmaticKey);
+
+        // Make API request
+        const { data } = await this.httpService
+            .post(`${baseUrl}/getCasinoGames?secureLogin=${secureLogin}&hash=${hash}`)
+            .toPromise();
 
         console.log('data', data);
 
-      return data.gameList;
+        return data.gameList;
     } catch (e) {
-      return new RpcException(e.messag || 'Something went wrong')
+        return new RpcException(e.message || 'Something went wrong');
     }
-  }
+}
 
-  async getActiveJackpotFeeds(): Promise<any> {
+
+  async getActiveJackpotFeeds(payload: SyncGameDto): Promise<any> {
     try {
+
+      const gameKeys = await this.gameKeyRepository.find({
+        where: {
+            client_id: payload.clientId,
+            provider: payload.provider,
+        },
+    });
+
+    // Extract the necessary values
+    const secureLogin = gameKeys.find(key => key.option === 'PRAGMATIC_SECURE_LOGIN')?.value;
+    const pragmaticKey = gameKeys.find(key => key.option === 'PRAGMATIC_KEY')?.value;
+
+    if (!secureLogin) {
+        throw new Error('Missing required game keys for Pragmatic Play');
+    }
+
       const currency = 'NGN';
-      const hash = this.genHash({ login: this.PRAGMATIC_SECURE_LOGIN, currency });
+      const hash = this.genHash({ login: secureLogin, currency }, pragmaticKey);
       console.log('hash', hash);
       const { data } = await this.httpService
-        .get(`https://api.prerelease-env.biz/IntegrationService/v3/JackpotFeeds/extended/jackpots/?login=${this.PRAGMATIC_SECURE_LOGIN}&currency=${currency}&hash=${hash}`)
+        .get(`https://api.prerelease-env.biz/IntegrationService/v3/JackpotFeeds/extended/jackpots/?login=${secureLogin}&currency=${currency}&hash=${hash}`)
         .toPromise();
 
         console.log('data', data);
-
-        // const data = {
-        //   "jackpots": [
-        //     {
-        //       "mainJackpotID": 459,
-        //       "name": "test_name",
-        //       "level": "B",
-        //       "games": "vsprg20doghouse",
-        //       "status": "A",
-        //       "tiersNumber": 4,
-        //       "tiers": [
-        //         {
-        //           "jackpotTierID": 459,
-        //           "tier": 0,
-        //           "amount": 10
-        //         },
-        //         {
-        //           "jackpotTierID": 460,
-        //           "tier": 1,
-        //           "amount": 200
-        //         }
-        //       ]
-        //     },
-        //     {
-        //       "mainJackpotID": 459,
-        //       "name": "test_name",
-        //       "level": "B",
-        //       "games": "vsprg20doghouse",
-        //       "status": "A",
-        //       "tiersNumber": 4,
-        //       "tiers": [
-        //         {
-        //           "jackpotTierID": 459,
-        //           "tier": 0,
-        //           "amount": 10
-        //         },
-        //         {
-        //           "jackpotTierID": 460,
-        //           "tier": 1,
-        //           "amount": 200
-        //         }
-        //       ]
-        //     },
-        //     {
-        //       "mainJackpotID": 459,
-        //       "name": "test_name",
-        //       "level": "B",
-        //       "games": "vsprg20doghouse",
-        //       "status": "A",
-        //       "tiersNumber": 4,
-        //       "tiers": [
-        //         {
-        //           "jackpotTierID": 459,
-        //           "tier": 0,
-        //           "amount": 10
-        //         },
-        //         {
-        //           "jackpotTierID": 460,
-        //           "tier": 1,
-        //           "amount": 200
-        //         }
-        //       ]
-        //     },
-        //   ],
-        //   "error": "0",
-        //   "description": "OK"
-        // }
         
 
       return data;
@@ -152,21 +105,29 @@ export class PragmaticService {
     }
   }
 
-  async getJackpotWinners(): Promise<any> {
+  async getJackpotWinners(payload: SyncGameDto): Promise<any> {
     try {
 
       const getDate = Date.now();
 
-      console.log('getDate', getDate);
+      const gameKeys = await this.gameKeyRepository.find({
+        where: {
+            client_id: payload.clientId,
+            provider: payload.provider,
+        },
+    });
+
+    const secureLogin = gameKeys.find(key => key.option === 'PRAGMATIC_SECURE_LOGIN')?.value;
+    const pragmaticKey = gameKeys.find(key => key.option === 'PRAGMATIC_KEY')?.value;
 
       const hash = this.genHash({ 
-        login: this.PRAGMATIC_SECURE_LOGIN,
+        login: secureLogin,
         startTimepoint: getDate,
         endTimepoint: getDate,
-       });
+       }, pragmaticKey);
       console.log("hash", hash);
       const { data } = await this.httpService
-        .get(`https://api.prerelease-env.biz/IntegrationService/v3/JackpotFeeds/extended/winners?login=${this.PRAGMATIC_SECURE_LOGIN}&hash=${hash}&startTimepoint=${getDate}&endTimepoint=${getDate}`)
+        .get(`https://api.prerelease-env.biz/IntegrationService/v3/JackpotFeeds/extended/winners?login=${secureLogin}&hash=${hash}&startTimepoint=${getDate}&endTimepoint=${getDate}`)
         .toPromise();
 
         console.log('data', data);
@@ -286,9 +247,24 @@ export class PragmaticService {
   }
 
   
-  public async syncGames() {
+  public async syncGames(payload: SyncGameDto) {
     try {
-      const games: any = await this.getCasinoGames();
+
+      const gameKeys = await this.gameKeyRepository.find({
+        where: {
+            client_id: payload.clientId,
+            provider: payload.provider,
+        },
+    });
+
+    console.log("gameKeys", gameKeys);
+
+    const baseUrl = gameKeys.find(key => key.option === 'PRAGMATIC_BASEURL')?.value;
+    const secureLogin = gameKeys.find(key => key.option === 'PRAGMATIC_SECURE_LOGIN')?.value;
+    const pragmaticKey = gameKeys.find(key => key.option === 'PRAGMATIC_KEY')?.value;
+    const imageUrl = gameKeys.find(key => key.option === 'PRAGMATIC_IMAGE_URL')?.value;
+
+      const games: any = await this.getCasinoGames(baseUrl, secureLogin, pragmaticKey);
       console.log("games", games);
   
       if (!games || games.length === 0) {
@@ -296,10 +272,14 @@ export class PragmaticService {
       }
   
       let provider = await this.providerRepository.findOne({
-        where: { name: 'Pragmatic Play' },
+        where: { name: payload.provider },
       });
 
       console.log("provider", provider);
+
+      
+
+    
   
       if (!provider) {
         const newProvider: ProviderEntity = new ProviderEntity();
@@ -323,8 +303,8 @@ export class PragmaticService {
               type: 'Slots',
               provider: provider,
               status: true,
-              imagePath:`${this.PRAGMATIC_IMAGE_URL}/${games[key].gameID}.png`,
-              bannerPath: `${this.PRAGMATIC_IMAGE_URL}/${games[key].gameID}.png`,
+              imagePath:`${imageUrl}/${games[key].gameID}.png`,
+              bannerPath: `${imageUrl}/${games[key].gameID}.png`,
             };
   
             const gameExist = await this.gameRepository.findOne({
@@ -403,24 +383,36 @@ export class PragmaticService {
         console.error(`Game with ID ${gameId} not found`);
         throw new NotFoundException('Game not found');
       }
+
+      const gameKeys = await this.gameKeyRepository.find({
+        where: {
+            client_id: payload.clientId,
+            provider: 'pragmatic-play',
+        },
+    });
+
+    // Extract the necessary values
+    const secureLogin = gameKeys.find(key => key.option === 'PRAGMATIC_SECURE_LOGIN')?.value;
+    const baseUrl = gameKeys.find(key => key.option === 'PRAGMATIC_BASEURL')?.value;
+    const pragmaticKey = gameKeys.find(key => key.option === 'PRAGMATIC_KEY')?.value;
   
       // Generate the hash for the game session
       const hash = this.genHash({
-        secureLogin: this.PRAGMATIC_SECURE_LOGIN,
+        secureLogin,
         symbol: gameExist.gameId,
         lobbyUrl: homeUrl,
         language: language,
         externalPlayerId: userId,
         token: authCode,
         ...(demo && { playMode: "DEMO" })
-      });
+      }, pragmaticKey);
 
       console.log("Generated hash:", hash);
 
       const playMode = demo ? 'playMode=DEMO' : '';
 
       const request = this.httpService.post(
-        `${this.PRAGMATIC_BASEURL}/game/url?secureLogin=${this.PRAGMATIC_SECURE_LOGIN}&symbol=${gameExist.gameId}&language=${language}&externalPlayerId=${userId}&token=${authCode}&hash=${hash}&${playMode}&lobbyUrl=${homeUrl}`,
+        `${baseUrl}/game/url?secureLogin=${secureLogin}&symbol=${gameExist.gameId}&language=${language}&externalPlayerId=${userId}&token=${authCode}&hash=${hash}&${playMode}&lobbyUrl=${homeUrl}`,
       );
 
       console.log("Request response:", request);
@@ -1677,13 +1669,26 @@ export class PragmaticService {
 
     console.log("body", body);
 
+    const gameKeys = await this.gameKeyRepository.find({
+      where: {
+          client_id: data.clientId,
+          provider: 'Pragmatic Play',
+      },
+  });
+
+  console.log("gameKeys", gameKeys);
+
+
+  const pragmaticKey = gameKeys.find(key => key.option === 'PRAGMATIC_KEY')?.value;
+
+
     let token = null;
 
     // Verify body is a valid URLSearchParams object
     if (body instanceof URLSearchParams) {
         const parsedBody = Object.fromEntries(body.entries());
 
-        if (this.hashCheck(parsedBody)) {
+        if (this.hashCheck(parsedBody, pragmaticKey)) {
             response = {
                 success: false,
                 message: 'Invalid Hash Signature',
@@ -1835,19 +1840,20 @@ export class PragmaticService {
     return crypto.createHash("md5").update(hash).digest("hex");
   };
 
-  genHash = (query) => {
+  genHash = (query, pragmaticKey) => {
+
     const queries = Object.keys(query);
     const unhash = queries.filter((item) => item !== "hash");
     unhash.sort();
     const queryParams = unhash.map((key) => `${key}=${query[key]}`).join("&");
     console.log("queryParams", queryParams);
 
-    const hash = this.md5Algo(`${queryParams}${this.PRAGMATIC_KEY}`);
+    const hash = this.md5Algo(`${queryParams}${pragmaticKey}`);
     return hash;
   };
 
-  hashCheck = (query) => {
-    const hash = this.genHash(query);
+  hashCheck = (query, pragmaticKey) => {
+    const hash = this.genHash(query, pragmaticKey);
     return query.hash !== hash;
   };
 
@@ -1927,4 +1933,3 @@ export class PragmaticService {
 
 }
 
-  

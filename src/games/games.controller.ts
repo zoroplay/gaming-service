@@ -370,14 +370,14 @@ async getGames(request?: GetGamesRequest) {
   }
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'handleCasinoJackpot')
-  HandleCasinoJackpot(): Promise<any> {
+  HandleCasinoJackpot(payload: SyncGameDto): Promise<any> {
     console.log('HandleCasinoJackpot');
-    return this.gamesService.handleCasinoJackpot();
+    return this.gamesService.handleCasinoJackpot(payload);
   }
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'handleCasinoJackpotWinners')
-  HandleCasinoJackpotWinners(): Promise<any> {
+  HandleCasinoJackpotWinners(payload: SyncGameDto): Promise<any> {
     console.log('handleCasinoJackpotWinners');
-    return this.gamesService.handleCasinoJackpotWinners();
+    return this.gamesService.handleCasinoJackpotWinners(payload);
   }
 }
