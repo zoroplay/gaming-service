@@ -539,7 +539,7 @@ export class GamesService {
         break;
       case 'evo-play':
         console.log('syncing here');
-        return await this.evoPlayService.syncGames();
+        return await this.evoPlayService.syncGames(syncGameDto);
         break;
       case 'pragmatic-play':
         console.log('pragmatic syncing here');
@@ -710,9 +710,9 @@ export class GamesService {
 
   async syncEvoPlayGames(): Promise<Game[] | any> {
     // Fetch the game list from your API (adjust the method name and params accordingly)
-    const gameList = await this.evoPlayService.getGames();
+    // const gameList = await this.evoPlayService.getGames();
 
-    return gameList;
+    // return gameList;
     // Find or create the 'Shack Evolution' provider
     // let provider = await this.providerRepository.findOneBy({
     //   name: 'Shack Evolution',
