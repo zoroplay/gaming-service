@@ -28,28 +28,29 @@ export interface SmatVirtualCallbackRequest {
 export interface CreateBonusRequest {
   clientId: number;
   bonusType: string;
-  creditType: string;
-  duration: number;
-  minimumSelection: number;
-  minimumOddsPerEvent: number;
-  minimumTotalOdds: number;
-  applicableBetType: string;
-  maximumWinning: number;
-  bonusAmount: number;
+  creditType?: string | undefined;
+  duration?: number | undefined;
+  minimumSelection?: number | undefined;
+  minimumOddsPerEvent?: number | undefined;
+  minimumTotalOdds?: number | undefined;
+  applicableBetType?: string | undefined;
+  maximumWinning?: number | undefined;
+  bonusAmount?: number | undefined;
   status?: number | undefined;
   created?: string | undefined;
   updated?: string | undefined;
   id?: number | undefined;
-  minimumLostGames: number;
-  rolloverCount: number;
-  name: string;
-  minimumEntryAmount: number;
-  maxAmount: number;
-  product: string;
+  minimumLostGames?: number | undefined;
+  rolloverCount?: number | undefined;
+  name?: string | undefined;
+  minimumEntryAmount?: number | undefined;
+  maxAmount?: number | undefined;
+  product?: string | undefined;
   gameId: string[];
   casinoSpinCount?: number | undefined;
   providerId?: number | undefined;
   bonusId?: number | undefined;
+  userIds: string[];
 }
 
 export interface CreateBonusResponse {
