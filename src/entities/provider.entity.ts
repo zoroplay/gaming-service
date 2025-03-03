@@ -24,6 +24,9 @@ export class Provider {
   @Column({nullable: true})
   description: string;
 
+  @Column({ default: 1 })
+  status: boolean;
+
   @Column({ type: 'text', nullable: true })
   imagePath: string;
 

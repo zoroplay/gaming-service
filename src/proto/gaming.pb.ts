@@ -28,28 +28,29 @@ export interface SmatVirtualCallbackRequest {
 export interface CreateBonusRequest {
   clientId: number;
   bonusType: string;
-  creditType: string;
-  duration: number;
-  minimumSelection: number;
-  minimumOddsPerEvent: number;
-  minimumTotalOdds: number;
-  applicableBetType: string;
-  maximumWinning: number;
-  bonusAmount: number;
+  creditType?: string | undefined;
+  duration?: number | undefined;
+  minimumSelection?: number | undefined;
+  minimumOddsPerEvent?: number | undefined;
+  minimumTotalOdds?: number | undefined;
+  applicableBetType?: string | undefined;
+  maximumWinning?: number | undefined;
+  bonusAmount?: number | undefined;
   status?: number | undefined;
   created?: string | undefined;
   updated?: string | undefined;
   id?: number | undefined;
-  minimumLostGames: number;
-  rolloverCount: number;
-  name: string;
-  minimumEntryAmount: number;
-  maxAmount: number;
-  product: string;
+  minimumLostGames?: number | undefined;
+  rolloverCount?: number | undefined;
+  name?: string | undefined;
+  minimumEntryAmount?: number | undefined;
+  maxAmount?: number | undefined;
+  product?: string | undefined;
   gameId: string[];
   casinoSpinCount?: number | undefined;
   providerId?: number | undefined;
   bonusId?: number | undefined;
+  userIds: string[];
 }
 
 export interface CreateBonusResponse {
@@ -101,6 +102,7 @@ export interface Empty {
 
 export interface SyncGameDto {
   provider: string;
+  clientId?: number | undefined;
 }
 
 export interface CallbackGameDto {
@@ -636,9 +638,9 @@ export interface GamingServiceClient {
 
   handleCasinoBonus(request: CreateBonusRequest): Observable<CreateBonusResponse>;
 
-  handleCasinoJackpot(request: Empty): Observable<CommonResponse>;
+  handleCasinoJackpot(request: SyncGameDto): Observable<CommonResponse>;
 
-  handleCasinoJackpotWinners(request: Empty): Observable<CommonResponse>;
+  handleCasinoJackpotWinners(request: SyncGameDto): Observable<CommonResponse>;
 
   startGame(request: StartGameDto): Observable<StartGameResponse>;
 
@@ -744,9 +746,11 @@ export interface GamingServiceController {
     request: CreateBonusRequest,
   ): Promise<CreateBonusResponse> | Observable<CreateBonusResponse> | CreateBonusResponse;
 
-  handleCasinoJackpot(request: Empty): Promise<CommonResponse> | Observable<CommonResponse> | CommonResponse;
+  handleCasinoJackpot(request: SyncGameDto): Promise<CommonResponse> | Observable<CommonResponse> | CommonResponse;
 
-  handleCasinoJackpotWinners(request: Empty): Promise<CommonResponse> | Observable<CommonResponse> | CommonResponse;
+  handleCasinoJackpotWinners(
+    request: SyncGameDto,
+  ): Promise<CommonResponse> | Observable<CommonResponse> | CommonResponse;
 
   startGame(request: StartGameDto): Promise<StartGameResponse> | Observable<StartGameResponse> | StartGameResponse;
 
