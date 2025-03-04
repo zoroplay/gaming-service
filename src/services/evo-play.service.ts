@@ -245,6 +245,9 @@ export class EvoPlayService {
     const token = gameKeys.find(key => key.option === 'EVO_PLAY_TOKEN')?.value;
     const version = gameKeys.find(key => key.option === 'EVO_PLAY_VERSION')?.value;
     const project = gameKeys.find(key => key.option === 'EVO_PLAY_PROJECT')?.value;
+    const baseUrl = gameKeys.find(key => key.option === 'EVO_PLAY_BASE_URL')?.value;
+
+      this.setRequestOptions(baseUrl, token);
 
       const formattedDate = this.addDaysToDate(data.duration).replace(' ', '%20');
       const formattedDateSpace = this.addDaysToDate(data.duration);
@@ -422,8 +425,10 @@ export class EvoPlayService {
     const project = gameKeys.find(key => key.option === 'EVO_PLAY_PROJECT')?.value;
     const token = gameKeys.find(key => key.option === 'EVO_PLAY_TOKEN')?.value;
     const version = gameKeys.find(key => key.option === 'EVO_PLAY_VERSION')?.value;
+    const baseUrl = gameKeys.find(key => key.option === 'EVO_PLAY_BASE_URL')?.value;
 
-      // Fetch the bonus details globally
+    this.setRequestOptions(baseUrl, token);
+    // Fetch the bonus details globally
     let bonus = [];
     let selectedBonus = null;
 
@@ -1121,7 +1126,7 @@ export class EvoPlayService {
           client_id: data.clientId,
           provider: 'evo-play',
       },
-  });
+    });
 
   // Extract the necessary values
   const project = gameKeys.find(key => key.option === 'EVO_PLAY_PROJECT')?.value;
