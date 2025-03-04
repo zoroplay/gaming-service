@@ -391,6 +391,10 @@ export class PragmaticService {
         },
     });
 
+    console.log("gameKeys", gameKeys);
+
+  
+
     // Extract the necessary values
     const secureLogin = gameKeys.find(key => key.option === 'PRAGMATIC_SECURE_LOGIN')?.value;
     const baseUrl = gameKeys.find(key => key.option === 'PRAGMATIC_BASEURL')?.value;
