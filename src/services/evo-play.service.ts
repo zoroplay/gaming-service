@@ -62,90 +62,18 @@ export class EvoPlayService {
     private readonly identityService: IdentityService,
     private readonly bonusService: BonusService,
   ) {
-    // this.baseUrl = this.configService.get<string>('EVO_PLAY_BASE_URL');
-    // this.project = this.configService.get<number>('EVO_PLAY_PROJECT');
-    // this.secretKey = this.configService.get<string>('EVO_PLAY_SECRET_KEY');
-    // this.version = this.configService.get<number>('EVO_PLAY_VERSION');
-    // this.token = this.configService.get<string>('EVO_PLAY_TOKEN');
-    // this.initializeService();
-
-    // this.setRequestOptions();
-  }
-
-
-
-  private async initializeService(clientId: number) {
-    try {
-      // Check cache first to avoid redundant DB queries
-      const cacheKey = `evoplay_config_${clientId}`;
-      const cachedConfig = await this.cacheManager.get(cacheKey);
-
-      if (cachedConfig) {
-        const config = JSON.parse(cachedConfig as string);
-        this.baseUrl = config.baseUrl;
-        this.token = config.token;
-        this.project = config.project;
-        this.version = config.version;
-        this.secretKey = config.secretKey;
-        this.setRequestOptions(this.baseUrl, this.token);
-        return;
-      }
-
-      // Fetch game keys from the database
-      const gameKeys = await this.gameKeyRepository.find({
-        where: {
-          client_id: clientId,
-          provider: 'evoplay' },
-      });
-
-      // Extract required values
-      this.baseUrl = gameKeys.find(key => key.option === 'EVO_PLAY_BASE_URL')?.value;
-      this.token = gameKeys.find(key => key.option === 'EVO_PLAY_TOKEN')?.value;
-      this.project = Number(gameKeys.find(key => key.option === 'EVO_PLAY_PROJECT')?.value);
-      this.version = Number(gameKeys.find(key => key.option === 'EVO_PLAY_VERSION')?.value);
-      this.secretKey = gameKeys.find(key => key.option === 'EVO_PLAY_SECRET_KEY')?.value;
-
-      if (!this.baseUrl || !this.token) {
-        throw new Error(`Missing required game keys for EvoPlay (Client ID: ${clientId})`);
-      }
-
-      // Store in cache
-      await this.cacheManager.set(
-        cacheKey,
-        JSON.stringify({
-          baseUrl: this.baseUrl,
-          token: this.token,
-          project: this.project,
-          version: this.version,
-          secretKey: this.secretKey,
-        }),
-        3600, // TTL in seconds (1 hour)
-      );
-
-      // Set request options after fetching values
-      this.setRequestOptions(this.baseUrl, this.token);
-    } catch (error) {
-      console.error(`Failed to initialize EvoPlayService for client ${clientId}:`, error.message);
-    }
+    this.baseUrl = this.configService.get<string>('EVO_PLAY_BASE_URL');
+    this.project = this.configService.get<number>('EVO_PLAY_PROJECT');
+    this.secretKey = this.configService.get<string>('EVO_PLAY_SECRET_KEY');
+    this.version = this.configService.get<number>('EVO_PLAY_VERSION');
+    this.token = this.configService.get<string>('EVO_PLAY_TOKEN');
+    // this.setRequestOptions(this.baseUrl, this.token);
   }
 
   /**
    * Set options for making the Client request
    */
-  // private setRequestOptions(baseUrl, token) {
-  //   this.requestConfig = {
-  //     baseURL: baseUrl,
-  //     headers: {
-  //       Authorization: `Bearer ${token}`,
-  //       Accept: 'application/json',
-  //       'Content-Type': 'application/json',
-  //     },
-  //     data: {},
-  //   };
-  //   // console.log(this.requestConfig);
-  // }
-
-  private setRequestOptions(baseUrl: string, token: string) {
+  private setRequestOptions(baseUrl, token) {
     this.requestConfig = {
       baseURL: baseUrl,
       headers: {
@@ -155,53 +83,32 @@ export class EvoPlayService {
       },
       data: {},
     };
+    // console.log(this.requestConfig);
   }
 
-  // async getGames(project, version, token) {
-  //   try {
-  //     const signature = this.getSignature(
-  //       project,
-  //       version,
-  //       {},
-  //       token,
-  //     );
-  //     // $url = $this->project_id."*".$this->version."*".$this->token;
-  //     const url = `Game/getList?project=${project}&version=${version}&signature=${signature}`;
-  //     const response: AxiosResponse = await this.httpClient.axiosRef.get(
-  //       url,
-  //       this.requestConfig,
-  //     );
-  //     // console.log(response.data.data);
-  //     return response.data.data;
-  //   } catch (e) {
-  //     console.error(e.message);
-  //   }
-  // }
-
-
-  async getGames(clientId: number) {
+  async getGames(project, version, token) {
     try {
-      // Ensure values are set before making requests
-      if (!this.baseUrl || !this.token) {
-        await this.initializeService(clientId);
-      }
-
-      const signature = this.getSignature(this.project, this.version, {}, this.token);
-      const url = `Game/getList?project=${this.project}&version=${this.version}&signature=${signature}`;
-      
-      const response: AxiosResponse = await this.httpClient.axiosRef.get(url, this.requestConfig);
+      const signature = this.getSignature(
+        project,
+        version,
+        {},
+        token,
+      );
+      // $url = $this->project_id."*".$this->version."*".$this->token;
+      const url = `Game/getList?project=${project}&version=${version}&signature=${signature}`;
+      const response: AxiosResponse = await this.httpClient.axiosRef.get(
+        url,
+        this.requestConfig,
+      );
+      // console.log(response.data.data);
       return response.data.data;
     } catch (e) {
       console.error(e.message);
-      throw new Error('Failed to fetch games');
     }
   }
+
   // @Timeout(100)
   public async syncGames(payload: SyncGameDto) {
-
-    if (!this.baseUrl || !this.token) {
-      await this.initializeService(payload.clientId);
-    }
 
     const gameKeys = await this.gameKeyRepository.find({
       where: {
@@ -217,7 +124,7 @@ export class EvoPlayService {
 
 
 
-    const games: any = await this.getGames(payload.clientId);
+    const games: any = await this.getGames(project, version, token);
 
     let provider = await this.providerRepository.findOne({
       where: { name: 'Evo Play' },
@@ -505,10 +412,6 @@ export class EvoPlayService {
   // start game here
   async constructGameUrl(data, game: GameEntity) {
     try {
-      if (!this.baseUrl || !this.token) {
-        await this.initializeService(data.clientId);
-      }
-      
       const balanceType = data.balanceType;
 
        const gameKeys = await this.gameKeyRepository.find({
@@ -518,7 +421,7 @@ export class EvoPlayService {
         },
     });
 
-    // // Extract the necessary values
+    // Extract the necessary values
     const project = gameKeys.find(key => key.option === 'EVO_PLAY_PROJECT')?.value;
     const token = gameKeys.find(key => key.option === 'EVO_PLAY_TOKEN')?.value;
     const version = gameKeys.find(key => key.option === 'EVO_PLAY_VERSION')?.value;
@@ -601,10 +504,10 @@ export class EvoPlayService {
       console.log("newData", newData);
 
       const signature = this.getSignature(
-        this.project,
-        this.version,
+        parseFloat(project),
+        parseFloat(version),
         newData,
-        this.token
+        token
       );
       // console.log(signature)
       // $url = $this->project_id."*".$this->version."*".$this->token;
