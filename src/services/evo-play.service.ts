@@ -536,6 +536,7 @@ export class EvoPlayService {
 
       console.log("gameSession", gameSession);
 
+      console.log('response', response.data)
       if(response.data.error) {
         return {success: false, message: response.data.error.message}
       } else {
