@@ -217,7 +217,7 @@ export class GamesController {
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'handleCallback')
   async handleCallback(request: CallbackGameDto): Promise<any> {
-    console.log('request', request);
+    // console.log('request', request);
     try {
       return await this.gamesService.handleGamesCallback(request);
     } catch (error) {
