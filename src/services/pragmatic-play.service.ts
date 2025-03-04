@@ -408,7 +408,7 @@ export class PragmaticService {
         language: language,
         externalPlayerId: userId,
         token: authCode,
-        ...(demo && { playMode: "DEMO" })
+        playMode: demo ? "DEMO" : "REAL" 
       }, pragmaticKey);
 
       console.log("Generated hash:", hash);
