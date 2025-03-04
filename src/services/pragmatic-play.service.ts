@@ -413,7 +413,7 @@ export class PragmaticService {
 
       console.log("Generated hash:", hash);
 
-      const playMode = demo ? 'playMode=DEMO' : 'REAL';
+      const playMode = demo ? 'DEMO' : 'REAL';
 
       const request = this.httpService.post(
         `${baseUrl}/game/url?secureLogin=${secureLogin}&symbol=${gameExist.gameId}&language=${language}&externalPlayerId=${userId}&token=${authCode}&hash=${hash}&playMode=${playMode}&lobbyUrl=${homeUrl}`,
