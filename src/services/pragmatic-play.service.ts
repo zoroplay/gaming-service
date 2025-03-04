@@ -408,15 +408,15 @@ export class PragmaticService {
         language: language,
         externalPlayerId: userId,
         token: authCode,
-        ...(demo && { playMode: "DEMO" })
+        playMode: demo ? "DEMO" : "REAL" 
       }, pragmaticKey);
 
       console.log("Generated hash:", hash);
 
-      const playMode = demo ? 'playMode=DEMO' : '';
+      const playMode = demo ? 'DEMO' : 'REAL';
 
       const request = this.httpService.post(
-        `${baseUrl}/game/url?secureLogin=${secureLogin}&symbol=${gameExist.gameId}&language=${language}&externalPlayerId=${userId}&token=${authCode}&hash=${hash}&${playMode}&lobbyUrl=${homeUrl}`,
+        `${baseUrl}/game/url?secureLogin=${secureLogin}&symbol=${gameExist.gameId}&language=${language}&externalPlayerId=${userId}&token=${authCode}&hash=${hash}&playMode=${playMode}&lobbyUrl=${homeUrl}`,
       );
 
       console.log("Request response:", request);
