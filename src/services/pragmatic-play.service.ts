@@ -1816,7 +1816,7 @@ export class PragmaticService {
 
     // Handle game actions
     switch (data.action) {
-        case 'authenticate.html':
+        case 'Authenticate':
             console.log("using pragmatic-play authenticate");
             return await this.authenticate(data.clientId, token, callback, balanceType);
         case 'Balance':
@@ -1878,7 +1878,7 @@ export class PragmaticService {
 
     console.log('body-Callback', body);
     const transactionId = 
-      action === 'authenticate.html' 
+      action === 'Authenticate' 
         ? body.get('hash') 
         : action === 'Balance' 
           ? body.get('hash')
@@ -1899,7 +1899,7 @@ export class PragmaticService {
     try {
       let callback;
       console.log("action", action);
-      if (action !== 'Balance' && action !== 'authenticate.html') {
+      if (action !== 'Balance' && action !== 'Authenticate') {
         console.log("Got in this box");
         // Check for an existing callback for actions other than Authenticate
         console.log("transactionId", transactionId);
