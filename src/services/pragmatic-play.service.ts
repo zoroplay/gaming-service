@@ -1816,7 +1816,7 @@ export class PragmaticService {
 
     // Handle game actions
     switch (data.action) {
-        case 'Authenticate':
+        case 'authenticate.html':
             console.log("using pragmatic-play authenticate");
             return await this.authenticate(data.clientId, token, callback, balanceType);
         case 'Balance':
