@@ -370,13 +370,13 @@ export class PragmaticService {
   async constructGameUrl(payload: StartGameDto): Promise<any> {
     try {
       // Log the incoming payload for debugging
-      console.log("Payload received:", payload);
+      // console.log("Payload received:", payload);
   
       const { gameId, language, authCode, userId, demo, balanceType, homeUrl } = payload;
   
       // Fetch the game details from the repository
       const gameExist = await this.gameRepository.findOne({ where: { id: gameId }, relations: { provider: true }});
-      console.log("Game retrieved from DB:", gameExist);
+      // console.log("Game retrieved from DB:", gameExist);
   
       // If game doesn't exist, throw an error
       if (!gameExist) {
@@ -391,7 +391,7 @@ export class PragmaticService {
         },
     });
 
-    console.log("gameKeys", gameKeys);
+    // console.log("gameKeys", gameKeys);
 
   
 
@@ -411,7 +411,7 @@ export class PragmaticService {
         playMode: demo ? "DEMO" : "REAL" 
       }, pragmaticKey);
 
-      console.log("Generated hash:", hash);
+      // console.log("Generated hash:", hash);
 
       const playMode = demo ? 'DEMO' : 'REAL';
 
@@ -419,11 +419,11 @@ export class PragmaticService {
         `${baseUrl}/game/url?secureLogin=${secureLogin}&symbol=${gameExist.gameId}&language=${language}&externalPlayerId=${userId}&token=${authCode}&hash=${hash}&playMode=${playMode}&lobbyUrl=${homeUrl}`,
       );
 
-      console.log("Request response:", request);
+      // console.log("Request response:", request);
 
       const val = await lastValueFrom(request);
 
-      console.log("val response:", val);
+      // console.log("val response:", val);
   
       // Start creating the game session
       const gameSession = new GameSession();
@@ -436,7 +436,7 @@ export class PragmaticService {
       gameSession.provider = gameExist.provider.slug;
   
       // Log game session data before saving
-      console.log("Game session data to save:", gameSession);
+      // console.log("Game session data to save:", gameSession);
   
       // Check if token is missing or invalid
       if (!gameSession.token) {
@@ -447,15 +447,15 @@ export class PragmaticService {
       // Attempt to save the game session
       try {
         await this.gameSessionRepo.save(gameSession);
-        console.log("Game session saved successfully", gameSession);
+        // console.log("Game session saved successfully", gameSession);
       } catch (dbError) {
         console.error("Error saving game session:", dbError.message);
         throw new Error(`Failed to save game session: ${dbError.message}`);
       }
 
       const { data } = await lastValueFrom(request);
-      console.log("data", data);
-      console.log("gameUrl", data.gameURL);
+      // console.log("data", data);
+      // console.log("gameUrl", data.gameURL);
   
       // Return the game URL from the mocked request object
       return { url: data.gameURL };
@@ -468,7 +468,7 @@ export class PragmaticService {
   }
   
   async authenticate(clientId, token, callback, walletType) {
-    console.log("Got to authenticate method");
+    // console.log("Got to authenticate method");
     const isValid = await this.identityService.validateToken({ clientId, token });
 
     //  const isValid = {
@@ -488,11 +488,11 @@ export class PragmaticService {
     //     }
     //   }
     
-    console.log("isValid", isValid);
+    // console.log("isValid", isValid);
     let response: any;
     const dataObject = typeof isValid.data === 'string' ? JSON.parse(isValid.data) : isValid.data;
 
-    console.log("dataObject", dataObject);
+    // console.log("dataObject", dataObject);
 
     if(!isValid || !isValid.status) {
       response = {
@@ -869,8 +869,6 @@ export class PragmaticService {
       return response;
     }
   }
-
-
 
   async win(clientId, player, callback, body, balanceType) {
     console.log('Got to win method');
@@ -1582,7 +1580,7 @@ export class PragmaticService {
   }
 
   async handleCallback(data: CallbackGameDto) {
-    console.log("_data", data);
+    // console.log("_data", data);
 
     const callback = await this.saveCallbackLog(data);
     console.log("callback-4", callback);
@@ -1880,7 +1878,7 @@ export class PragmaticService {
 
     console.log('body-Callback', body);
     const transactionId = 
-      action === 'Authenticate' 
+      action === 'authenticate.html' 
         ? body.get('hash') 
         : action === 'Balance' 
           ? body.get('hash')
@@ -1901,7 +1899,7 @@ export class PragmaticService {
     try {
       let callback;
       console.log("action", action);
-      if (action !== 'Balance' && action !== 'Authenticate') {
+      if (action !== 'Balance' && action !== 'authenticate.html') {
         console.log("Got in this box");
         // Check for an existing callback for actions other than Authenticate
         console.log("transactionId", transactionId);
