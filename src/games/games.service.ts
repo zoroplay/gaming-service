@@ -6,7 +6,7 @@ import { slugify } from 'src/common';
 import { FirebaseService } from 'src/common/services/firebaseUpload';
 import { Category } from 'src/entities/category.entity';
 import { GameKey } from 'src/entities/game-key.entity';
-import { GameCategory } from 'src/entities/game.category.entity';
+// import { GameCategory } from 'src/entities/game.category.entity';
 import { Promotion as PromotionEntity } from 'src/entities/promotion.entity';
 import {
   Tournament,
@@ -19,7 +19,6 @@ import {
   CallbackGameDto,
   Categories,
   CommonResponse,
-  CommonResponseArray,
   CreateBonusRequest,
   CreateGameDto,
   CreatePromotionRequest,
@@ -65,8 +64,8 @@ export class GamesService {
     private gameRepository: Repository<GameEntity>,
     @InjectRepository(Category)
     private categoryRepository: Repository<Category>,
-    @InjectRepository(GameCategory)
-    private gameCategoryRepository: Repository<GameCategory>,
+    // @InjectRepository(GameCategory)
+    // private gameCategoryRepository: Repository<GameCategory>,
     @InjectRepository(TournamentGame)
     private tournamentGameRepository: Repository<TournamentGame>,
     @InjectRepository(ProviderEntity)
@@ -213,7 +212,7 @@ export class GamesService {
 
     if (categoryId && categoryId !== 1) {
       query
-        .leftJoin(GameCategory, 'gamecat', 'gamecat.gameId = games.id')
+        .leftJoin(Category, 'gamecat', 'gamecat.gameId = games.id')
         .andWhere('gamecat.categoryId = :category', { category: categoryId });
     }
 
@@ -324,17 +323,12 @@ export class GamesService {
       throw new NotFoundException('Some categories not found');
     }
 
-    const gameCategories = categories.map((category) => {
-      const gameCategory = new GameCategory();
-      gameCategory.game = game;
-      gameCategory.category = category;
-      return gameCategory;
-    });
+    game.categories = categories;
 
-    console.log('gameCategories', gameCategories);
+    const val = await this.gameRepository.save(game);
 
-    const val = await this.gameCategoryRepository.save(gameCategories);
-    return val[0];
+    console.log("val", val);
+    return val;
   }
 
   async removeGameCategories(dto: AddGameToCategoriesDto) {
@@ -345,20 +339,27 @@ export class GamesService {
       throw new NotFoundException('Game not found');
     }
 
+    console.log("game", game);
+    console.log("game.categories", game.categories);
+
     const categories = await this.categoryRepository.find({
       where: { id: In(dto.categories) },
     });
+
+    console.log("categories", categories);
 
     if (categories.length !== dto.categories.length) {
       throw new NotFoundException('Some categories not found');
     }
 
-    await this.gameCategoryRepository.delete({
-      game,
-      category: In(categories.map((category) => category.id)),
-    });
+    game.categories = game.categories.filter(
+      (category) => !categories.some((c) => c.id === category.id)
+    );
 
-    return { message: 'Categories removed successfully' };
+    const val = await this.gameRepository.save(game);
+
+    console.log("val", val);
+    return val;
   }
 
   async fetchCategories(): Promise<Categories> {
@@ -993,46 +994,60 @@ export class GamesService {
     return response;
   }
 
-  async getGamesWithCategories(payload?: GetGamesRequest): Promise<CommonResponseArray> {
-    const { gameIds } = payload;
-    const query = this.gameRepository
-      .createQueryBuilder('game')
-      .leftJoinAndSelect('game.gameCategories', 'gameCategory')
-      .leftJoinAndSelect('gameCategory.category', 'category')
-      .leftJoinAndSelect('game.provider', 'provider');
+  // async getGamesWithCategories(payload?: GetGamesRequest): Promise<CommonResponseArray> {
+  //   const { gameIds } = payload;
+  //   const query = this.gameRepository
+  //     .createQueryBuilder('game')
+  //     .leftJoinAndSelect('game.gameCategories', 'gameCategory')
+  //     .leftJoinAndSelect('gameCategory.category', 'category')
+  //     .leftJoinAndSelect('game.provider', 'provider');
   
-    // Add filtering by gameIds if provided
-    if (gameIds && gameIds.length > 0) {
-      query.where('game.gameId IN (:...gameIds)', { gameIds });
-    }
+  //   // Add filtering by gameIds if provided
+  //   if (gameIds && gameIds.length > 0) {
+  //     query.where('game.gameId IN (:...gameIds)', { gameIds });
+  //   }
   
-    const [games] = await query.getManyAndCount();
+  //   const [games] = await query.getManyAndCount();
 
-    console.log('games', games[0]);
-    console.log('gameCategories', games[0].gameCategories);
+  //   console.log('games', games[0]);
+  //   // console.log('gameCategories', games[0].gameCategories);
   
-    const gameData = games.map((game) => ({
-      id: game.id,
-      status: game.status,
-      provider_id: game.provider ? game.provider.id : 0,
-      provider_name: game.provider ? game.provider.name : '',
-      game_id: game.gameId,
-      game_name: game.title,
-      image: game.imagePath,
-      description: game.description,
-      priority: game.priority,
-      category: game.gameCategories.map((gc) => ({
-        id: gc.category?.id, // Safely access category.id, fallback to 0
-        name: gc.category?.name, // Safely access category.name, fallback to an empty string
-      })),
-    }));
+  //   const gameData = games.map((game) => ({
+  //     id: game.id,
+  //     status: game.status,
+  //     provider_id: game.provider ? game.provider.id : 0,
+  //     provider_name: game.provider ? game.provider.name : '',
+  //     game_id: game.gameId,
+  //     game_name: game.title,
+  //     image: game.imagePath,
+  //     description: game.description,
+  //     priority: game.priority,
+  //     // category: game.gameCategories.map((gc) => ({
+  //     //   id: gc.category?.id, // Safely access category.id, fallback to 0
+  //     //   name: gc.category?.name, // Safely access category.name, fallback to an empty string
+  //     // })),
+  //   }));
   
+  //   return {
+  //     status: 200,
+  //     success: true,
+  //     message: 'Games retrieved successfully',
+  //     data: gameData,
+  //   };
+  // }
+
+  async getGamesWithCategories(payload?: GetGamesRequest) {
+    console.log("payload", payload);
+    const gameData = await this.gameRepository.find({
+      relations: ['provider', 'categories'],
+    });
+    console.log("gameData", gameData);
     return {
       status: 200,
       success: true,
-      message: 'Games retrieved successfully',
-      data: gameData,
-    };
+      message: 'Games fetched successfully',
+      data: gameData
+    }
   }
   
 

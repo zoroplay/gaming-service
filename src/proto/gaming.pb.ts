@@ -589,9 +589,9 @@ export interface GamingServiceClient {
 
   fetchCategories(request: Empty): Observable<Categories>;
 
-  addGameToCategories(request: AddGameToCategoriesDto): Observable<AddGameToCategoriesResponse>;
+  addGameToCategories(request: AddGameToCategoriesDto): Observable<Game>;
 
-  removeGameToCategories(request: AddGameToCategoriesDto): Observable<Empty>;
+  removeGameToCategories(request: AddGameToCategoriesDto): Observable<Game>;
 
   addTournamentGame(request: AddGameToTournamentDto): Observable<TournamentResponse>;
 
@@ -691,11 +691,9 @@ export interface GamingServiceController {
 
   fetchCategories(request: Empty): Promise<Categories> | Observable<Categories> | Categories;
 
-  addGameToCategories(
-    request: AddGameToCategoriesDto,
-  ): Promise<AddGameToCategoriesResponse> | Observable<AddGameToCategoriesResponse> | AddGameToCategoriesResponse;
+  addGameToCategories(request: AddGameToCategoriesDto): Promise<Game> | Observable<Game> | Game;
 
-  removeGameToCategories(request: AddGameToCategoriesDto): Promise<Empty> | Observable<Empty> | Empty;
+  removeGameToCategories(request: AddGameToCategoriesDto): Promise<Game> | Observable<Game> | Game;
 
   addTournamentGame(
     request: AddGameToTournamentDto,
