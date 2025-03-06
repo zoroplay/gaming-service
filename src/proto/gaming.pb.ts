@@ -145,6 +145,7 @@ export interface CreateProviderDto {
   name: string;
   description: string;
   imagePath: string;
+  status?: number | undefined;
 }
 
 export interface CreateGameDto {
@@ -624,6 +625,8 @@ export interface GamingServiceClient {
 
   findAllProviders(request: Empty): Observable<CommonResponse>;
 
+  findAdminProviders(request: Empty): Observable<CommonResponse>;
+
   getGames(request: GetGamesRequest): Observable<CommonResponseArray>;
 
   createPromotion(request: CreatePromotionRequest): Observable<Promotion>;
@@ -728,6 +731,8 @@ export interface GamingServiceController {
 
   findAllProviders(request: Empty): Promise<CommonResponse> | Observable<CommonResponse> | CommonResponse;
 
+  findAdminProviders(request: Empty): Promise<CommonResponse> | Observable<CommonResponse> | CommonResponse;
+
   getGames(
     request: GetGamesRequest,
   ): Promise<CommonResponseArray> | Observable<CommonResponseArray> | CommonResponseArray;
@@ -812,6 +817,7 @@ export function GamingServiceControllerMethods() {
       "findOneProvider",
       "removeProvider",
       "findAllProviders",
+      "findAdminProviders",
       "getGames",
       "createPromotion",
       "findPromotions",

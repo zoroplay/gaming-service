@@ -132,6 +132,25 @@ export class GamesService {
   }
 
   async findAllProvider(): Promise<CommonResponse> {
+    const providers = await this.providerRepository.find({
+      where: {
+        status: 1
+      }
+    });
+    // const protoResponse: Provider[] = resp.map(
+    //   (entity: ProviderEntity) => entity as unknown as Provider,
+    // );
+    // const final = {
+    //   providers: protoResponse,
+    // };
+    return {
+      success: true,
+      message: 'Providers retrieved successfully',
+      data: providers,
+    };
+  }
+
+  async findAdminProviders(): Promise<CommonResponse> {
     const providers = await this.providerRepository.find({});
     // const protoResponse: Provider[] = resp.map(
     //   (entity: ProviderEntity) => entity as unknown as Provider,
@@ -413,11 +432,22 @@ export class GamesService {
     if (!updateProvider) {
       throw new NotFoundException(`Provider ${createProviderDto.id} not found`);
     }
-    updateProvider.name = createProviderDto.name;
-    updateProvider.slug = createProviderDto.slug;
-    updateProvider.description = createProviderDto.description;
-    updateProvider.imagePath = createProviderDto.imagePath;
+    console.log("updateProvider", createProviderDto);
+
+    updateProvider.name = createProviderDto.name || updateProvider.name;
+    updateProvider.slug = createProviderDto.slug || updateProvider.slug;
+    updateProvider.description = createProviderDto.description || updateProvider.description;
+    updateProvider.imagePath = createProviderDto.imagePath || updateProvider.imagePath;
+    updateProvider.status = createProviderDto.status;
+
     const savedProvider = await this.providerRepository.save(updateProvider);
+
+    console.log("savedProvider", savedProvider);
+
+    if(!savedProvider) {
+      console.log("Error saving provider update");
+    }
+
     return savedProvider as unknown as Provider;
   }
 
@@ -977,6 +1007,9 @@ export class GamesService {
     }
   
     const [games] = await query.getManyAndCount();
+
+    console.log('games', games[0]);
+    console.log('gameCategories', games[0].gameCategories);
   
     const gameData = games.map((game) => ({
       id: game.id,
@@ -989,8 +1022,8 @@ export class GamesService {
       description: game.description,
       priority: game.priority,
       category: game.gameCategories.map((gc) => ({
-        id: gc.category?.id || '', // Safely access category.id, fallback to 0
-        name: gc.category?.name || '', // Safely access category.name, fallback to an empty string
+        id: gc.category?.id, // Safely access category.id, fallback to 0
+        name: gc.category?.name, // Safely access category.name, fallback to an empty string
       })),
     }));
   
@@ -1107,6 +1140,7 @@ export class GamesService {
     const val = await this.tournamentGameRepository.save(TournamentGames);
     return val[0];
   }
+
   async removeTournamentGames(dto: AddGameToTournamentDto) {
     const games = await this.gameRepository.find({
       where: { id: In(dto.gameId) },

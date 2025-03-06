@@ -81,6 +81,14 @@ export class GamesController {
     return this.gamesService.findAllProvider();
   }
 
+  @GrpcMethod(GAMING_SERVICE_NAME, 'findAdminProviders')
+  findAdminProviders(
+    request: Empty,
+  ): Providers | Observable<Providers> | Promise<CommonResponse> {
+    console.log('findAllProviders', request);
+    return this.gamesService.findAdminProviders();
+  }
+
   @GrpcMethod(GAMING_SERVICE_NAME, 'createGame')
   createGame(createGameDto: CreateGameDto): Promise<any> {
     console.log('createGame', createGameDto);
