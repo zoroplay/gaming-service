@@ -1036,19 +1036,52 @@ export class GamesService {
   //   };
   // }
 
+  // async getGamesWithCategories(payload?: GetGamesRequest) {
+  //   console.log("payload", payload);
+  //   const gameData = await this.gameRepository.find({
+  //     relations: ['provider', 'categories'],
+  //   });
+  //   console.log("gameData", gameData);
+  //   return {
+  //     status: 200,
+  //     success: true,
+  //     message: 'Games fetched successfully',
+  //     data: gameData
+  //   }
+  // }
+
   async getGamesWithCategories(payload?: GetGamesRequest) {
     console.log("payload", payload);
+  
+    const filters: any = {};
+  
+    if (payload?.providerId) {
+      filters.provider = { id: payload.providerId };
+    }
+  
     const gameData = await this.gameRepository.find({
+      where: filters,
       relations: ['provider', 'categories'],
     });
-    console.log("gameData", gameData);
+  
+    // If filtering by categoryId, further filter the retrieved games
+    let filteredGames = gameData;
+    if (payload?.categoryId) {
+      filteredGames = gameData.filter(game =>
+        game.categories.some(category => category.id === payload.categoryId)
+      );
+    }
+  
+    console.log("filteredGames", filteredGames);
+  
     return {
       status: 200,
       success: true,
       message: 'Games fetched successfully',
-      data: gameData
-    }
+      data: filteredGames
+    };
   }
+  
   
 
   async createTournament(
