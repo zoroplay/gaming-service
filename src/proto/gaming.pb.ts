@@ -7,8 +7,8 @@ import { Struct } from "./google/protobuf/struct.pb";
 export const protobufPackage = "gaming";
 
 export interface GetGamesRequest {
-  /** Optional array of game IDs for filtering */
-  gameIds: number[];
+  providerId?: number | undefined;
+  categoryId?: number | undefined;
 }
 
 export interface StartDto {
