@@ -21,7 +21,7 @@ import { IdentityModule } from 'src/identity/identity.module';
 import { GameKey } from 'src/entities/game-key.entity';
 import { CacheModule } from '@nestjs/cache-manager';
 import { Category } from 'src/entities/category.entity';
-import { GameCategory } from 'src/entities/game.category.entity';
+// import { GameCategory } from 'src/entities/game.category.entity';
 import { ScheduleModule } from '@nestjs/schedule';
 import { PragmaticService } from 'src/services/pragmatic-play.service';
 import { CasinoGame } from 'src/entities/casino-game.entity';
@@ -42,7 +42,7 @@ import { SmatVirtualService } from 'src/services/smatvirtual.service';
       max: 1000,
       isGlobal: true,
     }),
-    TypeOrmModule.forFeature([GameSession, CallbackLog, Category, Game, Promotion, Tournament, GameCategory, GameKey, Provider, CasinoGame, TournamentGame ]),
+    TypeOrmModule.forFeature([GameSession, CallbackLog, Category, Game, Promotion, Tournament, GameKey, Provider, CasinoGame, TournamentGame ]),
     HttpModule,
     IdentityModule,
     BonusModule,

@@ -1,14 +1,13 @@
+/* eslint-disable prettier/prettier */
 import {
-  Entity,
-  PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
-  UpdateDateColumn,
-  Index,
-  OneToMany,
+  Entity,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn
 } from 'typeorm';
-import { Game } from './game.entity';
-import { GameCategory } from './game.category.entity';
+// import { Game } from './game.entity';
+// import { GameCategory } from './game.category.entity';
 
 @Entity({ name: 'categories' })
 export class Category {
@@ -33,8 +32,8 @@ export class Category {
   // @OneToMany(() => Game, (game) => game.categories)
   // games: Game[];
 
-  @OneToMany(() => GameCategory, (gameCategory) => gameCategory.category)
-  gameCategories: GameCategory[];
+  // @OneToMany(() => GameCategory, (gameCategory) => gameCategory.category)
+  // gameCategories: GameCategory[];
 
   @CreateDateColumn({ type: 'timestamp' })
   created_at: Date;
