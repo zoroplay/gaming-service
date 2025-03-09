@@ -56,6 +56,7 @@ import { SmatVirtualService } from 'src/services/smatvirtual.service';
 import { FindManyOptions, ILike, In, Repository } from 'typeorm';
 import { Game as GameEntity } from '../entities/game.entity';
 import { Provider as ProviderEntity } from '../entities/provider.entity';
+import { GameCategoryEntity } from 'src/entities/game.category.entity';
 
 @Injectable()
 export class GamesService {
@@ -64,8 +65,8 @@ export class GamesService {
     private gameRepository: Repository<GameEntity>,
     @InjectRepository(Category)
     private categoryRepository: Repository<Category>,
-    // @InjectRepository(GameCategory)
-    // private gameCategoryRepository: Repository<GameCategory>,
+    @InjectRepository(GameCategoryEntity)
+    private gameCategoryRepository: Repository<GameCategoryEntity>,
     @InjectRepository(TournamentGame)
     private tournamentGameRepository: Repository<TournamentGame>,
     @InjectRepository(ProviderEntity)
@@ -212,8 +213,8 @@ export class GamesService {
 
     if (categoryId && categoryId !== 1) {
       query
-        .leftJoin(Category, 'gamecat', 'gamecat.gameId = games.id')
-        .andWhere('gamecat.categoryId = :category', { category: categoryId });
+        .leftJoin(GameCategoryEntity, 'gamecat', 'gamecat.game_id = games.id')
+        .andWhere('gamecat.category_id = :category', { category: categoryId });
     }
 
     if (providerId) {
@@ -311,10 +312,10 @@ export class GamesService {
       throw new NotFoundException('Game not found');
     }
 
-    console.log('game', game);
+    // console.log('game', game);
 
-    const categories = await this.categoryRepository.find({
-      where: { id: In(dto.categories) },
+    const categories = await this.gameCategoryRepository.find({
+      where: { category: In(dto.categories) },
     });
 
     console.log('categories', categories);

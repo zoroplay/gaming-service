@@ -3,11 +3,11 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  ManyToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn
 } from 'typeorm';
-// import { Game } from './game.entity';
-// import { GameCategory } from './game.category.entity';
+import { GameCategoryEntity } from './game.category.entity';
 
 @Entity({ name: 'categories' })
 export class Category {
@@ -29,11 +29,8 @@ export class Category {
   @Column({ default: 'active' })
   status: string;
 
-  // @OneToMany(() => Game, (game) => game.categories)
-  // games: Game[];
-
-  // @OneToMany(() => GameCategory, (gameCategory) => gameCategory.category)
-  // gameCategories: GameCategory[];
+  @ManyToMany(() => GameCategoryEntity, (gameCategory) => gameCategory.category)
+  games: GameCategoryEntity[];
 
   @CreateDateColumn({ type: 'timestamp' })
   created_at: Date;
