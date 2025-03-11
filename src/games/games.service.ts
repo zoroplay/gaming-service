@@ -31,6 +31,7 @@ import {
   Game,
   Games,
   GetGamesRequest,
+  GetPromotions,
   PaginationDto,
   Promotion,
   SaveCategoryRequest,
@@ -898,8 +899,24 @@ export class GamesService {
     return promotion;
   }
 
-  async fetchPromotions(): Promise<any> {
-    const promotions = await this.promotionRepository.find();
+  // async fetchPromotions(): Promise<any> {
+  //   const promotions = await this.promotionRepository.find({
+
+  //   });
+  //   console.log('promotions', promotions);
+  //   return { data: promotions };
+  // }
+
+  async fetchPromotions(payload: GetPromotions): Promise<any> {
+
+    console.log("payload", payload);
+  
+    const promotions = await this.promotionRepository.find({
+      where: {
+        clientId: payload.clientId
+      },
+    });
+  
     console.log('promotions', promotions);
     return { data: promotions };
   }
