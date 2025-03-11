@@ -226,7 +226,7 @@ export class GamesController {
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'handleCallback')
   async handleCallback(request: CallbackGameDto): Promise<any> {
-    console.log('request', request);
+    // console.log('request', request);
     try {
       return await this.gamesService.handleGamesCallback(request);
     } catch (error) {
@@ -247,25 +247,24 @@ export class GamesController {
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'updatePromotion')
   updatePromotion(payload: CreatePromotionRequest): Promise<any> {
-    console.log('fetch gameNames');
+    // console.log('fetch gameNames');
     return this.gamesService.updatePromotion(payload);
   }
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'findPromotions')
   fetchPromotions(payload: GetPromotions): Promise<any> {
-    console.log('find Promotions');
     return this.gamesService.fetchPromotions(payload);
   }
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'findOnePromotion')
   findOnePromotion(payload: FindOnePromotionDto): Promise<any> {
-    console.log('fetch category', payload);
+    // console.log('fetch category', payload);
     return this.gamesService.findOnePromotion(payload);
   }
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'removePromotion')
   async removePromotion(payload: FindOnePromotionDto): Promise<void> {
-    console.log('Payload received by gRPC server for deletion:', payload);
+    // console.log('Payload received by gRPC server for deletion:', payload);
     const { id } = payload;
 
     if (!id) {

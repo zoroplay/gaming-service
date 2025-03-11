@@ -877,7 +877,7 @@ export class GamesService {
   
       // Save the promotion entity to the database
       const savedPromotion = await this.promotionRepository.save(newPromotion);
-      console.log('Saved promotion:', savedPromotion);
+      // console.log('Saved promotion:', savedPromotion);
 
       return savedPromotion;
     } catch (error) {
@@ -888,7 +888,7 @@ export class GamesService {
 
   async findOnePromotion(request: FindOnePromotionDto): Promise<any> {
     const { id } = request;
-    console.log('id', id);
+    // console.log('id', id);
     const promotion = await this.promotionRepository.findOne({
       where: { id },
     });
@@ -898,14 +898,6 @@ export class GamesService {
     }
     return promotion;
   }
-
-  // async fetchPromotions(): Promise<any> {
-  //   const promotions = await this.promotionRepository.find({
-
-  //   });
-  //   console.log('promotions', promotions);
-  //   return { data: promotions };
-  // }
 
   async fetchPromotions(payload: GetPromotions): Promise<any> {
 
@@ -917,7 +909,6 @@ export class GamesService {
       },
     });
   
-    console.log('promotions', promotions);
     return { data: promotions };
   }
 
@@ -1069,7 +1060,7 @@ export class GamesService {
   // }
 
   async getGamesWithCategories(payload?: GetGamesRequest) {
-    console.log("payload", payload);
+    // console.log("payload", payload);
   
     const filters: any = {};
   
@@ -1090,7 +1081,7 @@ export class GamesService {
       );
     }
   
-    console.log("filteredGames", filteredGames);
+    // console.log("filteredGames", filteredGames);
   
     return {
       status: 200,

@@ -534,9 +534,6 @@ export class EvoPlayService {
 
       await this.gameSessionRepo.save(gameSession);
 
-      console.log("gameSession", gameSession);
-
-      console.log('response', response.data)
       if(response.data.error) {
         return {success: false, message: response.data.error.message}
       } else {
@@ -576,7 +573,7 @@ export class EvoPlayService {
     parts.push(compact(token));
 
     const str = parts.join('*')
-    console.log('str', str)
+    // console.log('str', str)
     const md5Hash = crypto
       .createHash('md5')
       .update(str)
@@ -1118,8 +1115,6 @@ export class EvoPlayService {
   async handleCallback(data: any) {
     const body = JSON.parse(data.body);
 
-    console.log(body);
-
     const callback = await this.saveCallbackLog(body);
 
     const gameKeys = await this.gameKeyRepository.find({
@@ -1175,8 +1170,6 @@ export class EvoPlayService {
 
     // get game session
     const gameSession = await this.gameSessionRepo.findOne({where: {token: body.token}});
-
-    console.log("gameSession", gameSession);
       
     if (gameSession.balance_type === 'bonus')
       balanceType = 'casino';
@@ -1220,7 +1213,6 @@ export class EvoPlayService {
       player = res.data;
 
     }
-    console.log('first stage passed');
 
     switch (body.name) {
       case 'init':
@@ -1321,8 +1313,6 @@ export class EvoPlayService {
           subject: 'Bet Deposit (Casino)',
           channel: game.type,
         });
-
-        console.log("debit", debit);
 
         if (!debit.success) {
           const response = {
@@ -1439,8 +1429,6 @@ export class EvoPlayService {
             channel: game.type,
           });
 
-          console.log("creditRes", creditRes);
-
           const resp = {
             success: true,
             message: 'win handled successfully',
@@ -1509,8 +1497,6 @@ export class EvoPlayService {
             subject: 'Bet Win (Casino)',
             channel: game.type,
           });
-
-          console.log("updateBonusWallet", updateBonusWallet);
 
           const response = {
             success: true,
@@ -1673,9 +1659,6 @@ export class EvoPlayService {
       clientId,
       token,
     });
-
-    console.log('player res', res);
-    console.log("walletType", walletType);
 
     if (!res) {
       const response = {
@@ -1899,7 +1882,6 @@ export class EvoPlayService {
 
   // save callback request
   async saveCallbackLog(data) {
-    console.log('saving callback logs');
     try {
       const callback = new CallbackLog();
       callback.transactionId = (data.name === 'BalanceIncrease') ? data.data.id : data.callback_id

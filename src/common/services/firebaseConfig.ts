@@ -17,6 +17,7 @@ const { privateKey } = JSON.parse(process.env.FIREBASE_PRIVATE_KEY)
   'auth_provider_x509_cert_url': process.env.FIREBASE_AUTH_PROVIDER,
   'client_x509_cert_url': process.env.FIREBASE_CLIENT_URL,
   'universe_domain': process.env.FIREBASE_DOMAIN
+
 } as ServiceAccount;
 
 
