@@ -23,6 +23,7 @@ import {
   Games,
   GAMING_SERVICE_NAME,
   GetGamesRequest,
+  GetPromotions,
   PaginationDto,
   Provider,
   Providers,
@@ -251,9 +252,8 @@ export class GamesController {
   }
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'findPromotions')
-  fetchPromotions(): Promise<any> {
-    // console.log('find Promotions');
-    return this.gamesService.fetchPromotions();
+  fetchPromotions(payload: GetPromotions): Promise<any> {
+    return this.gamesService.fetchPromotions(payload);
   }
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'findOnePromotion')
