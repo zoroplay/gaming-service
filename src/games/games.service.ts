@@ -305,7 +305,7 @@ export class GamesService {
   }
 
   async addGameToCategories(dto: AddGameToCategoriesDto) {
-    console.log('got to this part');
+  
     const game = await this.gameRepository.findOne({
       where: { id: dto.gameId },
     });
@@ -313,13 +313,11 @@ export class GamesService {
       throw new NotFoundException('Game not found');
     }
 
-    // console.log('game', game);
 
     const categories = await this.gameCategoryRepository.find({
       where: { category: In(dto.categories) },
     });
 
-    console.log('categories', categories);
 
     if (categories.length !== dto.categories.length) {
       throw new NotFoundException('Some categories not found');
@@ -329,26 +327,23 @@ export class GamesService {
 
     const val = await this.gameRepository.save(game);
 
-    console.log("val", val);
     return val;
   }
 
   async removeGameCategories(dto: AddGameToCategoriesDto) {
+    
     const game = await this.gameRepository.findOne({
       where: { id: dto.gameId },
+      relations: ['provider', 'categories'],
     });
+
     if (!game) {
       throw new NotFoundException('Game not found');
     }
 
-    console.log("game", game);
-    console.log("game.categories", game.categories);
-
     const categories = await this.categoryRepository.find({
       where: { id: In(dto.categories) },
     });
-
-    console.log("categories", categories);
 
     if (categories.length !== dto.categories.length) {
       throw new NotFoundException('Some categories not found');
@@ -360,7 +355,6 @@ export class GamesService {
 
     const val = await this.gameRepository.save(game);
 
-    console.log("val", val);
     return val;
   }
 
@@ -974,93 +968,7 @@ export class GamesService {
     await this.promotionRepository.remove(promotion);
   }
 
-  async getAllGamesWithCategories() {
-    const games = await this.gameRepository.find({
-      relations: ['provider', 'categories'], // Ensure the 'categories' relation exists in the Game entity
-    });
-
-    const response = {
-      games: games.map((game) => ({
-        id: game.id,
-        status: game.status,
-        provider_id: game.provider?.id || null,
-        provider_name: game.provider?.name || null,
-        game_id: game.gameId,
-        game_name: game.title,
-        image: game.imagePath,
-        description: game.description,
-        category: [],
-        // category: game.categories.map((category) => ({
-        //   id: category.id,
-        //   category_id: category.id, // Map correctly if `category_id` exists in DB
-        //   name: category.name,
-        //   status: category.status,
-        //   priority: category.priority,
-        // })),
-      })),
-    };
-
-    return response;
-  }
-
-  // async getGamesWithCategories(payload?: GetGamesRequest): Promise<CommonResponseArray> {
-  //   const { gameIds } = payload;
-  //   const query = this.gameRepository
-  //     .createQueryBuilder('game')
-  //     .leftJoinAndSelect('game.gameCategories', 'gameCategory')
-  //     .leftJoinAndSelect('gameCategory.category', 'category')
-  //     .leftJoinAndSelect('game.provider', 'provider');
-  
-  //   // Add filtering by gameIds if provided
-  //   if (gameIds && gameIds.length > 0) {
-  //     query.where('game.gameId IN (:...gameIds)', { gameIds });
-  //   }
-  
-  //   const [games] = await query.getManyAndCount();
-
-  //   console.log('games', games[0]);
-  //   // console.log('gameCategories', games[0].gameCategories);
-  
-  //   const gameData = games.map((game) => ({
-  //     id: game.id,
-  //     status: game.status,
-  //     provider_id: game.provider ? game.provider.id : 0,
-  //     provider_name: game.provider ? game.provider.name : '',
-  //     game_id: game.gameId,
-  //     game_name: game.title,
-  //     image: game.imagePath,
-  //     description: game.description,
-  //     priority: game.priority,
-  //     // category: game.gameCategories.map((gc) => ({
-  //     //   id: gc.category?.id, // Safely access category.id, fallback to 0
-  //     //   name: gc.category?.name, // Safely access category.name, fallback to an empty string
-  //     // })),
-  //   }));
-  
-  //   return {
-  //     status: 200,
-  //     success: true,
-  //     message: 'Games retrieved successfully',
-  //     data: gameData,
-  //   };
-  // }
-
-  // async getGamesWithCategories(payload?: GetGamesRequest) {
-  //   console.log("payload", payload);
-  //   const gameData = await this.gameRepository.find({
-  //     relations: ['provider', 'categories'],
-  //   });
-  //   console.log("gameData", gameData);
-  //   return {
-  //     status: 200,
-  //     success: true,
-  //     message: 'Games fetched successfully',
-  //     data: gameData
-  //   }
-  // }
-
   async getGamesWithCategories(payload?: GetGamesRequest) {
-    // console.log("payload", payload);
   
     const filters: any = {};
   
@@ -1080,8 +988,6 @@ export class GamesService {
         game.categories.some(category => category.id === payload.categoryId)
       );
     }
-  
-    // console.log("filteredGames", filteredGames);
   
     return {
       status: 200,
