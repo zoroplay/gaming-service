@@ -1302,6 +1302,10 @@ export class EvoPlayService {
           return response;
         }
 
+        // if(balanceType === 'bonus' || 'casino') {
+        //   const updateBonus = await this.bonusService.getBonusDetails()
+        // }
+
         const debit = await this.walletService.debit({
           userId: player.playerId,
           clientId: data.clientId,

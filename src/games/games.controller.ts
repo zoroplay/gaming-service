@@ -274,10 +274,6 @@ export class GamesController {
     return this.gamesService.removePromotion(payload);
   }
 
-  // @GrpcMethod(GAMING_SERVICE_NAME, 'getGames')
-  // async getGames() {
-  //   return this.gamesService.getGamesWithCategories();
-  // }
 
 @GrpcMethod(GAMING_SERVICE_NAME, 'getGames')
 async getGames(request?: GetGamesRequest) {
@@ -322,12 +318,6 @@ async getGames(request?: GetGamesRequest) {
     return this.gamesService.removeTournament(payload);
   }
 
-  // @GrpcMethod(GAMING_SERVICE_NAME, 'uploadImage')
-  // uploadImage(payload: FileChunk): Promise<any> {
-  //   return this.gamesService.uploadImage(payload)
-    
-  // }
-
   @GrpcMethod(GAMING_SERVICE_NAME, 'handleQtechCallback')
   async handleQtechCallback(payload: QtechCallbackRequest): Promise<any> {
     return this.qtechService.handlCallbacks(payload);
@@ -337,17 +327,6 @@ async getGames(request?: GetGamesRequest) {
   async handleSmatVirtualCallback(payload: SmatVirtualCallbackRequest): Promise<any> {
     return this.smatVirtualService.handleCallback(payload);
   }
-
-
-  // @GrpcMethod(GAMING_SERVICE_NAME, 'handleQtechGetBalance')
-  // async handleQtechGetBalance(payload: QtechCallbackRequest): Promise<any> {
-  //   return this.gamesService.handleQtechGetBalance(payload);
-  // }
-
-  // @GrpcMethod(GAMING_SERVICE_NAME, 'handleQtechTransactionBet')
-  // async handleQtechBet(payload: QtechtransactionRequest): Promise<any> {
-  //   return this.gamesService.handleQtechBet(payload);
-  // }
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'addTournamentGame')
   addTournamentGame(payload: AddGameToTournamentDto): Promise<any> {
@@ -360,16 +339,6 @@ async getGames(request?: GetGamesRequest) {
     console.log('removeGameToCategories');
     return this.gamesService.removeTournamentGames(payload);
   }
-
-  // @GrpcMethod(GAMING_SERVICE_NAME, 'handleQtechRollback')
-  // async handleQtechRollback(payload: QtechRollbackRequest): Promise<any> {
-  //   return this.gamesService.handleQtechRollback(payload);
-  // }
-
-  // @GrpcMethod(GAMING_SERVICE_NAME, 'handleQtechTransactionWin')
-  // async handleQtechWin(payload: QtechtransactionRequest): Promise<any> {
-  //   return this.gamesService.handleQtechWin(payload);
-  // }
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'handleCasinoBonus')
   handleCasinoBonus(payload: CreateBonusRequest): Promise<any> {

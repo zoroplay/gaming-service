@@ -91,6 +91,7 @@ export interface CreateBonusRequest {
   casinoSpinCount?: number | undefined;
   providerId?: number | undefined;
   bonusId?: number | undefined;
+  userIds: string[];
 }
 
 export interface CreateBonusResponse {
@@ -370,7 +371,7 @@ export interface BonusServiceClient {
 
   searchBonus(request: GetBonusByClientID): Observable<SearchBonusResponse>;
 
-  getActiveUserBonus(request: CheckDepositBonusRequest): Observable<CreateBonusResponse>;
+  getActiveUserBonus(request: CheckDepositBonusRequest): Observable<CommonResponseObj>;
 
   getBonus(request: GetBonusRequest): Observable<GetBonusResponse>;
 
@@ -430,7 +431,7 @@ export interface BonusServiceController {
 
   getActiveUserBonus(
     request: CheckDepositBonusRequest,
-  ): Promise<CreateBonusResponse> | Observable<CreateBonusResponse> | CreateBonusResponse;
+  ): Promise<CommonResponseObj> | Observable<CommonResponseObj> | CommonResponseObj;
 
   getBonus(request: GetBonusRequest): Promise<GetBonusResponse> | Observable<GetBonusResponse> | GetBonusResponse;
 
