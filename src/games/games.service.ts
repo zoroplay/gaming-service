@@ -57,6 +57,7 @@ import { SmatVirtualService } from 'src/services/smatvirtual.service';
 import { FindManyOptions, ILike, In, Repository } from 'typeorm';
 import { Game as GameEntity } from '../entities/game.entity';
 import { Provider as ProviderEntity } from '../entities/provider.entity';
+import { GameCategoryEntity } from 'src/entities/game.category.entity';
 
 @Injectable()
 export class GamesService {
@@ -65,8 +66,8 @@ export class GamesService {
     private gameRepository: Repository<GameEntity>,
     @InjectRepository(Category)
     private categoryRepository: Repository<Category>,
-    // @InjectRepository(GameCategory)
-    // private gameCategoryRepository: Repository<GameCategory>,
+    @InjectRepository(GameCategoryEntity)
+    private gameCategoryRepository: Repository<GameCategoryEntity>,
     @InjectRepository(TournamentGame)
     private tournamentGameRepository: Repository<TournamentGame>,
     @InjectRepository(ProviderEntity)
@@ -213,8 +214,8 @@ export class GamesService {
 
     if (categoryId && categoryId !== 1) {
       query
-        .leftJoin(Category, 'gamecat', 'gamecat.gameId = games.id')
-        .andWhere('gamecat.categoryId = :category', { category: categoryId });
+        .leftJoin(GameCategoryEntity, 'gamecat', 'gamecat.game_id = games.id')
+        .andWhere('gamecat.category_id = :category', { category: categoryId });
     }
 
     if (providerId) {
@@ -313,8 +314,8 @@ export class GamesService {
     }
 
 
-    const categories = await this.categoryRepository.find({
-      where: { id: In(dto.categories) },
+    const categories = await this.gameCategoryRepository.find({
+      where: { category: In(dto.categories) },
     });
 
 
@@ -870,7 +871,7 @@ export class GamesService {
   
       // Save the promotion entity to the database
       const savedPromotion = await this.promotionRepository.save(newPromotion);
-      console.log('Saved promotion:', savedPromotion);
+      // console.log('Saved promotion:', savedPromotion);
 
       return savedPromotion;
     } catch (error) {
@@ -881,7 +882,7 @@ export class GamesService {
 
   async findOnePromotion(request: FindOnePromotionDto): Promise<any> {
     const { id } = request;
-    console.log('id', id);
+    // console.log('id', id);
     const promotion = await this.promotionRepository.findOne({
       where: { id },
     });
@@ -891,14 +892,6 @@ export class GamesService {
     }
     return promotion;
   }
-
-  // async fetchPromotions(): Promise<any> {
-  //   const promotions = await this.promotionRepository.find({
-
-  //   });
-  //   console.log('promotions', promotions);
-  //   return { data: promotions };
-  // }
 
   async fetchPromotions(payload: GetPromotions): Promise<any> {
 
@@ -910,7 +903,6 @@ export class GamesService {
       },
     });
   
-    console.log('promotions', promotions);
     return { data: promotions };
   }
 
