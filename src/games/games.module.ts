@@ -32,7 +32,7 @@ import { FirebaseService } from 'src/common/services/firebaseUpload';
 import { TournamentGame } from 'src/entities/tournament-game.entity';
 import { BonusModule } from 'src/bonus/bonus.module';
 import { SmatVirtualService } from 'src/services/smatvirtual.service';
-import { GameCategoryEntity } from 'src/entities/game.category.entity';
+// import { GameCategoryEntity } from 'src/entities/game.category.entity';
 
 
 
@@ -43,7 +43,7 @@ import { GameCategoryEntity } from 'src/entities/game.category.entity';
       max: 1000,
       isGlobal: true,
     }),
-    TypeOrmModule.forFeature([GameSession, CallbackLog, Category, Game, GameCategoryEntity, Promotion, Tournament, GameKey, Provider, CasinoGame, TournamentGame ]),
+    TypeOrmModule.forFeature([GameSession, CallbackLog, Category, Game, Promotion, Tournament, GameKey, Provider, CasinoGame, TournamentGame ]),
     HttpModule,
     IdentityModule,
     BonusModule,

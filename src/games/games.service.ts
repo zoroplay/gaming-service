@@ -57,7 +57,7 @@ import { SmatVirtualService } from 'src/services/smatvirtual.service';
 import { FindManyOptions, ILike, In, Repository } from 'typeorm';
 import { Game as GameEntity } from '../entities/game.entity';
 import { Provider as ProviderEntity } from '../entities/provider.entity';
-import { GameCategoryEntity } from 'src/entities/game.category.entity';
+// import { GameCategoryEntity } from 'src/entities/game.category.entity';
 
 @Injectable()
 export class GamesService {
@@ -66,8 +66,8 @@ export class GamesService {
     private gameRepository: Repository<GameEntity>,
     @InjectRepository(Category)
     private categoryRepository: Repository<Category>,
-    @InjectRepository(GameCategoryEntity)
-    private gameCategoryRepository: Repository<GameCategoryEntity>,
+    // @InjectRepository(GameCategoryEntity)
+    // private gameCategoryRepository: Repository<GameCategoryEntity>,
     @InjectRepository(TournamentGame)
     private tournamentGameRepository: Repository<TournamentGame>,
     @InjectRepository(ProviderEntity)
@@ -203,39 +203,70 @@ export class GamesService {
   }
   // Make sure to import the interface
 
-  async fetchGames({
-    categoryId,
-    providerId,
-  }: FetchGamesRequest): Promise<Games> {
-    // Build the base query to filter games by status
-    const query = this.gameRepository
-      .createQueryBuilder('games')
-      .where('games.status = :status', { status: 1 });
+  // async fetchGames({
+  //   categoryId,
+  //   providerId,
+  // }: FetchGamesRequest): Promise<Games> {
+  //   // Build the base query to filter games by status
+  //   const query = this.gameRepository
+  //     .createQueryBuilder('games')
+  //     .where('games.status = :status', { status: 1 });
 
-    if (categoryId && categoryId !== 1) {
-      query
-        .leftJoin(GameCategoryEntity, 'gamecat', 'gamecat.game_id = games.id')
-        .andWhere('gamecat.category_id = :category', { category: categoryId });
+  //   if (categoryId && categoryId !== 1) {
+  //     query
+  //       .leftJoin(GameCategoryEntity, 'gamecat', 'gamecat.game_id = games.id')
+  //       .andWhere('gamecat.category_id = :category', { category: categoryId });
+  //   }
+
+  //   if (providerId) {
+  //     query.andWhere('games.providerId = :providerId', { providerId });
+  //   }
+
+  //   // Fetch the games based on the query
+  //   const games = await query.getMany();
+
+  //   // Convert TypeORM entities to proto-generated types
+  //   const protoResponse: Game[] = games.map((entity: GameEntity) =>
+  //     this.entityToProtoService.entityToProto(entity),
+  //   );
+
+  //   // Return the games and totalGames, ensuring that it matches the Games interface
+  //   const final: Games = {
+  //     games: protoResponse,
+  //   };
+
+  //   return final;
+  // }
+
+  async fetchGames(payload?: GetGamesRequest) {
+    console.log("hereeee")
+    const filters: any = {};
+  
+    if (payload?.providerId) {
+      filters.provider = { id: payload.providerId };
     }
+  
+    const gameData = await this.gameRepository.find({
+      where: filters,
+      relations: ['provider', 'categories'],
+    });
 
-    if (providerId) {
-      query.andWhere('games.providerId = :providerId', { providerId });
+    console.log("gameData", gameData);
+  
+    // If filtering by categoryId, further filter the retrieved games
+    let filteredGames = gameData;
+    if (payload?.categoryId) {
+      filteredGames = gameData.filter(game =>
+        game.categories.some(category => category.id === payload.categoryId)
+      );
     }
-
-    // Fetch the games based on the query
-    const games = await query.getMany();
-
-    // Convert TypeORM entities to proto-generated types
-    const protoResponse: Game[] = games.map((entity: GameEntity) =>
-      this.entityToProtoService.entityToProto(entity),
-    );
-
-    // Return the games and totalGames, ensuring that it matches the Games interface
-    const final: Games = {
-      games: protoResponse,
+  
+    return {
+      status: 200,
+      success: true,
+      message: 'Games fetched successfully',
+      data: filteredGames
     };
-
-    return final;
   }
 
   async fetchGamesByName(searchGamesDto: FetchGamesRequest): Promise<Games> {
@@ -309,13 +340,14 @@ export class GamesService {
     const game = await this.gameRepository.findOne({
       where: { id: dto.gameId },
     });
+
     if (!game) {
       throw new NotFoundException('Game not found');
     }
 
 
-    const categories = await this.gameCategoryRepository.find({
-      where: { category: In(dto.categories) },
+    const categories = await this.categoryRepository.find({
+      where: { id: In(dto.categories) },
     });
 
 

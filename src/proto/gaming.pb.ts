@@ -577,7 +577,7 @@ export interface GamingServiceClient {
 
   findAllGames(request: Empty): Observable<Games>;
 
-  fetchGames(request: FetchGamesRequest): Observable<Games>;
+  fetchGames(request: FetchGamesRequest): Observable<CommonResponseArray>;
 
   fetchGamesByName(request: FetchGamesRequest): Observable<Games>;
 
@@ -679,7 +679,9 @@ export interface GamingServiceController {
 
   findAllGames(request: Empty): Promise<Games> | Observable<Games> | Games;
 
-  fetchGames(request: FetchGamesRequest): Promise<Games> | Observable<Games> | Games;
+  fetchGames(
+    request: FetchGamesRequest,
+  ): Promise<CommonResponseArray> | Observable<CommonResponseArray> | CommonResponseArray;
 
   fetchGamesByName(request: FetchGamesRequest): Promise<Games> | Observable<Games> | Games;
 
