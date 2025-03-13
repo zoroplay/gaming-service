@@ -3,6 +3,8 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinTable,
+  ManyToMany,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
@@ -10,7 +12,8 @@ import {
 } from 'typeorm';
 import { Provider } from './provider.entity';
 import { TournamentGame } from './tournament-game.entity';
-import { GameCategoryEntity } from './game.category.entity';
+// import { GameCategoryEntity } from './game.category.entity';
+import { Category } from './category.entity';
 
 @Entity({ name: 'games' })
 export class Game {
@@ -54,12 +57,12 @@ export class Game {
   // @JoinTable()
   // categories: Category[];
 
-  // @ManyToMany(() => Category, { cascade: true })
-  // @JoinTable({ name: 'game_category' })
-  // categories: Category[]
+  @ManyToMany(() => Category, { cascade: true })
+  @JoinTable({ name: 'game_category' })
+  categories: Category[]
 
-  @OneToMany(() => GameCategoryEntity, (gameCategory) => gameCategory.game)
-  categories: GameCategoryEntity[];
+  // @OneToMany(() => GameCategoryEntity, (gameCategory) => gameCategory.game)
+  // categories: GameCategoryEntity[];
 
   @OneToMany(() => TournamentGame, (tournamentGame) => tournamentGame.game)
   tournamentGames: TournamentGame[];
