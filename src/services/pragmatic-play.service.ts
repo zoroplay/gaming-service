@@ -55,11 +55,11 @@ export class PragmaticService {
   async getCasinoGames(baseUrl, secureLogin, pragmaticKey): Promise<any> {
     try {
         // Generate hash
-        const hash = this.genHash({ secureLogin }, pragmaticKey);
+        const hash = this.genHash({ secureLogin  }, pragmaticKey);
 
         // Make API request
         const { data } = await this.httpService
-            .post(`${baseUrl}/getCasinoGames?secureLogin=${secureLogin}&hash=${hash}`)
+            .post(`${baseUrl}/getCasinoGames?secureLogin=${secureLogin}&hash=${hash}&options=GetFeatures,GetFrbDetails,Get-Lines,GetDataTypes,GetFcDetails`)
             .toPromise();
 
         console.log('data', data);
@@ -257,7 +257,7 @@ export class PragmaticService {
         },
     });
 
-    console.log("gameKeys", gameKeys);
+    console.log("gameKeys", gameKeys, payload);
 
     const baseUrl = gameKeys.find(key => key.option === 'PRAGMATIC_BASEURL')?.value;
     const secureLogin = gameKeys.find(key => key.option === 'PRAGMATIC_SECURE_LOGIN')?.value;
@@ -1689,6 +1689,8 @@ export class PragmaticService {
     // Verify body is a valid URLSearchParams object
     if (body instanceof URLSearchParams) {
         const parsedBody = Object.fromEntries(body.entries());
+
+        console.log("parsedBody", parsedBody);
 
         if (this.hashCheck(parsedBody, pragmaticKey)) {
             response = {
