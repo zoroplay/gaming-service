@@ -273,24 +273,22 @@ export class PragmaticService {
       }
   
       let provider = await this.providerRepository.findOne({
-        where: { name: payload.provider },
+        where: { name: 'Pragmatic Play' },
       });
-
+  
+      console.log("provider", provider);
       console.log("provider", provider);
 
-      
-
-    
   
-      if (!provider) {
-        const newProvider: ProviderEntity = new ProviderEntity();
-        newProvider.name = 'Pragmatic Play';
-        newProvider.slug = 'pragmatic-play';
-        newProvider.description = 'Pragmatic Play';
-        newProvider.imagePath =
-          'https://images.pexels.com/photos/414612/pexels-photo-414612.jpeg';
-        provider = await this.providerRepository.save(newProvider);
-      }
+      // if (!provider) {
+      //   const newProvider: ProviderEntity = new ProviderEntity();
+      //   newProvider.name = 'Pragmatic Play';
+      //   newProvider.slug = 'pragmatic-play';
+      //   newProvider.description = 'Pragmatic Play';
+      //   newProvider.imagePath =
+      //     'https://images.pexels.com/photos/414612/pexels-photo-414612.jpeg';
+      //   provider = await this.providerRepository.save(newProvider);
+      // }
 
       const savedGames = await Promise.all(
         Object.keys(games).map(async (key) => {
