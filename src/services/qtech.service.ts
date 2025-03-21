@@ -508,7 +508,7 @@ export class QtechService {
         stake: debitData.amount,
         gameName: game.title,
         gameNumber: gameId,
-        source: game.provider.slug,
+        source: 'qtech-games', //game.provider.slug,
         cashierTransactionId: debitData.clientRoundId,
         winnings: 0,
         username: auth.data.playerNickname,
@@ -516,7 +516,6 @@ export class QtechService {
       };
 
       const place_bet = await this.placeBet(placeBetPayload);
-      // console.log(place_bet)
       if (!place_bet.success) {
         const response = this.createErrorResponse('REQUEST_DECLINED', HttpStatus.BAD_REQUEST, 'Unable to place bet.');
 
@@ -530,15 +529,13 @@ export class QtechService {
         userId: parseInt(playerId),
         clientId,
         amount: debitData.amount.toFixed(2),
-        source: game.provider.slug,
+        source: 'qtech-games',
         description: `Casino Bet: (${gameName}:${debitData.gameId})`,
         username: auth.data.playerNickname,
         wallet: balanceType,
         subject: 'Bet Deposit (Casino)',
-        channel: gameName,
+        channel: debitData.device,
       });
-
-      console.log(debit)
 
       if (!debit.success) {
         const response = this.createErrorResponse('REQUEST_DECLINED', HttpStatus.BAD_REQUEST, 'Unable to place bet. Something went wrong');
@@ -646,7 +643,7 @@ export class QtechService {
         userId: playerId,
         clientId,
         amount: creditData.amount.toFixed(2),
-        source: game.provider.slug,
+        source: 'qtech-games',
         description: `Casino Bet: (${game.title}:${gameId})`,
         username: player.data.username,
         wallet: balanceType,
@@ -778,8 +775,8 @@ export class QtechService {
         description: `${data.rewardTitle} (${data.rewardType})`,
         username: player.data.username,
         wallet: 'main',
-        subject: 'Casino Reward',
-        channel: 'system',
+        subject: 'Casino Reward (QTech)',
+        channel: data.device,
       });
 
 
