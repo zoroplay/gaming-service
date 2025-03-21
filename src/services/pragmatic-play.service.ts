@@ -55,11 +55,12 @@ export class PragmaticService {
   async getCasinoGames(baseUrl, secureLogin, pragmaticKey): Promise<any> {
     try {
         // Generate hash
-        const hash = this.genHash({ secureLogin  }, pragmaticKey);
+        const options = `GetFeatures,GetFrbDetails,GetLines,GetDataTypes,GetFcDetails`;
+        const hash = this.genHash({ secureLogin, options}, pragmaticKey);
 
         // Make API request
         const { data } = await this.httpService
-            .post(`${baseUrl}/getCasinoGames?secureLogin=${secureLogin}&hash=${hash}&options=GetFeatures,GetFrbDetails,Get-Lines,GetDataTypes,GetFcDetails`)
+            .post(`${baseUrl}/getCasinoGames?secureLogin=${secureLogin}&hash=${hash}&options=${options}`)
             .toPromise();
 
         console.log('data', data);

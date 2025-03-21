@@ -481,6 +481,7 @@ export class GamesService {
   }
 
   async update(updateGameDto: UpdateGameDto): Promise<GameEntity> {
+    console.log("here", updateGameDto);
     const provider: ProviderEntity = await this.providerRepository.findOneBy({
       id: updateGameDto.providerId,
     });
@@ -495,15 +496,16 @@ export class GamesService {
     if (!updateGame) {
       throw new NotFoundException(`Game ${updateGameDto.id} not found`);
     }
-    updateGame.gameId = updateGameDto.gameId;
-    updateGame.title = updateGameDto.title;
-    updateGame.description = updateGameDto.description;
-    updateGame.url = updateGameDto.url;
-    updateGame.imagePath = updateGameDto.imagePath;
-    updateGame.bannerPath = updateGameDto.bannerPath;
-    updateGame.status = updateGameDto.status;
-    updateGame.type = updateGameDto.type;
+    updateGame.gameId = updateGameDto.gameId  || updateGame.gameId;
+    updateGame.title = updateGameDto.title || updateGame.title;
+    updateGame.description = updateGameDto.description || updateGame.description;
+    updateGame.url = updateGameDto.url || updateGame.url;
+    updateGame.imagePath = updateGameDto.imagePath || updateGame.imagePath;
+    updateGame.bannerPath = updateGameDto.bannerPath || updateGame.bannerPath;
+    updateGame.status = updateGameDto.status || updateGame.status;
+    updateGame.type = updateGameDto.type || updateGame.type;
     updateGame.provider = provider;
+    updateGame.priority = updateGameDto.priority || updateGame.priority;
     const savedGame = await this.gameRepository.save(updateGame);
     return savedGame;
   }
