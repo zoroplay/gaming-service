@@ -502,7 +502,7 @@ export class GamesService {
     updateGame.url = updateGameDto.url || updateGame.url;
     updateGame.imagePath = updateGameDto.imagePath || updateGame.imagePath;
     updateGame.bannerPath = updateGameDto.bannerPath || updateGame.bannerPath;
-    updateGame.status = updateGameDto.status || updateGame.status;
+    updateGame.status = updateGameDto.status !== undefined ? updateGameDto.status : updateGame.status;
     updateGame.type = updateGameDto.type || updateGame.type;
     updateGame.provider = provider;
     updateGame.priority = updateGameDto.priority || updateGame.priority;
