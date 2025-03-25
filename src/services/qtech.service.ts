@@ -77,9 +77,10 @@ export class QtechService {
 
   async getAccessToken(): Promise<any> {
     try {
+      const url = `${this.QTECH_BASEURL}/v1/auth/token?grant_type=password&response_type=token&username=${this.QTECH_USERNAME}&password=${this.QTECH_PASSWORD}`;
       const { data } = await this.httpService
         .post(
-          `${this.QTECH_BASEURL}/v1/auth/token?grant_type=password&response_type=token&username=${this.QTECH_USERNAME}&password=${this.QTECH_PASSWORD}`,
+          `${url}`,
         )
         .toPromise();
       console.log('data', data);
@@ -328,10 +329,10 @@ export class QtechService {
       const requestUrl = `${this.QTECH_BASEURL}/v1/games/${gameExist.gameId}/launch-url`;
 
       console.log('requestUrl:', requestUrl);
-
+      const token = await this.getAccessToken();
       // Set up headers
       const headers = {
-        Authorization: `Bearer ${await this.getAccessToken()}`,
+        Authorization: `Bearer ${token}`,
       };
 
       // Prepare the payload
