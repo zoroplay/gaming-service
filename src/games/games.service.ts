@@ -238,21 +238,49 @@ export class GamesService {
   //   return final;
   // }
 
-  async fetchGames(payload?: GetGamesRequest) {
-    console.log("hereeee")
-    const filters: any = {};
+  // async fetchGames(payload?: GetGamesRequest) {
+  //   console.log("hereeee")
+  //   const filters: any = {};
   
+  //   if (payload?.providerId) {
+  //     filters.provider = { id: payload.providerId };
+  //   }
+  
+  //   const gameData = await this.gameRepository.find({
+  //     where: filters,
+  //     relations: ['provider', 'categories'],
+  //   });
+
+  //   console.log("gameData", gameData);
+  
+  //   // If filtering by categoryId, further filter the retrieved games
+  //   let filteredGames = gameData;
+  //   if (payload?.categoryId) {
+  //     filteredGames = gameData.filter(game =>
+  //       game.categories.some(category => category.id === payload.categoryId)
+  //     );
+  //   }
+  
+  //   return {
+  //     status: 200,
+  //     success: true,
+  //     message: 'Games fetched successfully',
+  //     data: filteredGames
+  //   };
+  // }
+
+  async fetchGames(payload?: GetGamesRequest) {
+    const filters: any = { status: 1 }; // Ensure only active games are fetched
+
     if (payload?.providerId) {
       filters.provider = { id: payload.providerId };
     }
-  
+
     const gameData = await this.gameRepository.find({
       where: filters,
       relations: ['provider', 'categories'],
     });
 
-    console.log("gameData", gameData);
-  
     // If filtering by categoryId, further filter the retrieved games
     let filteredGames = gameData;
     if (payload?.categoryId) {
@@ -260,14 +288,15 @@ export class GamesService {
         game.categories.some(category => category.id === payload.categoryId)
       );
     }
-  
+
     return {
       status: 200,
       success: true,
       message: 'Games fetched successfully',
       data: filteredGames
     };
-  }
+}
+
 
   async fetchGamesByName(searchGamesDto: FetchGamesRequest): Promise<Games> {
     const { gameName } = searchGamesDto;
@@ -1030,8 +1059,6 @@ export class GamesService {
       data: filteredGames
     };
   }
-  
-  
 
   async createTournament(
     createTournamentDto: CreateTournamentDto,
