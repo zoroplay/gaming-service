@@ -238,21 +238,49 @@ export class GamesService {
   //   return final;
   // }
 
-  async fetchGames(payload?: GetGamesRequest) {
-    console.log("hereeee")
-    const filters: any = {};
+  // async fetchGames(payload?: GetGamesRequest) {
+  //   console.log("hereeee")
+  //   const filters: any = {};
   
+  //   if (payload?.providerId) {
+  //     filters.provider = { id: payload.providerId };
+  //   }
+  
+  //   const gameData = await this.gameRepository.find({
+  //     where: filters,
+  //     relations: ['provider', 'categories'],
+  //   });
+
+  //   console.log("gameData", gameData);
+  
+  //   // If filtering by categoryId, further filter the retrieved games
+  //   let filteredGames = gameData;
+  //   if (payload?.categoryId) {
+  //     filteredGames = gameData.filter(game =>
+  //       game.categories.some(category => category.id === payload.categoryId)
+  //     );
+  //   }
+  
+  //   return {
+  //     status: 200,
+  //     success: true,
+  //     message: 'Games fetched successfully',
+  //     data: filteredGames
+  //   };
+  // }
+
+  async fetchGames(payload?: GetGamesRequest) {
+    const filters: any = { status: 1 }; // Ensure only active games are fetched
+
     if (payload?.providerId) {
       filters.provider = { id: payload.providerId };
     }
-  
+
     const gameData = await this.gameRepository.find({
       where: filters,
       relations: ['provider', 'categories'],
     });
 
-    console.log("gameData", gameData);
-  
     // If filtering by categoryId, further filter the retrieved games
     let filteredGames = gameData;
     if (payload?.categoryId) {
@@ -260,14 +288,15 @@ export class GamesService {
         game.categories.some(category => category.id === payload.categoryId)
       );
     }
-  
+
     return {
       status: 200,
       success: true,
       message: 'Games fetched successfully',
       data: filteredGames
     };
-  }
+}
+
 
   async fetchGamesByName(searchGamesDto: FetchGamesRequest): Promise<Games> {
     const { gameName } = searchGamesDto;
@@ -481,6 +510,7 @@ export class GamesService {
   }
 
   async update(updateGameDto: UpdateGameDto): Promise<GameEntity> {
+    console.log("here", updateGameDto);
     const provider: ProviderEntity = await this.providerRepository.findOneBy({
       id: updateGameDto.providerId,
     });
@@ -495,15 +525,16 @@ export class GamesService {
     if (!updateGame) {
       throw new NotFoundException(`Game ${updateGameDto.id} not found`);
     }
-    updateGame.gameId = updateGameDto.gameId;
-    updateGame.title = updateGameDto.title;
-    updateGame.description = updateGameDto.description;
-    updateGame.url = updateGameDto.url;
-    updateGame.imagePath = updateGameDto.imagePath;
-    updateGame.bannerPath = updateGameDto.bannerPath;
-    updateGame.status = updateGameDto.status;
-    updateGame.type = updateGameDto.type;
+    updateGame.gameId = updateGameDto.gameId  || updateGame.gameId;
+    updateGame.title = updateGameDto.title || updateGame.title;
+    updateGame.description = updateGameDto.description || updateGame.description;
+    updateGame.url = updateGameDto.url || updateGame.url;
+    updateGame.imagePath = updateGameDto.imagePath || updateGame.imagePath;
+    updateGame.bannerPath = updateGameDto.bannerPath || updateGame.bannerPath;
+    updateGame.status = updateGameDto.status !== undefined ? updateGameDto.status : updateGame.status;
+    updateGame.type = updateGameDto.type || updateGame.type;
     updateGame.provider = provider;
+    updateGame.priority = updateGameDto.priority || updateGame.priority;
     const savedGame = await this.gameRepository.save(updateGame);
     return savedGame;
   }
@@ -1028,8 +1059,6 @@ export class GamesService {
       data: filteredGames
     };
   }
-  
-  
 
   async createTournament(
     createTournamentDto: CreateTournamentDto,

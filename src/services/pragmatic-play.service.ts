@@ -55,11 +55,12 @@ export class PragmaticService {
   async getCasinoGames(baseUrl, secureLogin, pragmaticKey): Promise<any> {
     try {
         // Generate hash
-        const hash = this.genHash({ secureLogin }, pragmaticKey);
+        const options = `GetFeatures,GetFrbDetails,GetLines,GetDataTypes,GetFcDetails`;
+        const hash = this.genHash({ secureLogin, options}, pragmaticKey);
 
         // Make API request
         const { data } = await this.httpService
-            .post(`${baseUrl}/getCasinoGames?secureLogin=${secureLogin}&hash=${hash}`)
+            .post(`${baseUrl}/getCasinoGames?secureLogin=${secureLogin}&hash=${hash}&options=${options}`)
             .toPromise();
 
         console.log('data', data);
@@ -257,7 +258,7 @@ export class PragmaticService {
         },
     });
 
-    console.log("gameKeys", gameKeys);
+    console.log("gameKeys", gameKeys, payload);
 
     const baseUrl = gameKeys.find(key => key.option === 'PRAGMATIC_BASEURL')?.value;
     const secureLogin = gameKeys.find(key => key.option === 'PRAGMATIC_SECURE_LOGIN')?.value;
@@ -272,14 +273,11 @@ export class PragmaticService {
       }
   
       let provider = await this.providerRepository.findOne({
-        where: { name: payload.provider },
+        where: { slug: 'pragmatic-play' },
       });
-
+  
       console.log("provider", provider);
 
-      
-
-    
   
       if (!provider) {
         const newProvider: ProviderEntity = new ProviderEntity();
@@ -1581,7 +1579,7 @@ export class PragmaticService {
 
   async handleCallback(data: CallbackGameDto) {
     // console.log("_data", data);
-
+    
     const callback = await this.saveCallbackLog(data);
     console.log("callback-4", callback);
     let response;
@@ -1676,12 +1674,12 @@ export class PragmaticService {
           client_id: data.clientId,
           provider: 'pragmatic-play',
       },
-  });
+    });
 
-  console.log("gameKeys", gameKeys);
+    console.log("gameKeys", gameKeys);
 
 
-  const pragmaticKey = gameKeys.find(key => key.option === 'PRAGMATIC_KEY')?.value;
+    const pragmaticKey = gameKeys.find(key => key.option === 'PRAGMATIC_KEY')?.value;
 
 
     let token = null;
@@ -1689,6 +1687,8 @@ export class PragmaticService {
     // Verify body is a valid URLSearchParams object
     if (body instanceof URLSearchParams) {
         const parsedBody = Object.fromEntries(body.entries());
+
+        console.log("parsedBody", parsedBody);
 
         if (this.hashCheck(parsedBody, pragmaticKey)) {
             response = {
