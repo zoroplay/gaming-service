@@ -78,6 +78,7 @@ export class QtechService {
   async getAccessToken(): Promise<any> {
     try {
       const url = `${this.QTECH_BASEURL}/v1/auth/token?grant_type=password&response_type=token&username=${this.QTECH_USERNAME}&password=${this.QTECH_PASSWORD}`;
+      console.log(url)
       const { data } = await this.httpService
         .post(
           `${url}`,
