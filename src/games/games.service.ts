@@ -1059,8 +1059,6 @@ export class GamesService {
       data: filteredGames
     };
   }
-  
-  
 
   async createTournament(
     createTournamentDto: CreateTournamentDto,
