@@ -1579,7 +1579,7 @@ export class PragmaticService {
 
   async handleCallback(data: CallbackGameDto) {
     // console.log("_data", data);
-
+    
     const callback = await this.saveCallbackLog(data);
     console.log("callback-4", callback);
     let response;
@@ -1674,12 +1674,12 @@ export class PragmaticService {
           client_id: data.clientId,
           provider: 'pragmatic-play',
       },
-  });
+    });
 
-  console.log("gameKeys", gameKeys);
+    console.log("gameKeys", gameKeys);
 
 
-  const pragmaticKey = gameKeys.find(key => key.option === 'PRAGMATIC_KEY')?.value;
+    const pragmaticKey = gameKeys.find(key => key.option === 'PRAGMATIC_KEY')?.value;
 
 
     let token = null;

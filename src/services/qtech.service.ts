@@ -26,15 +26,15 @@ import {
   RollbackCasinoBetRequest,
 } from 'src/proto/betting.pb';
 import { firstValueFrom } from 'rxjs';
+import { GameKey } from 'src/entities/game-key.entity';
 
 @Injectable()
 export class QtechService {
-  private readonly QTECH_BASEURL: string;
-  private readonly QTECH_PASSWORD: string;
-  private readonly QTECH_USERNAME: string;
-  private readonly QTECH_IMAGE_URL: string;
-  private readonly QTECH_PASS_KEY: string;
-  private readonly OPERATOR_URL: string;
+  private QTECH_BASEURL: string;
+  private QTECH_PASSWORD: string;
+  private QTECH_USERNAME: string;
+  private QTECH_IMAGE_URL: string;
+  private CLIENT_ID: number;
 
   constructor(
     @InjectRepository(ProviderEntity)
@@ -45,22 +45,34 @@ export class QtechService {
     private gameRepository: Repository<GameEntity>,
     @InjectRepository(GameSession)
     private gameSessionRepo: Repository<GameSession>,
-    @InjectRepository(CasinoGame)
-    private casinoGameRepository: Repository<CasinoGame>,
+    @InjectRepository(GameKey)
+    private gameKeyRepository: Repository<GameKey>,
     private readonly betService: BetService,
     private readonly walletService: WalletService,
     private readonly identityService: IdentityService,
     private readonly httpService: HttpService,
-    private readonly configService: ConfigService, // For accessing environment variables
   ) {
-    this.QTECH_BASEURL = this.configService.get<string>('QTECH_BASEURL');
-    this.QTECH_PASSWORD = this.configService.get<string>('QTECH_PASSWORD');
-    this.QTECH_USERNAME = this.configService.get<string>('QTECH_USERNAME');
-    this.QTECH_IMAGE_URL = this.configService.get<string>('QTECH_IMAGE_URL');
-    this.QTECH_PASS_KEY = this.configService.get<string>('QTECH_PASS_KEY');
-    this.OPERATOR_URL = this.configService.get<string>('OPERATOR_URL');
+    
   }
 
+  async setKeys (clientId) {
+    this.CLIENT_ID = clientId;
+
+    const gameKeys = await this.gameKeyRepository.find({
+      where: {
+          client_id: clientId,
+          provider: 'qtech-games',
+      },
+    });
+
+    // console.log("gameKeys", gameKeys);
+
+    this.QTECH_BASEURL = gameKeys.find(key => key.option === 'QTECH_BASEURL')?.value;
+    this.QTECH_PASSWORD = gameKeys.find(key => key.option === 'QTECH_PASSWORD')?.value;
+    this.QTECH_USERNAME = gameKeys.find(key => key.option === 'QTECH_USERNAME')?.value;
+    this.QTECH_IMAGE_URL = gameKeys.find(key => key.option === 'QTECH_IMAGE_URL')?.value;
+
+  }
   // Get Casino Games
 
   async getAccessToken(): Promise<any> {
@@ -244,6 +256,8 @@ export class QtechService {
     try {
       const { gameId, userId, authCode, balanceType, isMobile, homeUrl } =
         payload;
+      
+      await this.setKeys(payload.clientId);
 
       // Fetch game details from the repository
       const gameExist = await this.gameRepository.findOne({
@@ -837,6 +851,7 @@ export class QtechService {
     // console.log('_data', _data);
     //const balanceType = 'main';
     // console.log('using qtech-games');
+    await this.setKeys(_data.clientId);
 
     const callback = await this.saveCallbackLog(_data);
     
