@@ -873,6 +873,8 @@ export class GamesService {
             provider: 'smart-soft',
           },
         });
+
+        console.log('smart-soft callback', _data);
         
         return await this.smartSoftService.handleCallback(
           _data,
