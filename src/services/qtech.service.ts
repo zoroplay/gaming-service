@@ -77,17 +77,15 @@ export class QtechService {
 
   async getAccessToken(): Promise<any> {
     try {
-      const url = `${this.QTECH_BASEURL}/v1/auth/token?grant_type=password&response_type=token&username=${this.QTECH_USERNAME}&password=${this.QTECH_PASSWORD}`;
-      console.log(url)
-      const res =  await firstValueFrom(this.httpService
-        .get(
-          `${url}`,
-        ))
-      console.log('response data', res.data);
+      const { data } = await this.httpService
+        .post(
+          `${this.QTECH_BASEURL}/v1/auth/token?grant_type=password&response_type=token&username=${this.QTECH_USERNAME}&password=${this.QTECH_PASSWORD}`,
+        )
+        .toPromise();
+      console.log('data', data);
 
-      return res.data.access_token;
+      return data.access_token;
     } catch (e) {
-      console.log('error getting token', e.message);
       return new RpcException(e.messag || 'Something went wrong');
     }
   }
@@ -330,11 +328,10 @@ export class QtechService {
       const requestUrl = `${this.QTECH_BASEURL}/v1/games/${gameExist.gameId}/launch-url`;
 
       console.log('requestUrl:', requestUrl);
-      const token = await this.getAccessToken();
-      console.log('recevieved token', token);
+
       // Set up headers
       const headers = {
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${await this.getAccessToken()}`,
       };
 
       // Prepare the payload
