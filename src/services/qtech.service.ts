@@ -34,6 +34,7 @@ export class QtechService {
   private QTECH_PASSWORD: string;
   private QTECH_USERNAME: string;
   private QTECH_IMAGE_URL: string;
+  private QTECH_PASS_KEY: string;
   private CLIENT_ID: number;
 
   constructor(
@@ -71,6 +72,7 @@ export class QtechService {
     this.QTECH_PASSWORD = gameKeys.find(key => key.option === 'QTECH_PASSWORD')?.value;
     this.QTECH_USERNAME = gameKeys.find(key => key.option === 'QTECH_USERNAME')?.value;
     this.QTECH_IMAGE_URL = gameKeys.find(key => key.option === 'QTECH_IMAGE_URL')?.value;
+    this.QTECH_PASS_KEY = gameKeys.find(key => key.option === 'QTECH_PASS_KEY')?.value;
 
   }
   // Get Casino Games
@@ -848,15 +850,15 @@ export class QtechService {
   }
 
   async handlCallbacks(_data: QtechCallbackRequest): Promise<any> {
-    // console.log('_data', _data);
     //const balanceType = 'main';
-    // console.log('using qtech-games');
+    console.log('using qtech-games', _data.action);
+    console.log('_data', _data);
     await this.setKeys(_data.clientId);
 
     const callback = await this.saveCallbackLog(_data);
     
     // verify pass key, if not valid, return error
-    if (_data.passkey !== process.env.QTECH_PASS_KEY)
+    if (_data.passkey !== this.QTECH_PASS_KEY)
       return this.createErrorResponse('LOGIN_FAILED', HttpStatus.UNAUTHORIZED, 'The given pass-key is incorrect.');
 
     // console.log('callback-4', callback);
