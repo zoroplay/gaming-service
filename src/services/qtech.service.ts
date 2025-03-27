@@ -88,6 +88,7 @@ export class QtechService {
 
       return data.access_token;
     } catch (e) {
+      console.log('error getting token', e.message);
       return new RpcException(e.messag || 'Something went wrong');
     }
   }
@@ -331,6 +332,7 @@ export class QtechService {
 
       console.log('requestUrl:', requestUrl);
       const token = await this.getAccessToken();
+      console.log('recevieved token', token);
       // Set up headers
       const headers = {
         Authorization: `Bearer ${token}`,
