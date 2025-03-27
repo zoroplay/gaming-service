@@ -79,14 +79,13 @@ export class QtechService {
     try {
       const url = `${this.QTECH_BASEURL}/v1/auth/token?grant_type=password&response_type=token&username=${this.QTECH_USERNAME}&password=${this.QTECH_PASSWORD}`;
       console.log(url)
-      const { data } = await this.httpService
-        .post(
+      const res =  await firstValueFrom(this.httpService
+        .get(
           `${url}`,
-        )
-        .toPromise();
-      console.log('data', data);
+        ))
+      console.log('response data', res.data);
 
-      return data.access_token;
+      return res.data.access_token;
     } catch (e) {
       console.log('error getting token', e.message);
       return new RpcException(e.messag || 'Something went wrong');
