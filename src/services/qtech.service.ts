@@ -855,14 +855,13 @@ export class QtechService {
     console.log('_data', _data);
     await this.setKeys(_data.clientId);
 
-    if (_data.action === 'DEBIT' || _data.action === 'ROLLBACK') {
-      const data = JSON.parse(_data.body);
-      
-      const isExist = await this.callbackLogRepository.findOne({where: {transactionId: data.txnId}});
+    const data = JSON.parse(_data.body);
+    
+    const isExist = await this.callbackLogRepository.findOne({where: {transactionId: data.txnId}});
 
-      if (isExist) 
-        return JSON.parse(isExist.response);
-    }
+    if (isExist && isExist.status) 
+      return JSON.parse(isExist.response);
+    
     const callback = await this.saveCallbackLog(_data);
     
     // verify pass key, if not valid, return error
