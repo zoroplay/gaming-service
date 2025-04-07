@@ -849,12 +849,20 @@ export class QtechService {
     return await firstValueFrom(this.betService.cancelCasinoBet(data));
   }
 
-  async handlCallbacks(_data: QtechCallbackRequest): Promise<any> {
+  async handleCallbacks(_data: QtechCallbackRequest): Promise<any> {
     //const balanceType = 'main';
     console.log('using qtech-games', _data.action);
     console.log('_data', _data);
     await this.setKeys(_data.clientId);
 
+    if (_data.action === 'DEBIT') {
+      const data = JSON.parse(_data.body);
+      
+      const isExist = await this.callbackLogRepository.findOne({where: {transactionId: data.txnId}});
+
+      if (isExist) 
+        return JSON.parse(isExist.response);
+    }
     const callback = await this.saveCallbackLog(_data);
     
     // verify pass key, if not valid, return error
