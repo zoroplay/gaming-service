@@ -855,12 +855,14 @@ export class QtechService {
     console.log('_data', _data);
     await this.setKeys(_data.clientId);
 
-    const data = JSON.parse(_data.body);
-    
-    const isExist = await this.callbackLogRepository.findOne({where: {transactionId: data.txnId}});
+    if (_data.action !== 'verifySession' && _data.action !== 'getBalance') {
+      const data = JSON.parse(_data.body);
+      
+      const isExist = await this.callbackLogRepository.findOne({where: {transactionId: data.txnId}});
 
-    if (isExist && isExist.status) 
-      return JSON.parse(isExist.response);
+      if (isExist && isExist.status) 
+        return JSON.parse(isExist.response);
+    }  
     
     const callback = await this.saveCallbackLog(_data);
     
