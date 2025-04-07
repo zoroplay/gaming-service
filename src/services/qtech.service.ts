@@ -855,7 +855,7 @@ export class QtechService {
     console.log('_data', _data);
     await this.setKeys(_data.clientId);
 
-    if (_data.action === 'DEBIT') {
+    if (_data.action === 'DEBIT' || _data.action === 'ROLLBACK') {
       const data = JSON.parse(_data.body);
       
       const isExist = await this.callbackLogRepository.findOne({where: {transactionId: data.txnId}});
