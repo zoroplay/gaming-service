@@ -863,12 +863,12 @@ export class QtechService {
       if (isExist && isExist.status) 
         return JSON.parse(isExist.response);
     }  
-    
+
     const callback = await this.saveCallbackLog(_data);
     
     // verify pass key, if not valid, return error
     if (_data.passkey !== this.QTECH_PASS_KEY)
-      return this.createErrorResponse('LOGIN_FAILED', HttpStatus.UNAUTHORIZED, 'The given pass-key is incorrect.');
+      return this.createErrorResponse('VALIDATION_ERROR', HttpStatus.UNPROCESSABLE_ENTITY, 'The given pass-key is incorrect.');
 
     // console.log('callback-4', callback);
 
