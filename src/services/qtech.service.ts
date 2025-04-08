@@ -368,8 +368,17 @@ export class QtechService {
   }
 
   async verifySession(payload: QtechCallbackRequest, callback: CallbackLog): Promise<any> {
-    const { walletSessionId, clientId } = payload;
+    const { walletSessionId, clientId, playerId } = payload;
     try {
+      const id = parseInt(playerId);
+      if (isNaN(id)) {
+        const response = this.createErrorResponse('ACCOUNT_BLOCKED', HttpStatus.FORBIDDEN, 'Invalid account');
+        // update callback logs, and gaming session
+        await this.updateCallbackGameSession(callback, response, {session_id: walletSessionId}, {callback_id: callback.id})
+
+        return response;
+      }
+
       // Validate token
       const auth = await this.identityService.validateToken({
         clientId,
@@ -466,6 +475,14 @@ export class QtechService {
     const debitData: any = JSON.parse(body);
     // console.log('Debit request', debitData)
     try {
+      const id = parseInt(playerId);
+      if (isNaN(id)) {
+        const response = this.createErrorResponse('ACCOUNT_BLOCKED', HttpStatus.FORBIDDEN, 'Invalid account');
+        // update callback logs, and gaming session
+        await this.updateCallbackGameSession(callback, response, {session_id: walletSessionId}, {callback_id: callback.id})
+
+        return response;
+      }
       let game = null;
       let amount = debitData.amount;
       let balanceType = 'main';
@@ -585,6 +602,14 @@ export class QtechService {
     const { walletSessionId, gameId, clientId, body, playerId } = payload;
 
     try {
+      const id = parseInt(playerId);
+      if (isNaN(id)) {
+        const response = this.createErrorResponse('ACCOUNT_BLOCKED', HttpStatus.FORBIDDEN, 'Invalid account');
+        // update callback logs, and gaming session
+        await this.updateCallbackGameSession(callback, response, {session_id: walletSessionId}, {callback_id: callback.id})
+
+        return response;
+      }
       const creditData: any = JSON.parse(body);
 
       // Validate gameId
@@ -777,6 +802,15 @@ export class QtechService {
     
     try {
 
+      const id = parseInt(playerId);
+      if (!data.rewardType) {
+        const response = this.createErrorResponse('REQUEST_DECLINED', HttpStatus.BAD_REQUEST, 'A required field is missing');
+        // update callback logs, and gaming session
+        await this.updateCallbackGameSession(callback, response, {session_id: walletSessionId}, {callback_id: callback.id})
+
+        return response;
+      }
+
       // get player details
       const player = await this.identityService.getDetails({
         clientId,
@@ -868,7 +902,7 @@ export class QtechService {
     
     // verify pass key, if not valid, return error
     if (_data.passkey !== this.QTECH_PASS_KEY)
-      return this.createErrorResponse('VALIDATION_ERROR', HttpStatus.UNPROCESSABLE_ENTITY, 'The given pass-key is incorrect.');
+      return this.createErrorResponse('LOGIN_FAILED', HttpStatus.UNAUTHORIZED, 'The given pass-key is incorrect.');
 
     // console.log('callback-4', callback);
 
