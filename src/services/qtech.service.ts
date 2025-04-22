@@ -420,7 +420,6 @@ export class QtechService {
     const { walletSessionId, clientId, playerId } = payload;
 
     try {
-
       // Validate token and get user balance
       const player = await this.identityService.getDetails({
         clientId,
@@ -515,6 +514,8 @@ export class QtechService {
         clientId,
         token: walletSessionId,
       });
+
+      console.log('Auth', auth)
 
       if (!auth || !auth.success) {
         const response = this.createErrorResponse('INVALID_TOKEN', HttpStatus.BAD_REQUEST, 'Missing, invalid or expired player (wallet) session token.');
@@ -885,8 +886,8 @@ export class QtechService {
 
   async handleCallbacks(_data: QtechCallbackRequest): Promise<any> {
     //const balanceType = 'main';
-    console.log('using qtech-games', _data.action);
-    console.log('_data', _data);
+    // console.log('using qtech-games', _data.action);
+    // console.log('_data', _data);
     await this.setKeys(_data.clientId);
 
     if (_data.action !== 'verifySession' && _data.action !== 'getBalance') {
