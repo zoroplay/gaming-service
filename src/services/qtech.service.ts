@@ -34,6 +34,7 @@ export class QtechService {
   private QTECH_PASSWORD: string;
   private QTECH_USERNAME: string;
   private QTECH_IMAGE_URL: string;
+  private QTECH_PASS_KEY: string;
   private CLIENT_ID: number;
 
   constructor(
@@ -71,6 +72,7 @@ export class QtechService {
     this.QTECH_PASSWORD = gameKeys.find(key => key.option === 'QTECH_PASSWORD')?.value;
     this.QTECH_USERNAME = gameKeys.find(key => key.option === 'QTECH_USERNAME')?.value;
     this.QTECH_IMAGE_URL = gameKeys.find(key => key.option === 'QTECH_IMAGE_URL')?.value;
+    this.QTECH_PASS_KEY = gameKeys.find(key => key.option === 'QTECH_PASS_KEY')?.value;
 
   }
   // Get Casino Games
@@ -366,8 +368,17 @@ export class QtechService {
   }
 
   async verifySession(payload: QtechCallbackRequest, callback: CallbackLog): Promise<any> {
-    const { walletSessionId, clientId } = payload;
+    const { walletSessionId, clientId, playerId } = payload;
     try {
+      const id = parseInt(playerId);
+      if (isNaN(id)) {
+        const response = this.createErrorResponse('ACCOUNT_BLOCKED', HttpStatus.FORBIDDEN, 'Invalid account');
+        // update callback logs, and gaming session
+        await this.updateCallbackGameSession(callback, response, {session_id: walletSessionId}, {callback_id: callback.id})
+
+        return response;
+      }
+
       // Validate token
       const auth = await this.identityService.validateToken({
         clientId,
@@ -409,7 +420,6 @@ export class QtechService {
     const { walletSessionId, clientId, playerId } = payload;
 
     try {
-
       // Validate token and get user balance
       const player = await this.identityService.getDetails({
         clientId,
@@ -464,6 +474,14 @@ export class QtechService {
     const debitData: any = JSON.parse(body);
     // console.log('Debit request', debitData)
     try {
+      const id = parseInt(playerId);
+      if (isNaN(id)) {
+        const response = this.createErrorResponse('ACCOUNT_BLOCKED', HttpStatus.FORBIDDEN, 'Invalid account');
+        // update callback logs, and gaming session
+        await this.updateCallbackGameSession(callback, response, {session_id: walletSessionId}, {callback_id: callback.id})
+
+        return response;
+      }
       let game = null;
       let amount = debitData.amount;
       let balanceType = 'main';
@@ -496,6 +514,8 @@ export class QtechService {
         clientId,
         token: walletSessionId,
       });
+
+      console.log('Auth', auth)
 
       if (!auth || !auth.success) {
         const response = this.createErrorResponse('INVALID_TOKEN', HttpStatus.BAD_REQUEST, 'Missing, invalid or expired player (wallet) session token.');
@@ -583,6 +603,14 @@ export class QtechService {
     const { walletSessionId, gameId, clientId, body, playerId } = payload;
 
     try {
+      const id = parseInt(playerId);
+      if (isNaN(id)) {
+        const response = this.createErrorResponse('ACCOUNT_BLOCKED', HttpStatus.FORBIDDEN, 'Invalid account');
+        // update callback logs, and gaming session
+        await this.updateCallbackGameSession(callback, response, {session_id: walletSessionId}, {callback_id: callback.id})
+
+        return response;
+      }
       const creditData: any = JSON.parse(body);
 
       // Validate gameId
@@ -775,6 +803,15 @@ export class QtechService {
     
     try {
 
+      const id = parseInt(playerId);
+      if (!data.rewardType) {
+        const response = this.createErrorResponse('REQUEST_DECLINED', HttpStatus.BAD_REQUEST, 'A required field is missing');
+        // update callback logs, and gaming session
+        await this.updateCallbackGameSession(callback, response, {session_id: walletSessionId}, {callback_id: callback.id})
+
+        return response;
+      }
+
       // get player details
       const player = await this.identityService.getDetails({
         clientId,
@@ -847,16 +884,25 @@ export class QtechService {
     return await firstValueFrom(this.betService.cancelCasinoBet(data));
   }
 
-  async handlCallbacks(_data: QtechCallbackRequest): Promise<any> {
-    // console.log('_data', _data);
+  async handleCallbacks(_data: QtechCallbackRequest): Promise<any> {
     //const balanceType = 'main';
-    // console.log('using qtech-games');
+    // console.log('using qtech-games', _data.action);
+    // console.log('_data', _data);
     await this.setKeys(_data.clientId);
+
+    if (_data.action !== 'verifySession' && _data.action !== 'getBalance') {
+      const data = JSON.parse(_data.body);
+      
+      const isExist = await this.callbackLogRepository.findOne({where: {transactionId: data.txnId}});
+
+      if (isExist && isExist.status) 
+        return JSON.parse(isExist.response);
+    }  
 
     const callback = await this.saveCallbackLog(_data);
     
     // verify pass key, if not valid, return error
-    if (_data.passkey !== process.env.QTECH_PASS_KEY)
+    if (_data.passkey !== this.QTECH_PASS_KEY)
       return this.createErrorResponse('LOGIN_FAILED', HttpStatus.UNAUTHORIZED, 'The given pass-key is incorrect.');
 
     // console.log('callback-4', callback);

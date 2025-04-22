@@ -320,7 +320,7 @@ async getGames(request?: GetGamesRequest) {
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'handleQtechCallback')
   async handleQtechCallback(payload: QtechCallbackRequest): Promise<any> {
-    return this.qtechService.handlCallbacks(payload);
+    return this.qtechService.handleCallbacks(payload);
   }
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'handleSmatVirtualCallback')
