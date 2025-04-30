@@ -57,6 +57,7 @@ import { SmatVirtualService } from 'src/services/smatvirtual.service';
 import { FindManyOptions, ILike, In, Repository } from 'typeorm';
 import { Game as GameEntity } from '../entities/game.entity';
 import { Provider as ProviderEntity } from '../entities/provider.entity';
+import { SpribeService } from 'src/services/spribe.service';
 // import { GameCategoryEntity } from 'src/entities/game.category.entity';
 
 @Injectable()
@@ -89,6 +90,7 @@ export class GamesService {
     private readonly qtechService: QtechService,
     private readonly firebaseService: FirebaseService,
     private readonly smatVirtualService: SmatVirtualService,
+    private readonly spribeService: SpribeService,
   ) {}
 
   async createProvider(
@@ -639,6 +641,10 @@ export class GamesService {
         console.log('qtech syncing here');
         return await this.qtechService.syncGames();
         break;
+      case 'spribe':
+          console.log('qtech syncing here');
+          return await this.spribeService.syncGames();
+          break;
       default:
         throw new NotFoundException(
           'Specified provider does not support sync feature',
