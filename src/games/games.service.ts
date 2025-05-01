@@ -620,25 +620,19 @@ export class GamesService {
     switch (syncGameDto.provider) {
       case 'shack-evolution':
         return await this.syncShackGames();
-        break;
       case 'c27':
         return await this.syncC2Games();
-        break;
       case 'tada':
         return await this.tadaGamingService.syncGames();
-        break;
       case 'evo-play':
         console.log('syncing here');
         return await this.evoPlayService.syncGames(syncGameDto);
-        break;
       case 'pragmatic-play':
         console.log('pragmatic syncing here');
         return await this.pragmaticPlayService.syncGames(syncGameDto);
-        break;
       case 'qtech-games':
         console.log('qtech syncing here');
-        return await this.qtechService.syncGames();
-        break;
+        return await this.qtechService.syncGames(syncGameDto.clientId);
       default:
         throw new NotFoundException(
           'Specified provider does not support sync feature',
