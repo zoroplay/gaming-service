@@ -469,28 +469,12 @@ export class PragmaticService {
     // console.log("Got to authenticate method");
     const isValid = await this.identityService.validateToken({ clientId, token });
 
-    //  const isValid = {
-    //     success: true,
-    //     status: HttpStatus.OK,
-    //     message: 'Success',
-    //     data: {
-    //       playerId: '1',
-    //       clientId: '4',
-    //       playerNickname: 'frank',
-    //       casinoBalance: 0.0,
-    //       sessionId: '123',
-    //       balance: 100.0,
-    //       virtualBalance: 0.0,
-    //       currency: 'NGN',
-    //       group: null,
-    //     }
-    //   }
     
     // console.log("isValid", isValid);
     let response: any;
     const dataObject = typeof isValid.data === 'string' ? JSON.parse(isValid.data) : isValid.data;
 
-    console.log("dataObject", dataObject);
+    // console.log("dataObject", dataObject);
 
     if(!isValid || !isValid.status) {
       response = {
@@ -514,7 +498,7 @@ export class PragmaticService {
         userId: dataObject.playerId,
         cash: parseFloat(dataObject.balance.toFixed(2)) || 0.00,
         currency: dataObject.currency,
-        bonus: parseFloat(dataObject.casinoBalance.toFixed(2)) || 0.00,
+        bonus: dataObject.casinoBalance ? parseFloat(dataObject.casinoBalance.toFixed(2)) : 0.00,
         token: token,
         error: 0,
         description: 'Success',
@@ -1596,57 +1580,6 @@ export class PragmaticService {
         console.log("existingResponse", existingResponse);
 
         return existingResponse;
-
-      //   if (existingRequest?.userId) {
-      //     // Get userId from the response
-
-      //     console.log("Got to the updated wallet block");
-      //     const userId = existingRequest.userId;
-    
-      //     try {
-      //         // Fetch the wallet details for the user
-      //         const getWallet = await this.walletService.getWallet({
-      //           userId,
-      //           clientId: data.clientId
-      //         });
-
-      //         console.log("getWallet", getWallet);
-
-
-      //         if(!getWallet || !getWallet.status) {
-      //           response = {
-      //             success: false,
-      //             status: HttpStatus.BAD_REQUEST,
-      //             message: 'Invalid auth code, please login to try again',
-      //             data: {}
-      //           }
-          
-      //           const val = await this.callbackLogRepository.update({ id: callback.id}, { response: JSON.stringify(response)});
-      //           console.log("val", val);
-          
-      //           return response;
-      //         } 
-    
-      //         if (getWallet && getWallet.data.availableBalance !== undefined) {
-      //             // Update the cash field with the updated balance
-      //             existingResponse.data.cash = getWallet.data.availableBalance;
-    
-      //             // Save the updated response back to the log
-      //             await this.callbackLogRepository.update(
-      //                 { id: callback.id },
-      //                 { response: JSON.stringify(existingResponse) }
-      //             );
-    
-      //             console.log("Updated response with wallet balance:", existingResponse);
-      //             return existingResponse;
-      //         }
-      //     } catch (error) {
-      //         console.error("Error fetching wallet details or updating response:", error);
-      //         // Handle errors if needed, e.g., log or return the original response
-      //     }
-      // }  else {
-      //   return JSON.parse(callback.response);
-      // }
   
     } 
     // Parse the body if it exists
@@ -1667,7 +1600,7 @@ export class PragmaticService {
         }
     }
 
-    console.log("body", body);
+    // console.log("body", body);
 
     const gameKeys = await this.gameKeyRepository.find({
       where: {
@@ -1676,7 +1609,7 @@ export class PragmaticService {
       },
     });
 
-    console.log("gameKeys", gameKeys);
+    // console.log("gameKeys", gameKeys);
 
 
     const pragmaticKey = gameKeys.find(key => key.option === 'PRAGMATIC_KEY')?.value;
@@ -1759,25 +1692,7 @@ export class PragmaticService {
 
         if (token) {
             const res = await this.identityService.validateToken({ clientId: data.clientId, token });
-            console.log("res", res);
-
-            
-      // const res = {
-      //   success: true,
-      //   message: "Success",
-      //   data: {
-      //     playerId: 214993,
-      //     clientId: 4,
-      //     playerNickname: 'pragmatic-play',
-      //     sessionId: '132',
-      //     balance: 9996.25,
-      //     casinoBalance: 0.0,
-      //     virtualBalance: 0.5,
-      //     group: null,
-      //     currency: 'NGN'
-      //   }
-        
-      // };
+            // console.log("res", res);
 
             if (!res.success) {
                 response = {
