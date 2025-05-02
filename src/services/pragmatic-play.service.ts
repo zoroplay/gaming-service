@@ -490,7 +490,7 @@ export class PragmaticService {
     let response: any;
     const dataObject = typeof isValid.data === 'string' ? JSON.parse(isValid.data) : isValid.data;
 
-    // console.log("dataObject", dataObject);
+    console.log("dataObject", dataObject);
 
     if(!isValid || !isValid.status) {
       response = {
