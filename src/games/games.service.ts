@@ -580,6 +580,10 @@ export class GamesService {
         console.log('using pragmatic-play');
         return await this.pragmaticPlayService.constructGameUrl(startGameDto);
 
+      case 'spribe':
+        console.log('using spribe');
+        return await this.spribeService.constructGameUrl(startGameDto);
+
       case 'evolution':
         // return await this.smartSoftService.constructGameUrl(
         //   startGameDto,
@@ -594,7 +598,7 @@ export class GamesService {
             option: 'SMART_SOFT_PORTAL',
             provider: 'smart-soft',
           },
-        });
+        });7
 
         return await this.smartSoftService.constructGameUrl(
           startGameDto,
@@ -622,24 +626,19 @@ export class GamesService {
     switch (syncGameDto.provider) {
       case 'shack-evolution':
         return await this.syncShackGames();
-        break;
       case 'c27':
         return await this.syncC2Games();
-        break;
       case 'tada':
         return await this.tadaGamingService.syncGames();
-        break;
       case 'evo-play':
         console.log('syncing here');
         return await this.evoPlayService.syncGames(syncGameDto);
-        break;
       case 'pragmatic-play':
         console.log('pragmatic syncing here');
         return await this.pragmaticPlayService.syncGames(syncGameDto);
-        break;
       case 'qtech-games':
         console.log('qtech syncing here');
-        return await this.qtechService.syncGames();
+        return await this.qtechService.syncGames(syncGameDto.clientId);
         break;
       case 'spribe':
           console.log('qtech syncing here');
@@ -1263,4 +1262,5 @@ async handleCasinoJackpotWinners(payload: SyncGameDto): Promise<any> {
   }
   
 }
+
 }
