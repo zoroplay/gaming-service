@@ -305,6 +305,9 @@ export class GamesService {
 
     const query = this.gameRepository.createQueryBuilder('games');
 
+    // Add condition to filter out games with status 0
+    query.andWhere('games.status != :status', { status: 0 });
+
     if (gameName) {
       // Use LIKE to allow partial match (wildcard search) on gameName
       query.andWhere('games.title LIKE :gameName', {
