@@ -141,8 +141,11 @@ export class QtechService {
     }
   }
 
-  public async syncGames() {
+  public async syncGames(client_id) {
     try {
+
+      await this.setKeys(client_id);
+      
       // Fetch games from the gRPC service
       const gamesResponse: any = await this.getCasinoGames();
 

@@ -57,6 +57,7 @@ import { SmatVirtualService } from 'src/services/smatvirtual.service';
 import { FindManyOptions, ILike, In, Repository } from 'typeorm';
 import { Game as GameEntity } from '../entities/game.entity';
 import { Provider as ProviderEntity } from '../entities/provider.entity';
+import { SpribeService } from 'src/services/spribe.service';
 // import { GameCategoryEntity } from 'src/entities/game.category.entity';
 
 @Injectable()
@@ -89,6 +90,7 @@ export class GamesService {
     private readonly qtechService: QtechService,
     private readonly firebaseService: FirebaseService,
     private readonly smatVirtualService: SmatVirtualService,
+    private readonly spribeService: SpribeService,
   ) {}
 
   async createProvider(
@@ -302,6 +304,9 @@ export class GamesService {
     const { gameName } = searchGamesDto;
 
     const query = this.gameRepository.createQueryBuilder('games');
+
+    // Add condition to filter out games with status 0
+    query.andWhere('games.status != :status', { status: 0 });
 
     if (gameName) {
       // Use LIKE to allow partial match (wildcard search) on gameName
@@ -578,6 +583,10 @@ export class GamesService {
         console.log('using pragmatic-play');
         return await this.pragmaticPlayService.constructGameUrl(startGameDto);
 
+      case 'spribe':
+        console.log('using spribe');
+        return await this.spribeService.constructGameUrl(startGameDto);
+
       case 'evolution':
         // return await this.smartSoftService.constructGameUrl(
         //   startGameDto,
@@ -592,7 +601,7 @@ export class GamesService {
             option: 'SMART_SOFT_PORTAL',
             provider: 'smart-soft',
           },
-        });
+        });7
 
         return await this.smartSoftService.constructGameUrl(
           startGameDto,
@@ -620,25 +629,24 @@ export class GamesService {
     switch (syncGameDto.provider) {
       case 'shack-evolution':
         return await this.syncShackGames();
-        break;
       case 'c27':
         return await this.syncC2Games();
-        break;
       case 'tada':
         return await this.tadaGamingService.syncGames();
-        break;
       case 'evo-play':
         console.log('syncing here');
         return await this.evoPlayService.syncGames(syncGameDto);
-        break;
       case 'pragmatic-play':
         console.log('pragmatic syncing here');
         return await this.pragmaticPlayService.syncGames(syncGameDto);
-        break;
       case 'qtech-games':
         console.log('qtech syncing here');
-        return await this.qtechService.syncGames();
+        return await this.qtechService.syncGames(syncGameDto.clientId);
         break;
+      case 'spribe':
+          console.log('qtech syncing here');
+          return await this.spribeService.syncGames();
+          break;
       default:
         throw new NotFoundException(
           'Specified provider does not support sync feature',
@@ -1261,4 +1269,5 @@ async handleCasinoJackpotWinners(payload: SyncGameDto): Promise<any> {
   }
   
 }
+
 }

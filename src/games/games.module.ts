@@ -32,6 +32,7 @@ import { FirebaseService } from 'src/common/services/firebaseUpload';
 import { TournamentGame } from 'src/entities/tournament-game.entity';
 import { BonusModule } from 'src/bonus/bonus.module';
 import { SmatVirtualService } from 'src/services/smatvirtual.service';
+import { SpribeService } from 'src/services/spribe.service';
 // import { GameCategoryEntity } from 'src/entities/game.category.entity';
 
 
@@ -64,7 +65,8 @@ import { SmatVirtualService } from 'src/services/smatvirtual.service';
     PragmaticService,
     QtechService,
     FirebaseService,
-    SmatVirtualService
+    SmatVirtualService,
+    SpribeService
   ],
 })
 export class GamesModule {}

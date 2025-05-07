@@ -232,6 +232,7 @@ export class EvoPlayService {
 
   //Register Bonus
   async registerBonus(data: CreateBonusRequest) {
+    console.log('data', data);
     try {
 
       const gameKeys = await this.gameKeyRepository.find({
