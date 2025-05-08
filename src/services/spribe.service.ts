@@ -4,12 +4,12 @@
 import { HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { GameKey } from 'src/entities/game-key.entity';
-import { StartGameDto, SyncGameDto } from 'src/proto/gaming.pb';
+import { CallbackGameDto, StartGameDto, SyncGameDto } from 'src/proto/gaming.pb';
 import { Repository } from 'typeorm';
 import * as crypto from 'crypto';
-import { Game as GameEntity, GameSession, Provider as ProviderEntity } from '../entities';
-import { HttpService } from '@nestjs/axios';
+import { CallbackLog, Game as GameEntity, GameSession, Provider as ProviderEntity } from '../entities';
 import { RpcException } from '@nestjs/microservices';
+import { IdentityService } from 'src/identity/identity.service';
 
 
 
@@ -33,7 +33,9 @@ export class SpribeService {
     private gameKeyRepository: Repository<GameKey>,
     @InjectRepository(GameSession)
     private gameSessionRepo: Repository<GameSession>,
-    private readonly httpService: HttpService,
+    @InjectRepository(CallbackLog)
+    private callbackLogRepository: Repository<CallbackLog>,
+    private readonly identityService: IdentityService,
   ) {}
 
   async setKeys (clientId) {
@@ -352,21 +354,21 @@ export class SpribeService {
         console.log("requestUrl", requestUrl);
     
         // Generate security headers for a GET request (no body)
-        const securityheaders = this.generateSecurityHeaders(
-          this.SPRIBE_OPERATOR_KEY,
-          this.SPRIBE_SECRET_TOKEN,
-          requestUrl,
-          '' // No payload for GET request
-        );
+        // const securityheaders = this.generateSecurityHeaders(
+        //   this.SPRIBE_OPERATOR_KEY,
+        //   this.SPRIBE_SECRET_TOKEN,
+        //   requestUrl,
+        //   '' // No payload for GET request
+        // );
     
-        console.log("securityheaders", securityheaders);
+        // console.log("securityheaders", securityheaders);
     
-        // Set up headers
-        const headers = {
-          'X-Spribe-Client-ID': securityheaders['X-Spribe-Client-ID'],
-          'X-Spribe-Client-TS': securityheaders['X-Spribe-Client-TS'],
-          'X-Spribe-Client-Signature': securityheaders['X-Spribe-Client-Signature'],
-        };
+        // // Set up headers
+        // const headers = {
+        //   'X-Spribe-Client-ID': securityheaders['X-Spribe-Client-ID'],
+        //   'X-Spribe-Client-TS': securityheaders['X-Spribe-Client-TS'],
+        //   'X-Spribe-Client-Signature': securityheaders['X-Spribe-Client-Signature'],
+        // };
     
         // Start creating the game session
         const gameSession = new GameSession();
@@ -400,14 +402,14 @@ export class SpribeService {
         }
     
         // Make a GET request instead of POST
-        const { data } = await this.httpService
-          .get(requestUrl, { headers })
-          .toPromise();
+        // const { data } = await this.httpService
+        //   .get(requestUrl, { headers })
+        //   .toPromise();
         
-        console.log("data", data);
+        // console.log("data", data);
     
         // Return the game URL from the response
-        return { url: data.gameURL };
+        return { url: requestUrl };
     
       } catch (error) {
         // Catch and log any errors that occur
@@ -416,39 +418,320 @@ export class SpribeService {
       }
     }
 
+    async authenticate(clientId, token, callback, walletType) {
+      // console.log("Got to authenticate method");
+      const isValid = await this.identityService.validateToken({ clientId, token });
+  
+      let response: any;
+      const dataObject = typeof isValid.data === 'string' ? JSON.parse(isValid.data) : isValid.data;
+  
+      // console.log("dataObject", dataObject);
+  
+      if(!isValid || !isValid.status) {
+        response = {
+          success: false,
+          status: HttpStatus.BAD_REQUEST,
+          message: 'Invalid auth code, please login to try again',
+          data: {}
+        }
+  
+        const val = await this.callbackLogRepository.update({ id: callback.id}, { response: JSON.stringify(response)});
+        console.log("val", val);
+  
+        return response;
+      } 
+  
+      response = {
+        success: true,
+        status: HttpStatus.OK,
+        message: "Authentication Successful",
+        data: {
+          code: 200,
+          message: "ok",
+          data: {
+            user_id: dataObject.playerId,
+            username: dataObject.playerNickname || 'Test User',
+            balance: parseFloat(dataObject.balance.toFixed(2)) || 0.00,
+            currency: 'KES',
+          }
+        }
+      }
+  
+      await this.callbackLogRepository.update({ id: callback.id}, { response: JSON.stringify(response)});
+  
+      return response;
+  
+    }
+
+    //   async handleCallback(data: CallbackGameDto) {
+    //     console.log("handle callback-data", data);
+
+    //     await this.setKeys(data.clientId);
+        
+    //     const callback = await this.saveCallbackLog(data);
+    //     console.log("callback-4", callback);
+    //     let response;
+    //     let body = {};
+    
+    //     // Return response if already logged
+    //     // if (callback?.response != null) {
+    //     //     console.log("Existing callback response found. Processing it.");
+    
+    //     //     const existingRequest = JSON.parse(callback.payload);
+    //     //     const existingResponse = JSON.parse(callback.response);
+    
+    //     //     console.log("existingRequest", existingRequest);
+    //     //     console.log("existingResponse", existingResponse);
+    
+    //     //     return existingResponse;
+      
+    //     // } 
+    //     // Parse the body if it exists
+    //     if (data.body) {
+    //         try {
+    //             body = new URLSearchParams(data.body);
+    //         } catch (error) {
+    //             console.error('Error parsing body:', error);
+    //             response = {
+    //                 success: false,
+    //                 message: 'Invalid body format',
+    //                 status: HttpStatus.BAD_REQUEST,
+    //                 data: { error: 5, description: 'Error' }
+    //             };
+    
+    //             await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
+    //             return response;
+    //         }
+    //     }
+    
+    //     console.log("body", body);
+    
+    //     let token = null;
+    
+    //     // Verify body is a valid URLSearchParams object
+    //     if (body instanceof URLSearchParams) {
+    //         const parsedBody = Object.fromEntries(body.entries());
+    
+    //         console.log("parsedBody", parsedBody);
+    
+    //         if (this.hashCheck(parsedBody, pragmaticKey)) {
+    //             response = {
+    //                 success: false,
+    //                 message: 'Invalid Hash Signature',
+    //                 status: HttpStatus.BAD_REQUEST,
+    //                 data: { error: 5, description: 'Error' }
+    //             };
+    
+    //             await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
+    //             return response;
+    //         }
+    //     } else {
+    //         response = {
+    //             success: false,
+    //             message: 'Invalid body format',
+    //             status: HttpStatus.BAD_REQUEST,
+    //             data: { error: 5, description: 'Error' }
+    //         };
+    
+    //         await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
+    //         return response;
+    //     }
+    
+    //     let player = null;
+    //     let balanceType;
+    
+    //     // Handle PromoWin without token
+    //     if (data.action === 'PromoWin') {
+    //         console.log("Got to handle-callback promoWin");
+    
+    //         const getUser = await this.identityService.getDetails({
+    //             clientId: data.clientId,
+    //             userId: parseFloat(body.get("userId"))
+    //         });
+    
+    //         console.log("getUser", getUser);
+    
+    //         if (!getUser.success) {
+    //             response = {
+    //                 success: false,
+    //                 message: 'Invalid User ID',
+    //                 status: HttpStatus.NOT_FOUND
+    //             };
+    
+    //             await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
+    //             return response;
+    //         }
+    
+    //         const res = await this.identityService.validateToken({ clientId: data.clientId, token: getUser.data.authCode });
+    
+    //         if (!res.success) {
+    //           response = {
+    //               success: false,
+    //               message: 'Invalid Session ID',
+    //               status: HttpStatus.NOT_FOUND
+    //           };
+    
+    //           await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
+    //           return response;
+    //         }
+    
+    //         player = res.data;
+    //     } else {
+    //         // Handle other actions with token validation
+    //         token = body.get("token");
+    //         console.log("token", token);
+    
+    //         if (token) {
+    //             const res = await this.identityService.validateToken({ clientId: data.clientId, token });
+    //             console.log("res", res);
+    
+                
+    //       // const res = {
+    //       //   success: true,
+    //       //   message: "Success",
+    //       //   data: {
+    //       //     playerId: 214993,
+    //       //     clientId: 4,
+    //       //     playerNickname: 'pragmatic-play',
+    //       //     sessionId: '132',
+    //       //     balance: 9996.25,
+    //       //     casinoBalance: 0.0,
+    //       //     virtualBalance: 0.5,
+    //       //     group: null,
+    //       //     currency: 'NGN'
+    //       //   }
+            
+    //       // };
+    
+    //             if (!res.success) {
+    //                 response = {
+    //                     success: false,
+    //                     message: 'Invalid Session ID',
+    //                     status: HttpStatus.NOT_FOUND
+    //                 };
+    
+    //                 await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
+    //                 return response;
+    //             }
+    
+    //             if (!player) {
+    //                 player = res.data;
+    //             }
+    //         } else {
+    //             response = {
+    //                 success: false,
+    //                 message: 'Token is missing',
+    //                 status: HttpStatus.BAD_REQUEST
+    //             };
+    
+    //             await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
+    //             return response;
+    //         }
+    
+    //         const gameSession = await this.gameSessionRepo.findOne({ where: { session_id: token } });
+    //         console.log("gameSession", gameSession);
+    
+    //         if (gameSession?.balance_type === 'bonus') {
+    //             balanceType = 'casino';
+    //         }
+    //     }
+    
+    //     console.log("player", player);
+    
+    //     // Handle game actions
+    //     switch (data.action) {
+    //         case 'Authenticate':
+    //             console.log("using spribe authenticate");
+    //             return await this.authenticate(data.clientId, token, callback, balanceType);
+    //         case 'Balance':
+    //             return await this.getBalance(data.clientId, player, callback, balanceType);
+    //         case 'Bet':
+    //             return await this.bet(data.clientId, player, callback, body, balanceType);
+    //         case 'Result':
+    //             return await this.win(data.clientId, player, callback, body, balanceType);
+    //         case 'Refund':
+    //             return await this.refund(data.clientId, player, callback, body, balanceType);
+    //         default:
+    //             return { success: false, message: 'Invalid request', status: HttpStatus.BAD_REQUEST };
+    //     }
+    // }
 
 
-generateSecurityHeaders(
-  clientId: string,
-  clientSecret: string,
-  requestUri: string,
-  requestBody?: string
-) {
-  // Generate current timestamp in seconds since Unix epoch
-  const timestamp = Math.floor(Date.now() / 1000).toString();
-  
-  // Concatenate values for signature generation
-  let dataToSign = timestamp + requestUri;
-  
-  // Add request body for POST and PUT requests
-  if (requestBody) {
-    dataToSign += requestBody;
+
+  generateSecurityHeaders(
+    clientId: string,
+    clientSecret: string,
+    requestUri: string,
+    requestBody?: string
+  ) {
+    // Generate current timestamp in seconds since Unix epoch
+    const timestamp = Math.floor(Date.now() / 1000).toString();
+    
+    // Concatenate values for signature generation
+    let dataToSign = timestamp + requestUri;
+    
+    // Add request body for POST and PUT requests
+    if (requestBody) {
+      dataToSign += requestBody;
+    }
+    
+    // Generate HMAC SHA256 signature using the client secret
+    const signature = crypto
+      .createHmac('sha256', clientSecret)
+      .update(dataToSign)
+      .digest('hex');
+    
+    // Return all required headers
+    return {
+      'X-Spribe-Client-ID': clientId,
+      'X-Spribe-Client-TS': timestamp,
+      'X-Spribe-Client-Signature': signature
+    };
+
   }
-  
-  // Generate HMAC SHA256 signature using the client secret
-  const signature = crypto
-    .createHmac('sha256', clientSecret)
-    .update(dataToSign)
-    .digest('hex');
-  
-  // Return all required headers
-  return {
-    'X-Spribe-Client-ID': clientId,
-    'X-Spribe-Client-TS': timestamp,
-    'X-Spribe-Client-Signature': signature
-  };
 
-}
+  // hashCheck = (query, pragmaticKey) => {
+  //   const hash = this.generateSecurityHeaders(
+  //     this.SPRIBE_OPERATOR_KEY,)
+  //   return query.hash !== hash;
+  // };
+
+    async saveCallbackLog(data) {
+      console.log('body-data', data);
+      const action = data.action;
+      const body = data.body ? new URLSearchParams(data.body) : new URLSearchParams();
+  
+      console.log('body-Callback', body);
+      const transactionId = 
+        action === 'auth' 
+          ? body.get('session_token') 
+          : action === 'info' 
+            ? body.get('session_token')
+            : action === 'withdraw' 
+            ? body.get('session_token') 
+            : action === 'deposit' 
+            ? body.get('session_token')
+            : action === 'rollback' 
+            ? body.get('session_token') 
+              : body.get('transactionId');
+  
+      try {
+        let callback;
+        console.log("action", action);
+        
+        callback = new CallbackLog();
+        callback.transactionId = transactionId;
+        callback.request_type = action;
+        callback.payload = JSON.stringify(Object.fromEntries(body)); // Convert URLSearchParams back to JSON
+  
+        console.log("saved-callback", callback)
+  
+        return await this.callbackLogRepository.save(callback);
+  
+      } catch(e) {
+        console.log('Error saving callback log', e.message);
+      }
+  }
 
 }
 
