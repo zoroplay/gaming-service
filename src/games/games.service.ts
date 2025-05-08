@@ -299,32 +299,33 @@ export class GamesService {
     };
 }
 
-
   async fetchGamesByName(searchGamesDto: FetchGamesRequest): Promise<Games> {
     const { gameName } = searchGamesDto;
-
-    const query = this.gameRepository.createQueryBuilder('games');
-
-    // Add condition to filter out games with status 0
-    query.andWhere('games.status != :status', { status: 0 });
-
+  
+    const query = this.gameRepository.createQueryBuilder('games')
+      // Join with the provider table to check provider status
+      .leftJoin('games.provider', 'provider')
+      // Only include games where both the game status and provider status are not 0
+      .andWhere('games.status != :gameStatus', { gameStatus: 0 })
+      .andWhere('provider.status != :providerStatus', { providerStatus: 0 });
+  
     if (gameName) {
       // Use LIKE to allow partial match (wildcard search) on gameName
       query.andWhere('games.title LIKE :gameName', {
         gameName: `%${gameName}%`,
       });
     }
-
+  
     const games = await query.getMany();
     // Convert TypeORM entities to proto-generated types
     const protoResponse: Game[] = games.map((entity: GameEntity) =>
       this.entityToProtoService.entityToProto(entity),
     );
-
+  
     const final = {
       games: protoResponse,
     };
-
+  
     return final;
   }
 
