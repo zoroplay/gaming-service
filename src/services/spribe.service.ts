@@ -4,12 +4,13 @@
 import { HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { GameKey } from 'src/entities/game-key.entity';
-import { CallbackGameDto, StartGameDto, SyncGameDto } from 'src/proto/gaming.pb';
+import { CallbackGameDto, SpribeCallbackRequest, StartGameDto, SyncGameDto } from 'src/proto/gaming.pb';
 import { Repository } from 'typeorm';
 import * as crypto from 'crypto';
 import { CallbackLog, Game as GameEntity, GameSession, Provider as ProviderEntity } from '../entities';
 import { RpcException } from '@nestjs/microservices';
 import { IdentityService } from 'src/identity/identity.service';
+import { WalletService } from 'src/wallet/wallet.service';
 
 
 
@@ -36,6 +37,7 @@ export class SpribeService {
     @InjectRepository(CallbackLog)
     private callbackLogRepository: Repository<CallbackLog>,
     private readonly identityService: IdentityService,
+     private readonly walletService: WalletService,
   ) {}
 
   async setKeys (clientId) {
@@ -432,7 +434,10 @@ export class SpribeService {
           success: false,
           status: HttpStatus.BAD_REQUEST,
           message: 'Invalid auth code, please login to try again',
-          data: {}
+          data: {
+            code: 401,
+            message: "User token is invalid"
+          }
         }
   
         const val = await this.callbackLogRepository.update({ id: callback.id}, { response: JSON.stringify(response)});
@@ -463,198 +468,240 @@ export class SpribeService {
   
     }
 
-    //   async handleCallback(data: CallbackGameDto) {
-    //     console.log("handle callback-data", data);
+    async getBalance(clientId, player, callback, walletType) {
+    console.log("Got to balance method");
+    let response;
 
-    //     await this.setKeys(data.clientId);
+    if (player) {
+      //TODO: USE PLAYER UserID AND ClientID to get balance from wallet service;
+      const wallet = await this.walletService.getWallet({
+        userId: player.playerId,
+        clientId,
+        wallet: walletType
+      });
+
+      // const wallet = {
+      //   success: true,
+      //   status: HttpStatus.OK,
+      //   message: 'Success',
+      //   data: {
+      //     userId: '1',
+      //     clientId: '4',
+      //     casinoBonusBalance: 0.0,
+      //     sportBonusBalance: 0.00,
+      //     balance: 100.0,
+      //     trustBalance: 0.0,
+      //     availableBalance: 100.0,
+      //     virtualBonusBalance: 0.0,
+      //   }
+      // } 
+
+      const dataObject = typeof wallet === 'string' ? JSON.parse(wallet) : wallet;
+
+      console.log("dataObject", dataObject);
+
+      if (dataObject.success) {
+        response = {
+          success: true,
+          status: HttpStatus.OK,
+          message: 'Balance Success',
+          data: {
+            code: 200,
+            message: 'ok',
+            data: {
+              user_id: player.playerId,
+              username: player.playerNickname || 'Test User',
+              balance: parseFloat(dataObject.data.balance.toFixed(2)) || 0.00,
+              currency: player.currency,
+            }
+          },
+        };
+       
+      } else {
+        response = {
+          success: false,
+          status: HttpStatus.INTERNAL_SERVER_ERROR,
+          message: 'Could not retrieve balance',
+          data: {}
+        };
+      }
+    } else {
+      response = {
+        success: false,
+        status: HttpStatus.NOT_FOUND,
+        message: 'Player not found',
+        data: {}
+      };
+    }
+    // update callback log response
+    await this.callbackLogRepository.update({ id: callback.id}, { response: JSON.stringify(response)});
+
+    return response;
+  }
+
+      async handleCallback(data: SpribeCallbackRequest) {
+        console.log("handle callback-data", data);
+
+        await this.setKeys(data.clientId);
         
-    //     const callback = await this.saveCallbackLog(data);
-    //     console.log("callback-4", callback);
-    //     let response;
-    //     let body = {};
+        const callback = await this.saveCallbackLog(data);
+        console.log("callback-4", callback);
+        let response;
+        let body = {};
+        const signature = data.body.includes('signature');
     
-    //     // Return response if already logged
-    //     // if (callback?.response != null) {
-    //     //     console.log("Existing callback response found. Processing it.");
+        // Return response if already logged
+        // if (callback?.response != null) {
+        //     console.log("Existing callback response found. Processing it.");
     
-    //     //     const existingRequest = JSON.parse(callback.payload);
-    //     //     const existingResponse = JSON.parse(callback.response);
+        //     const existingRequest = JSON.parse(callback.payload);
+        //     const existingResponse = JSON.parse(callback.response);
     
-    //     //     console.log("existingRequest", existingRequest);
-    //     //     console.log("existingResponse", existingResponse);
+        //     console.log("existingRequest", existingRequest);
+        //     console.log("existingResponse", existingResponse);
     
-    //     //     return existingResponse;
+        //     return existingResponse;
       
-    //     // } 
-    //     // Parse the body if it exists
-    //     if (data.body) {
-    //         try {
-    //             body = new URLSearchParams(data.body);
-    //         } catch (error) {
-    //             console.error('Error parsing body:', error);
-    //             response = {
-    //                 success: false,
-    //                 message: 'Invalid body format',
-    //                 status: HttpStatus.BAD_REQUEST,
-    //                 data: { error: 5, description: 'Error' }
-    //             };
+        // } 
+        // Parse the body if it exists
+
+        const queryString = data.body.includes('?') 
+        ? data.body.substring(data.body.indexOf('?')) 
+        : '';
+      const path = 'api/v2/games/4/spribe/callback/auth' + queryString;
+
+
+        if (data.body) {
+            try {
+                body = new URLSearchParams(data.body);
+            } catch (error) {
+                console.error('Error parsing body:', error);
+                response = {
+                    success: false,
+                    message: 'Invalid body format',
+                    status: HttpStatus.BAD_REQUEST,
+                    data: { error: 5, description: 'Error' }
+                };
     
-    //             await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
-    //             return response;
-    //         }
-    //     }
+                await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
+                return response;
+            }
+        }
     
-    //     console.log("body", body);
+        console.log("body", body);
     
-    //     let token = null;
+        let token = null;
     
-    //     // Verify body is a valid URLSearchParams object
-    //     if (body instanceof URLSearchParams) {
-    //         const parsedBody = Object.fromEntries(body.entries());
+        // Verify body is a valid URLSearchParams object
+        if (body instanceof URLSearchParams) {
+            const parsedBody = Object.fromEntries(body.entries());
     
-    //         console.log("parsedBody", parsedBody);
+            console.log("parsedBody", parsedBody);
     
-    //         if (this.hashCheck(parsedBody, pragmaticKey)) {
-    //             response = {
-    //                 success: false,
-    //                 message: 'Invalid Hash Signature',
-    //                 status: HttpStatus.BAD_REQUEST,
-    //                 data: { error: 5, description: 'Error' }
-    //             };
+            if (this.hashCheck(this.SPRIBE_OPERATOR_KEY, this.SPRIBE_SECRET_TOKEN, path, signature, JSON.stringify(parsedBody))) {
+                response = {
+                    success: false,
+                    message: 'Invalid Hash Signature',
+                    status: HttpStatus.BAD_REQUEST,
+                    data: { error: 5, description: 'Error' }
+                };
     
-    //             await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
-    //             return response;
-    //         }
-    //     } else {
-    //         response = {
-    //             success: false,
-    //             message: 'Invalid body format',
-    //             status: HttpStatus.BAD_REQUEST,
-    //             data: { error: 5, description: 'Error' }
-    //         };
+                await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
+                return response;
+            }
+        } else {
+            response = {
+                success: false,
+                message: 'Invalid body format',
+                status: HttpStatus.BAD_REQUEST,
+                data: { error: 5, description: 'Error' }
+            };
     
-    //         await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
-    //         return response;
-    //     }
+            await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
+            return response;
+        }
     
-    //     let player = null;
-    //     let balanceType;
+        let player = null;
+        let balanceType;
     
-    //     // Handle PromoWin without token
-    //     if (data.action === 'PromoWin') {
-    //         console.log("Got to handle-callback promoWin");
+            // Handle other actions with token validation
+            token = body.get("session_token");
+            console.log("session_token", token);
     
-    //         const getUser = await this.identityService.getDetails({
-    //             clientId: data.clientId,
-    //             userId: parseFloat(body.get("userId"))
-    //         });
-    
-    //         console.log("getUser", getUser);
-    
-    //         if (!getUser.success) {
-    //             response = {
-    //                 success: false,
-    //                 message: 'Invalid User ID',
-    //                 status: HttpStatus.NOT_FOUND
-    //             };
-    
-    //             await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
-    //             return response;
-    //         }
-    
-    //         const res = await this.identityService.validateToken({ clientId: data.clientId, token: getUser.data.authCode });
-    
-    //         if (!res.success) {
-    //           response = {
-    //               success: false,
-    //               message: 'Invalid Session ID',
-    //               status: HttpStatus.NOT_FOUND
-    //           };
-    
-    //           await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
-    //           return response;
-    //         }
-    
-    //         player = res.data;
-    //     } else {
-    //         // Handle other actions with token validation
-    //         token = body.get("token");
-    //         console.log("token", token);
-    
-    //         if (token) {
-    //             const res = await this.identityService.validateToken({ clientId: data.clientId, token });
-    //             console.log("res", res);
+            if (token) {
+                const res = await this.identityService.validateToken({ clientId: data.clientId, token });
+                console.log("res", res);
     
                 
-    //       // const res = {
-    //       //   success: true,
-    //       //   message: "Success",
-    //       //   data: {
-    //       //     playerId: 214993,
-    //       //     clientId: 4,
-    //       //     playerNickname: 'pragmatic-play',
-    //       //     sessionId: '132',
-    //       //     balance: 9996.25,
-    //       //     casinoBalance: 0.0,
-    //       //     virtualBalance: 0.5,
-    //       //     group: null,
-    //       //     currency: 'NGN'
-    //       //   }
+          // const res = {
+          //   success: true,
+          //   message: "Success",
+          //   data: {
+          //     playerId: 214993,
+          //     clientId: 4,
+          //     playerNickname: 'pragmatic-play',
+          //     sessionId: '132',
+          //     balance: 9996.25,
+          //     casinoBalance: 0.0,
+          //     virtualBalance: 0.5,
+          //     group: null,
+          //     currency: 'NGN'
+          //   }
             
-    //       // };
+          // };
     
-    //             if (!res.success) {
-    //                 response = {
-    //                     success: false,
-    //                     message: 'Invalid Session ID',
-    //                     status: HttpStatus.NOT_FOUND
-    //                 };
+                if (!res.success) {
+                    response = {
+                        success: false,
+                        message: 'Invalid Session ID',
+                        status: HttpStatus.NOT_FOUND
+                    };
     
-    //                 await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
-    //                 return response;
-    //             }
+                    await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
+                    return response;
+                }
     
-    //             if (!player) {
-    //                 player = res.data;
-    //             }
-    //         } else {
-    //             response = {
-    //                 success: false,
-    //                 message: 'Token is missing',
-    //                 status: HttpStatus.BAD_REQUEST
-    //             };
+                if (!player) {
+                    player = res.data;
+                }
+            } else {
+                response = {
+                    success: false,
+                    message: 'Token is missing',
+                    status: HttpStatus.BAD_REQUEST
+                };
     
-    //             await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
-    //             return response;
-    //         }
+                await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
+                return response;
+            }
     
-    //         const gameSession = await this.gameSessionRepo.findOne({ where: { session_id: token } });
-    //         console.log("gameSession", gameSession);
+            const gameSession = await this.gameSessionRepo.findOne({ where: { session_id: token } });
+            console.log("gameSession", gameSession);
     
-    //         if (gameSession?.balance_type === 'bonus') {
-    //             balanceType = 'casino';
-    //         }
-    //     }
+            if (gameSession?.balance_type === 'bonus') {
+                balanceType = 'casino';
+            }
+
     
-    //     console.log("player", player);
+        console.log("player", player);
     
-    //     // Handle game actions
-    //     switch (data.action) {
-    //         case 'Authenticate':
-    //             console.log("using spribe authenticate");
-    //             return await this.authenticate(data.clientId, token, callback, balanceType);
-    //         case 'Balance':
-    //             return await this.getBalance(data.clientId, player, callback, balanceType);
-    //         case 'Bet':
-    //             return await this.bet(data.clientId, player, callback, body, balanceType);
-    //         case 'Result':
-    //             return await this.win(data.clientId, player, callback, body, balanceType);
-    //         case 'Refund':
-    //             return await this.refund(data.clientId, player, callback, body, balanceType);
-    //         default:
-    //             return { success: false, message: 'Invalid request', status: HttpStatus.BAD_REQUEST };
-    //     }
-    // }
+        // Handle game actions
+        switch (data.action) {
+            case 'Authenticate':
+                console.log("using spribe authenticate");
+                return await this.authenticate(data.clientId, token, callback, balanceType);
+            case 'Balance':
+                return await this.getBalance(data.clientId, player, callback, balanceType);
+            // case 'Bet':
+            //     return await this.bet(data.clientId, player, callback, body, balanceType);
+            // case 'Result':
+            //     return await this.win(data.clientId, player, callback, body, balanceType);
+            // case 'Refund':
+            //     return await this.refund(data.clientId, player, callback, body, balanceType);
+            default:
+                return { success: false, message: 'Invalid request', status: HttpStatus.BAD_REQUEST };
+        }
+    }
 
 
 
@@ -690,11 +737,11 @@ export class SpribeService {
 
   }
 
-  // hashCheck = (query, pragmaticKey) => {
-  //   const hash = this.generateSecurityHeaders(
-  //     this.SPRIBE_OPERATOR_KEY,)
-  //   return query.hash !== hash;
-  // };
+  hashCheck = (clientId: string, clientSecret: string, requestUri: string, signature, requestBody?: string,  ) => {
+    const hash = this.generateSecurityHeaders(clientId, clientSecret, requestUri, requestBody)['X-Spribe-Client-Signature'];
+
+    return signature !== hash;
+  };
 
     async saveCallbackLog(data) {
       console.log('body-data', data);
