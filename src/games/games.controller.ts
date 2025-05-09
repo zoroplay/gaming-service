@@ -30,6 +30,7 @@ import {
   QtechCallbackRequest,
   SaveCategoryRequest,
   SmatVirtualCallbackRequest,
+  SpribeCallbackRequest,
   StartDto,
   StartGameDto,
   SyncGameDto,
@@ -38,6 +39,7 @@ import {
 import { GamesService } from './games.service';
 import { QtechService } from 'src/services';
 import { SmatVirtualService } from 'src/services/smatvirtual.service';
+import { SpribeService } from 'src/services/spribe.service';
 
 @Controller()
 export class GamesController {
@@ -45,6 +47,7 @@ export class GamesController {
     private readonly gamesService: GamesService,
     private readonly qtechService: QtechService,
     private readonly smatVirtualService: SmatVirtualService,
+    private readonly spribeService: SpribeService,
   ) {}
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'createProvider')
@@ -356,5 +359,10 @@ async getGames(request?: GetGamesRequest) {
   HandleCasinoJackpotWinners(payload: SyncGameDto): Promise<any> {
     console.log('handleCasinoJackpotWinners');
     return this.gamesService.handleCasinoJackpotWinners(payload);
+  }
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'handleSpribeCallback')
+  async handleSpribeCallback(payload: SpribeCallbackRequest): Promise<any> {
+    return this.spribeService.handleCallback(payload);
   }
 }
