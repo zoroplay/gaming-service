@@ -895,6 +895,9 @@ export class GamesService {
       case 'pragmatic-play':
         console.log('using pragmatic-play');
         return await this.pragmaticPlayService.handleCallback(_data);
+      case 'spribe':
+        console.log('using spribe');
+        return await this.spribeService.handleCallback(_data);
       default:
         throw new NotFoundException('Unknown provider');
     }

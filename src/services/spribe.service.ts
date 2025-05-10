@@ -539,7 +539,7 @@ export class SpribeService {
     return response;
   }
 
-      async handleCallback(data: SpribeCallbackRequest) {
+      async handleCallback(data: CallbackGameDto) {
         console.log("handle callback-data", data);
 
         await this.setKeys(data.clientId);

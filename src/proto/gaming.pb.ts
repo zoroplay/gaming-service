@@ -77,6 +77,7 @@ export interface QtechCallbackRequest {
 
 export interface SpribeCallbackRequest {
   clientId: number;
+  provider: string;
   signature?: string | undefined;
   body?: string | undefined;
   action: string;
@@ -124,6 +125,7 @@ export interface CallbackGameDto {
   method?: string | undefined;
   header: { [key: string]: any } | undefined;
   body?: string | undefined;
+  signature?: string | undefined;
 }
 
 export interface FindOneGameDto {
@@ -666,7 +668,7 @@ export interface GamingServiceClient {
 
   handleQtechCallback(request: QtechCallbackRequest): Observable<CallbackResponse>;
 
-  handleSpribeCallback(request: SpribeCallbackRequest): Observable<CallbackResponse>;
+  handleSpribeCallback(request: CallbackGameDto): Observable<CallbackResponse>;
 
   handleSmatVirtualCallback(request: SmatVirtualCallbackRequest): Observable<CallbackResponse>;
 
@@ -783,7 +785,7 @@ export interface GamingServiceController {
   ): Promise<CallbackResponse> | Observable<CallbackResponse> | CallbackResponse;
 
   handleSpribeCallback(
-    request: SpribeCallbackRequest,
+    request: CallbackGameDto,
   ): Promise<CallbackResponse> | Observable<CallbackResponse> | CallbackResponse;
 
   handleSmatVirtualCallback(
