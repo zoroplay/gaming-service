@@ -467,7 +467,7 @@ export class SpribeService {
             response = {
               success: false,
               status: HttpStatus.BAD_REQUEST,
-              message: `Game with id ${body.get('gameId')}not Found`,
+              message: `Game with id ${body.game}not Found`,
               data: {}
             }
     
@@ -514,7 +514,7 @@ export class SpribeService {
         
           const dataObject = typeof getWallet.data === 'string' ? JSON.parse(getWallet.data) : getWallet.data;
     
-          console.log("dataObject", dataObject, body.get('amount'));
+          console.log("dataObject", dataObject, body.amount);
     
           let { availableBalance, casinoBonusBalance } = dataObject;
           const betAmount = parseFloat(body.amount) / 1000;
@@ -710,7 +710,7 @@ export class SpribeService {
           response = {
             success: false,
             status: HttpStatus.BAD_REQUEST,
-            message: `Game with id ${body.get('gameId')} not Found`,
+            message: `Game with id ${body.game} not Found`,
             data: {},
           };
       
@@ -889,7 +889,7 @@ export class SpribeService {
             response = {
               success: false,
               status: HttpStatus.BAD_REQUEST,
-              message: `Game with id ${body.get('gameId')}not Found`,
+              message: `Game with id ${body.game}not Found`,
               data: {}
             }
     
@@ -1221,7 +1221,7 @@ export class SpribeService {
             ? body.provider_tx_id 
             : action === 'rollback' 
             ? body.session_token
-              : body.get('transactionId');
+              : body.transactionId;
   
       try {
         let callback;
