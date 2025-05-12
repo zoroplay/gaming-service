@@ -614,7 +614,7 @@ export class SpribeService {
         let balanceType;
     
         // Handle other actions with token validation
-        token = newBody.user_token ? newBody.user_token : newBody.player_token;
+        token = newBody.user_token ? newBody.user_token : newBody.session_token;
         console.log("user_token", token);
     
         if (token) {
