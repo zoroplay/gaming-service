@@ -421,7 +421,7 @@ export class SpribeService {
     }
 
     async authenticate(clientId, token, callback, walletType) {
-      // console.log("Got to authenticate method");
+      console.log("Got to authenticate method");
       const isValid = await this.identityService.validateToken({ clientId, token });
   
       let response: any;
@@ -548,7 +548,7 @@ export class SpribeService {
         console.log("callback-4", callback);
         let response;
         let body = {};
-        const signature = data.body.includes('signature');
+        const signature = data.signature;
     
         // Return response if already logged
         // if (callback?.response != null) {
@@ -568,12 +568,12 @@ export class SpribeService {
         const queryString = data.body.includes('?') 
         ? data.body.substring(data.body.indexOf('?')) 
         : '';
-      const path = 'api/v2/games/4/spribe/callback/auth' + queryString;
+      const path = data.path + queryString;
 
 
         if (data.body) {
             try {
-                body = new URLSearchParams(data.body);
+                body = JSON.stringify(data.body);
             } catch (error) {
                 console.error('Error parsing body:', error);
                 response = {
@@ -589,108 +589,97 @@ export class SpribeService {
         }
     
         console.log("body", body);
+
+        const newBody = data.body ? JSON.parse(data.body) : {};
+
+        console.log("newBody", newBody);
     
         let token = null;
     
         // Verify body is a valid URLSearchParams object
-        if (body instanceof URLSearchParams) {
-            const parsedBody = Object.fromEntries(body.entries());
     
-            console.log("parsedBody", parsedBody);
-    
-            if (this.hashCheck(this.SPRIBE_OPERATOR_KEY, this.SPRIBE_SECRET_TOKEN, path, signature, JSON.stringify(parsedBody))) {
-                response = {
-                    success: false,
-                    message: 'Invalid Hash Signature',
-                    status: HttpStatus.BAD_REQUEST,
-                    data: { error: 5, description: 'Error' }
-                };
-    
-                await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
-                return response;
-            }
-        } else {
-            response = {
-                success: false,
-                message: 'Invalid body format',
-                status: HttpStatus.BAD_REQUEST,
-                data: { error: 5, description: 'Error' }
-            };
-    
-            await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
-            return response;
-        }
+        // if (this.hashCheck(this.SPRIBE_OPERATOR_KEY, this.SPRIBE_SECRET_TOKEN, path, signature, newBody)) {
+        //     response = {
+        //         success: false,
+        //         message: 'Invalid Hash Signature',
+        //         status: HttpStatus.BAD_REQUEST,
+        //         data: { error: 5, description: 'Error' }
+        //     };
+
+        //     await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
+        //     return response;
+        // }
     
         let player = null;
         let balanceType;
     
-            // Handle other actions with token validation
-            token = body.get("session_token");
-            console.log("session_token", token);
+        // Handle other actions with token validation
+        token = newBody.user_token ? newBody.user_token : newBody.player_token;
+        console.log("user_token", token);
     
-            if (token) {
-                const res = await this.identityService.validateToken({ clientId: data.clientId, token });
-                console.log("res", res);
-    
-                
-          // const res = {
-          //   success: true,
-          //   message: "Success",
-          //   data: {
-          //     playerId: 214993,
-          //     clientId: 4,
-          //     playerNickname: 'pragmatic-play',
-          //     sessionId: '132',
-          //     balance: 9996.25,
-          //     casinoBalance: 0.0,
-          //     virtualBalance: 0.5,
-          //     group: null,
-          //     currency: 'NGN'
-          //   }
+        if (token) {
+            const res = await this.identityService.validateToken({ clientId: data.clientId, token });
+            console.log("res", res);
+
             
-          // };
-    
-                if (!res.success) {
-                    response = {
-                        success: false,
-                        message: 'Invalid Session ID',
-                        status: HttpStatus.NOT_FOUND
-                    };
-    
-                    await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
-                    return response;
-                }
-    
-                if (!player) {
-                    player = res.data;
-                }
-            } else {
+      // const res = {
+      //   success: true,
+      //   message: "Success",
+      //   data: {
+      //     playerId: 214993,
+      //     clientId: 4,
+      //     playerNickname: 'pragmatic-play',
+      //     sessionId: '132',
+      //     balance: 9996.25,
+      //     casinoBalance: 0.0,
+      //     virtualBalance: 0.5,
+      //     group: null,
+      //     currency: 'NGN'
+      //   }
+        
+      // };
+
+            if (!res.success) {
                 response = {
                     success: false,
-                    message: 'Token is missing',
-                    status: HttpStatus.BAD_REQUEST
+                    message: 'Invalid Session ID',
+                    status: HttpStatus.NOT_FOUND
                 };
-    
+
                 await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
                 return response;
             }
-    
-            const gameSession = await this.gameSessionRepo.findOne({ where: { session_id: token } });
-            console.log("gameSession", gameSession);
-    
-            if (gameSession?.balance_type === 'bonus') {
-                balanceType = 'casino';
+
+            if (!player) {
+                player = res.data;
             }
+        } else {
+            response = {
+                success: false,
+                message: 'Token is missing',
+                status: HttpStatus.BAD_REQUEST
+            };
+
+            await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
+            return response;
+        }
+    
+        const gameSession = await this.gameSessionRepo.findOne({ where: { session_id: token } });
+        console.log("gameSession", gameSession);
+
+        if (gameSession?.balance_type === 'bonus') {
+            balanceType = 'casino';
+        }
 
     
         console.log("player", player);
     
         // Handle game actions
         switch (data.action) {
-            case 'Authenticate':
+            case 'auth':
                 console.log("using spribe authenticate");
                 return await this.authenticate(data.clientId, token, callback, balanceType);
-            case 'Balance':
+            case 'info':
                 return await this.getBalance(data.clientId, player, callback, balanceType);
             // case 'Bet':
             //     return await this.bet(data.clientId, player, callback, body, balanceType);
@@ -746,20 +735,20 @@ export class SpribeService {
     async saveCallbackLog(data) {
       console.log('body-data', data);
       const action = data.action;
-      const body = data.body ? new URLSearchParams(data.body) : new URLSearchParams();
+      const body = data.body ? JSON.parse(data.body) : {};
   
       console.log('body-Callback', body);
       const transactionId = 
         action === 'auth' 
-          ? body.get('session_token') 
+          ? body.session_token
           : action === 'info' 
-            ? body.get('session_token')
+            ? body.session_token
             : action === 'withdraw' 
-            ? body.get('session_token') 
+            ? body.session_token 
             : action === 'deposit' 
-            ? body.get('session_token')
+            ? body.session_token
             : action === 'rollback' 
-            ? body.get('session_token') 
+            ? body.session_token
               : body.get('transactionId');
   
       try {
@@ -769,7 +758,7 @@ export class SpribeService {
         callback = new CallbackLog();
         callback.transactionId = transactionId;
         callback.request_type = action;
-        callback.payload = JSON.stringify(Object.fromEntries(body)); // Convert URLSearchParams back to JSON
+        callback.payload = JSON.stringify(body); // Convert URLSearchParams back to JSON
   
         console.log("saved-callback", callback)
   

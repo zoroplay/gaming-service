@@ -126,6 +126,7 @@ export interface CallbackGameDto {
   header: { [key: string]: any } | undefined;
   body?: string | undefined;
   signature?: string | undefined;
+  path?: string | undefined;
 }
 
 export interface FindOneGameDto {
