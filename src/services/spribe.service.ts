@@ -5,12 +5,15 @@ import { HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { GameKey } from 'src/entities/game-key.entity';
 import { CallbackGameDto, SpribeCallbackRequest, StartGameDto, SyncGameDto } from 'src/proto/gaming.pb';
-import { Repository } from 'typeorm';
+import { Raw, Repository } from 'typeorm';
 import * as crypto from 'crypto';
 import { CallbackLog, Game as GameEntity, GameSession, Provider as ProviderEntity } from '../entities';
 import { RpcException } from '@nestjs/microservices';
 import { IdentityService } from 'src/identity/identity.service';
 import { WalletService } from 'src/wallet/wallet.service';
+import { CreditCasinoBetRequest, PlaceCasinoBetRequest, RollbackCasinoBetRequest, SettleCasinoBetRequest } from 'src/proto/betting.pb';
+import { BetService } from 'src/bet/bet.service';
+import { firstValueFrom, lastValueFrom } from 'rxjs';
 
 
 
@@ -38,6 +41,7 @@ export class SpribeService {
     private callbackLogRepository: Repository<CallbackLog>,
     private readonly identityService: IdentityService,
      private readonly walletService: WalletService,
+     private readonly betService: BetService,
   ) {}
 
   async setKeys (clientId) {
@@ -432,9 +436,597 @@ export class SpribeService {
     await this.callbackLogRepository.update({ id: callback.id}, { response: JSON.stringify(response)});
 
     return response;
-  }
+    }
 
-      async handleCallback(data: CallbackGameDto) {
+    // Place Bet
+    async placeBet(data: PlaceCasinoBetRequest) {
+      return firstValueFrom(this.betService.placeCasinoBet(data));
+    }
+
+    // Settle Bet
+    async result(data: CreditCasinoBetRequest) {
+      return await firstValueFrom(this.betService.settleCasinoBet(data));
+    }
+
+    async rollback(data: RollbackCasinoBetRequest) {
+        return await firstValueFrom(this.betService.cancelCasinoBet(data));
+    }
+
+    async withdraw(clientId, player, callback, body, balanceType) {
+        console.log("Got to bet method");
+        console.log("bet-callback", callback);
+        console.log("player", player, body, balanceType);
+        let response: any;
+    
+        if(player) {
+          const gameExist = await this.gameRepository.findOne({ where: { gameId: body.game }, relations: { provider: true }});
+          console.log("Game retrieved from DB:", gameExist);
+      
+          // If game doesn't exist, throw an error
+          if (!gameExist) {
+            response = {
+              success: false,
+              status: HttpStatus.BAD_REQUEST,
+              message: `Game with id ${body.get('gameId')}not Found`,
+              data: {}
+            }
+    
+            await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
+            return response;
+          }
+    
+          const getWallet = await this.walletService.getWallet({
+            userId: player.playerId,
+            clientId
+          });
+    
+          console.log("getWallet", getWallet);
+    
+          // const getWallet = {
+          //   success: true,
+          //   status: HttpStatus.OK,
+          //   message: 'Success',
+          //   data: {
+          //     userId: '1',
+          //     clientId: '4',
+          //     casinoBonusBalance: 0.0,
+          //     sportBonusBalance: 0.00,
+          //     balance: 1450.0,
+          //     trustBalance: 0.0,
+          //     availableBalance: 1450.0,
+          //     virtualBonusBalance: 0.0,
+          //   }
+          // } 
+    
+          if(!getWallet || !getWallet.status) {
+            response = {
+              success: false,
+              status: HttpStatus.BAD_REQUEST,
+              message: 'Invalid auth code, please login to try again',
+              data: {}
+            }
+      
+            const val = await this.callbackLogRepository.update({ id: callback.id}, { response: JSON.stringify(response)});
+            console.log("val", val);
+      
+            return response;
+          } 
+        
+          const dataObject = typeof getWallet.data === 'string' ? JSON.parse(getWallet.data) : getWallet.data;
+    
+          console.log("dataObject", dataObject, body.get('amount'));
+    
+          let { availableBalance, casinoBonusBalance } = dataObject;
+          const betAmount = parseFloat(body.amount) / 1000;
+
+          console.log("betAmount", betAmount);
+    
+          if (availableBalance < betAmount) {
+              response = {
+                  success: false,
+                  status: HttpStatus.BAD_REQUEST,
+                  message: 'Insufficient balance to place this bet',
+                  data: {}
+              };
+              await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
+              return response;
+          }
+    
+          const placeBetPayload: PlaceCasinoBetRequest = {
+            userId: player.playerId,
+            clientId,
+            username: player.playerNickname,
+            roundId: body.action_id,
+            transactionId: body.action_id,
+            gameId: body.game,
+            stake: betAmount,
+            gameName: gameExist.title,
+            gameNumber: gameExist.gameId,
+            source: gameExist.provider.slug,
+            winnings: 0,
+            roundDetails: body.provider_tx_id
+          };
+    
+    
+          console.log("placeBetPayload", placeBetPayload);
+    
+          const place_bet = await this.placeBet(placeBetPayload);
+    
+          console.log("place_bet", place_bet);
+    
+          // const place_bet = {
+          //   success: true,
+          //   status: HttpStatus.OK,
+          //   message: 'Casino Bet Placed',
+          //   data: {
+          //     transactionId: '123456',
+          //     balance: 1450,
+          //   },
+          // }
+    
+    
+        //   return {
+        //     success: false,
+        //     bonusId: bonusResult.id,
+        //     status: 201,
+        //     description: "Bonus created successfully",
+        // }
+    
+          if (!place_bet.success) {
+            response = {
+              success: false,
+              status: HttpStatus.INTERNAL_SERVER_ERROR,
+              message: 'Place bet unsuccessful',
+            };
+    
+            const val = await this.callbackLogRepository.update({ id: callback.id}, { response: JSON.stringify(response)});
+            console.log("val", val);
+      
+            return response;
+          }
+    
+          const debit = await this.walletService.debit({
+            userId: player.playerId,
+            clientId,
+            amount: betAmount.toString(),
+            source: gameExist.provider.slug,
+            description: `Casino Bet: (${gameExist.title}:${body.game})`,
+            username: player.playerNickname,
+            wallet: balanceType,
+            subject: 'Bet Deposit (Casino)',
+            channel: 'web',
+          });
+    
+          console.log("debit", debit);
+    
+          // const debit = {
+          //   success: true,
+          //   status: HttpStatus.OK,
+          //   message: 'Casino Bet Placed',
+          //   data: {
+          //     balance: 1450.0,
+          //   },
+          // }
+    
+          if (!debit.success) {
+            response = {
+              success: false,
+              status: HttpStatus.BAD_REQUEST,
+              message: 'Error debiting user wallet',
+            };
+    
+            const val = await this.callbackLogRepository.update({ id: callback.id}, { response: JSON.stringify(response)});
+            console.log("val", val);
+      
+            return response;
+          }
+    
+          const getUpdatedWallet = await this.walletService.getWallet({
+            userId: player.playerId,
+            clientId
+          });
+    
+          console.log("getWallet", getUpdatedWallet);
+    
+          // const getUpdatedWallet = {
+          //   success: true,
+          //   status: HttpStatus.OK,
+          //   message: 'Success',
+          //   data: {
+          //     userId: '1',
+          //     clientId: '4',
+          //     casinoBonusBalance: 0.0,
+          //     sportBonusBalance: 0.00,
+          //     balance: 1450.0,
+          //     trustBalance: 0.0,
+          //     availableBalance: 1450.0,
+          //     virtualBonusBalance: 0.0,
+          //   }
+          // }
+
+    
+          response = {
+            success: true,
+            message: 'Bet Successful',
+            status: HttpStatus.OK,
+            data: {
+              code: 200,
+              message: "ok",
+              data: {
+                operator_tx_id: place_bet.data.transactionId,
+                new_balance: parseFloat(getUpdatedWallet.data.availableBalance.toFixed(2)),
+                old_balance: parseFloat(getUpdatedWallet.data.availableBalance.toFixed(2)) + betAmount,
+                user_id: player.playerId,
+                currency: 'KES',
+                provider: body.provider,
+                provider_tx_id: body.provider_tx_id,
+              }
+            } 
+          };
+    
+          await this.callbackLogRepository.update({ id: callback.id}, { response: JSON.stringify(response)});
+    
+          console.log("bet-response", response);
+    
+          return response;
+    
+        } else {
+          response = {
+            success: false,
+            status: HttpStatus.BAD_REQUEST,
+            message: `Player with userId ${player.playerId} not found`,
+            data: {}
+          }
+    
+          await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
+          return response;
+        }
+    }
+
+    async deposit(clientId, player, callback, body, balanceType) {
+        console.log('Got to win method');
+        console.log('player', player, body, balanceType);
+        let response: any;
+      
+        if (!player) {
+          response = {
+            success: false,
+            status: HttpStatus.BAD_REQUEST,
+            message: `Player with userId ${player.playerId} not found`,
+            data: {},
+          };
+      
+          await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
+          return response;
+        }
+      
+        const gameExist = await this.gameRepository.findOne({
+          where: { gameId: body.game },
+          relations: { provider: true },
+        });
+        console.log('Game retrieved from DB:', gameExist);
+      
+        if (!gameExist) {
+          response = {
+            success: false,
+            status: HttpStatus.BAD_REQUEST,
+            message: `Game with id ${body.get('gameId')} not Found`,
+            data: {},
+          };
+      
+          await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
+          return response;
+        }
+      
+        let amount = parseFloat(body.amount) / 1000;
+      
+      
+        if (amount > 0) {
+          const callbackLog = await this.callbackLogRepository.findOne({
+            where: {
+              request_type: 'withdraw',
+              payload: Raw((alias) => `${alias} LIKE '%"provider_tx_id":"${body.withdraw_provider_tx_id}"%'`),
+            },
+            order: { createdAt: 'DESC' },
+          });
+      
+          if (!callbackLog) {
+            console.log('Callback log not found');
+            response = {
+              transactionId: 0,
+              error: 0,
+              description: `Unsuccessful credit`,
+            };
+      
+            await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
+            return response;
+          }
+      
+          console.log('callbackLog', callbackLog);
+      
+          const callbackResponse = JSON.parse(callbackLog.response);
+      
+          console.log('callbackResponse', callbackResponse);
+      
+          const settlePayload: SettleCasinoBetRequest = {
+            transactionId: callbackResponse.operator_tx_id,
+            winnings: amount,
+          };
+          const settle_bet = await this.result(settlePayload);
+      
+          console.log('settle_bet', settle_bet);
+      
+          if (!settle_bet.success) {
+            response = {
+              error: 120,
+              description: `Unsuccessful`,
+            };
+            await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
+            return response;
+          }
+      
+          const creditResponse = await this.walletService.credit({
+            userId: player.playerId,
+            clientId,
+            amount: amount,
+            source: gameExist.provider.slug,
+            description: `Casino Bet: (${gameExist.title})`,
+            username: player.playerNickname,
+            wallet: balanceType,
+            subject: 'Bet Win (Casino)',
+            channel: gameExist.type,
+          });
+      
+          if (!creditResponse.success) {
+            response = {
+              error: 120,
+              description: `Unsuccessful`,
+            };
+            await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
+            return response;
+          }
+      
+          console.log('creditResponse', creditResponse);
+      
+          const updatedWallet = await this.walletService.getWallet({
+            userId: player.playerId,
+            clientId,
+          });
+      
+          console.log('updatedWallet', updatedWallet);
+      
+          if (!updatedWallet.success) {
+            response = {
+              error: 120,
+              description: `Unsuccessful`,
+            };
+            await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
+            return response;
+          }
+      
+          response = {
+            success: true,
+            message: 'Win Successful',
+            status: HttpStatus.OK,
+           data: {
+              code: 200,
+              message: "ok",
+              data: {
+                operator_tx_id: settle_bet.data.transactionId,
+                new_balance: parseFloat(updatedWallet.data.availableBalance.toFixed(2)),
+                old_balance: parseFloat(updatedWallet.data.availableBalance.toFixed(2)) + amount,
+                user_id: player.playerId,
+                currency: 'KES',
+                provider: body.provider,
+                provider_tx_id: body.provider_tx_id,
+              }
+            }
+          };
+      
+          await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
+          return response;
+        } else {
+          response = {
+            success: false,
+            status: HttpStatus.BAD_REQUEST,
+            message: `Player with userId ${player.playerId} not found`,
+            data: {}
+          };
+    
+          await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
+          return response;
+        }
+    }
+
+    async refund(clientId, player, callback, body, balanceType) {
+        console.log("Got to refund method");
+        console.log("player", player, body, balanceType);
+        let response: any;
+    
+        if(player) {
+    
+          const reversePayload: RollbackCasinoBetRequest = {
+            transactionId: body.rollback_provider_tx_id,
+          };
+    
+          console.log("reversePayload", reversePayload);
+    
+          const callbackLog = await this.callbackLogRepository.findOne({where: {transactionId: body.provider_tx_id,}});
+    
+          if (!callbackLog) {
+            console.log('Callback log not found')
+    
+            response = {
+              success: true,
+              message: 'Refund Unsuccessful',
+              status: HttpStatus.OK,
+              data: {
+                transactionId: 0,
+                error: 0,
+                description: `Unsuccessful rollback`,
+              },
+            };
+    
+    
+            // response = {
+            //   transactionId: 0,
+            //   error: 0,
+            //   description: `Unsuccessful rollback`,
+            // }
+      
+            await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
+            return response;
+    
+          }
+    
+          const callbackPayload = JSON.parse(callbackLog.payload); 
+    
+          const gameExist = await this.gameRepository.findOne({ where: { gameId: callbackPayload.gameId }, relations: { provider: true }});
+          console.log("Game retrieved from DB:", gameExist);
+      
+          // // If game doesn't exist, throw an error
+          if (!gameExist) {
+            response = {
+              success: false,
+              status: HttpStatus.BAD_REQUEST,
+              message: `Game with id ${body.get('gameId')}not Found`,
+              data: {}
+            }
+    
+            await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
+            return response;
+          }
+    
+          // console.log('update ticket')
+          const transaction = await this.rollback(reversePayload);
+    
+          // const transaction = {
+          //   success: true,
+          //   status: HttpStatus.OK,
+          //   message: 'Casino Bet Placed',
+          //   data: {
+          //     transactionId: '123456',
+          //     balance: 756,
+          //   },
+          // }
+    
+          if (!transaction.success) {
+            console.log('transaction error')
+            response = {
+              success: true,
+              message: 'Refund Unsuccessful',
+              status: HttpStatus.OK,
+              data: {
+                transactionId: 0,
+                error: 0,
+                description: `Unsuccessful rollback`,
+              },
+            };
+      
+            await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
+            return response;
+          }
+    
+          const rollbackWalletRes = await this.walletService.credit({
+            userId: player.playerId,
+            clientId,
+            amount: callbackPayload.amount,
+            source: gameExist.provider.slug,
+            description: `Bet Cancelled: (${gameExist.title})`,
+            username: player.playerNickname,
+            wallet: balanceType,
+            subject: 'Bet refund (Casino)',
+            channel: gameExist.title,
+          });
+    
+          // const rollbackWalletRes = {
+          //   success: true,
+          //   status: HttpStatus.OK,
+          //   message: 'Casino Bet Placed',
+          //   data: {
+          //     userId: 11,
+          //     balance: 11,
+          //     availableBalance: 11,
+          //     trustBalance: 11,
+          //     sportBonusBalance: 22,
+          //     virtualBonusBalance: 11,
+          //     casinoBonusBalance: 1
+          //   },
+          // }
+    
+          console.log('rollbackWalletRes', rollbackWalletRes);
+    
+          if (!rollbackWalletRes.success) {
+            console.log('transaction error')
+            response = {
+              success: true,
+              message: 'Refund Unsuccessful',
+              status: HttpStatus.OK,
+              data: {
+                transactionId: 0,
+                error: 0,
+                description: `Unsuccessful rollback`,
+              },
+            };
+      
+            await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
+            return response;
+          }
+
+          const updatedWallet = await this.walletService.getWallet({
+            userId: player.playerId,
+            clientId,
+          });
+      
+          console.log('updatedWallet', updatedWallet);
+      
+          if (!updatedWallet.success) {
+            response = {
+              error: 120,
+              description: `Unsuccessful`,
+            };
+            await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
+            return response;
+          }
+
+          response = {
+            success: true,
+            message: 'Refund Successful',
+            status: HttpStatus.OK,
+           data: {
+              code: 200,
+              message: "ok",
+              data: {
+                operator_tx_id: transaction.data.transactionId,
+                new_balance: parseFloat(updatedWallet.data.availableBalance.toFixed(2)),
+                old_balance: parseFloat(updatedWallet.data.availableBalance.toFixed(2)) + parseFloat(callbackPayload.amount),
+                user_id: player.playerId,
+                currency: 'KES',
+                provider: body.provider,
+                provider_tx_id: body.provider_tx_id,
+              }
+            }
+          };
+    
+          await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
+          return response;
+    
+          
+        } else {
+          response = {
+            success: false,
+            status: HttpStatus.BAD_REQUEST,
+            message: `Player with userId ${player.playerId} not found`,
+            data: {}
+          }
+    
+          await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
+          return response;
+        }
+      
+      }
+
+    async handleCallback(data: CallbackGameDto) {
         console.log("handle callback-data", data);
 
         await this.setKeys(data.clientId);
@@ -445,21 +1037,6 @@ export class SpribeService {
         let body = {};
         const signature = data.signature;
     
-        // Return response if already logged
-        // if (callback?.response != null) {
-        //     console.log("Existing callback response found. Processing it.");
-    
-        //     const existingRequest = JSON.parse(callback.payload);
-        //     const existingResponse = JSON.parse(callback.response);
-    
-        //     console.log("existingRequest", existingRequest);
-        //     console.log("existingResponse", existingResponse);
-    
-        //     return existingResponse;
-      
-        // } 
-        // Parse the body if it exists
-
         const queryString = data.body.includes('?') 
         ? data.body.substring(data.body.indexOf('?')) 
         : '';
@@ -576,12 +1153,12 @@ export class SpribeService {
                 return await this.authenticate(data.clientId, token, callback, balanceType);
             case 'info':
                 return await this.getBalance(data.clientId, player, callback, balanceType);
-            // case 'Bet':
-            //     return await this.bet(data.clientId, player, callback, body, balanceType);
-            // case 'Result':
-            //     return await this.win(data.clientId, player, callback, body, balanceType);
-            // case 'Refund':
-            //     return await this.refund(data.clientId, player, callback, body, balanceType);
+            case 'withdraw':
+                return await this.withdraw(data.clientId, player, callback, newBody, balanceType);
+            case 'deposit':
+                return await this.deposit(data.clientId, player, callback, newBody, balanceType);
+            case 'rollback':
+                return await this.refund(data.clientId, player, callback, newBody, balanceType);
             default:
                 return { success: false, message: 'Invalid request', status: HttpStatus.BAD_REQUEST };
         }
@@ -639,9 +1216,9 @@ export class SpribeService {
           : action === 'info' 
             ? body.session_token
             : action === 'withdraw' 
-            ? body.session_token 
+            ? body.provider_tx_id 
             : action === 'deposit' 
-            ? body.session_token
+            ? body.provider_tx_id 
             : action === 'rollback' 
             ? body.session_token
               : body.get('transactionId');
@@ -649,6 +1226,14 @@ export class SpribeService {
       try {
         let callback;
         console.log("action", action);
+
+        callback = await this.callbackLogRepository.findOne({
+          where: { transactionId },
+        });
+
+        console.log("callback-idem", callback);
+  
+        if (callback) return callback;
         
         callback = new CallbackLog();
         callback.transactionId = transactionId;
