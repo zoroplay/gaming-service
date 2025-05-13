@@ -1565,7 +1565,6 @@ export class PragmaticService {
     // console.log("_data", data);
     
     const callback = await this.saveCallbackLog(data);
-    console.log("callback-4", callback);
     let response;
     let body = {};
 
@@ -1620,8 +1619,6 @@ export class PragmaticService {
     // Verify body is a valid URLSearchParams object
     if (body instanceof URLSearchParams) {
         const parsedBody = Object.fromEntries(body.entries());
-
-        console.log("parsedBody", parsedBody);
 
         if (this.hashCheck(parsedBody, pragmaticKey)) {
             response = {
@@ -1787,11 +1784,9 @@ export class PragmaticService {
   }
 
   async saveCallbackLog(data) {
-    console.log('body-data', data);
     const action = data.action;
     const body = data.body ? new URLSearchParams(data.body) : new URLSearchParams();
 
-    console.log('body-Callback', body);
     const transactionId = 
       action === 'Authenticate' 
         ? body.get('hash') 
