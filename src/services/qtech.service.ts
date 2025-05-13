@@ -107,7 +107,7 @@ export class QtechService {
 
   async getCasinoGames(
     size: number = 50,
-    currencies: string = 'USD,CNY',
+    currencies: string = 'NGN,SSP,KES',
     languages: string = 'en_US',
     gameTypes: string = 'BINGO,CASUALGAME,ESPORTS,INSTANTWIN,LIVECASINO,SCRATCHCARD,SHOOTING,SLOT,SPORTS,TABLEGAME,VIDEOPOKER,VIRTUAL_SPORTS,LOTTERY,CRASH,GAME_SHOW',
     includeFields: string = 'id,name,currencies,clientTypes,provider,description, images, languages',
