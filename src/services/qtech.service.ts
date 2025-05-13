@@ -106,11 +106,11 @@ export class QtechService {
   }
 
   async getCasinoGames(
-    size: number = 100,
-    currencies: string = 'USD,CNY',
+    size: number = 500,
+    currencies: string = 'NGN,SSP,KES',
     languages: string = 'en_US',
-    gameTypes: string = 'BINGO,CASUALGAME,ESPORTS,INSTANTWIN,LIVECASINO,SCRATCHCARD,SHOOTING,SLOT,SPORTS,TABLEGAME,VIDEOPOKER,VIRTUAL_SPORTS,LOTTERY,CRASH,GAME_SHOW',
-    includeFields: string = 'id,name,currencies,clientTypes,provider,description, images, languages',
+    // gameTypes: string = 'BINGO,CASUALGAME,ESPORTS,INSTANTWIN,LIVECASINO,SCRATCHCARD,SHOOTING,SLOT,SPORTS,TABLEGAME,VIDEOPOKER,VIRTUAL_SPORTS,LOTTERY,CRASH,GAME_SHOW',
+    // includeFields: string = 'id,name,currencies,clientTypes,provider,description, images, languages',
   ): Promise<any> {
     const accessToken = await this.getAccessToken();
 
@@ -120,8 +120,8 @@ export class QtechService {
         size: size.toString(),
         currencies: currencies,
         languages: languages,
-        gameTypes: gameTypes,
-        includeFields: includeFields,
+        // gameTypes: gameTypes,
+        // includeFields: includeFields,
       }).toString();
 
       const url = `${this.QTECH_BASEURL}/v2/games?${params}`;
