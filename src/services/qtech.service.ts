@@ -106,7 +106,7 @@ export class QtechService {
   }
 
   async getCasinoGames(
-    size: number = 100,
+    size: number = 50,
     currencies: string = 'USD,CNY',
     languages: string = 'en_US',
     gameTypes: string = 'BINGO,CASUALGAME,ESPORTS,INSTANTWIN,LIVECASINO,SCRATCHCARD,SHOOTING,SLOT,SPORTS,TABLEGAME,VIDEOPOKER,VIRTUAL_SPORTS,LOTTERY,CRASH,GAME_SHOW',
@@ -133,7 +133,7 @@ export class QtechService {
       };
 
       const { data } = await this.httpService.get(url, { headers }).toPromise();
-      console.log('Get Games response:', JSON.stringify(data));
+      console.log('Get Games response:', JSON.stringify(data.items));
       return data;
     } catch (e) {
       console.error('Error in getCasinoGames:', e.message);
