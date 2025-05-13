@@ -247,9 +247,9 @@ export class QtechService {
         }),
       );
 
-      if (gamesResponse.links[0]?.href) {
+      if (gamesResponse.links[0]?.href !== this.GAME_LINK) {
         console.log('fetching new games')
-        this.CLIENT_ID;
+        this.GAME_LINK = gamesResponse.links[0]?.href;
         return this.syncGames(client_id);
       }
 
