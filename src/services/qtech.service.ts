@@ -107,7 +107,7 @@ export class QtechService {
   }
 
   async getCasinoGames(
-    size: number = 50,
+    size: number = 500,
     currencies: string = 'NGN,SSP,KES',
     languages: string = 'en_US',
     gameTypes: string = 'BINGO,CASUALGAME,ESPORTS,INSTANTWIN,LIVECASINO,SCRATCHCARD,SHOOTING,SLOT,SPORTS,TABLEGAME,VIDEOPOKER,VIRTUAL_SPORTS,LOTTERY,CRASH,GAME_SHOW',
@@ -130,7 +130,7 @@ export class QtechService {
         url = this.GAME_LINK;
 
       console.log('Fetching games', url);
-      
+
       const headers = {
         Authorization: `Bearer ${accessToken}`,
         'Time-Zone': 'UTC',
@@ -169,7 +169,7 @@ export class QtechService {
         };
       }
 
-      console.log('Games retrieved:', gamesResponse.items);
+      // console.log('Games retrieved:', gamesResponse.items);
 
       // Process and save each game
       const savedGames = await Promise.all(
@@ -228,9 +228,11 @@ export class QtechService {
             });
 
             if (existingGame) {
+              console.log('updating game', existingGame.title)
               this.gameRepository.merge(existingGame, gameData);
               return await this.gameRepository.save(existingGame);
             } else {
+              console.log('saving new game', gameData.title)
               return await this.gameRepository.save(
                 this.gameRepository.create(gameData),
               );
@@ -245,8 +247,10 @@ export class QtechService {
         }),
       );
 
-      if (gamesResponse.link[0].href) {
-        this.CLIENT_ID
+      if (gamesResponse.links[0]?.href) {
+        console.log('fetching new games')
+        this.CLIENT_ID;
+        return this.syncGames(client_id);
       }
 
       // Filter out unsuccessful saves
