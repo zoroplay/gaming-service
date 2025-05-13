@@ -140,6 +140,7 @@ export class QtechService {
 
       const { data } = await this.httpService.get(url, { headers }).toPromise();
       console.log('Get Games response:', JSON.stringify(data.links));
+      console.log('Total Games:', data.totalCount);
       return data;
     } catch (e) {
       console.error('Error in getCasinoGames:', e.message);
