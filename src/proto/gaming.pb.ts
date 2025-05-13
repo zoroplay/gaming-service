@@ -75,6 +75,14 @@ export interface QtechCallbackRequest {
   action: string;
 }
 
+export interface SpribeCallbackRequest {
+  clientId: number;
+  provider: string;
+  signature?: string | undefined;
+  body?: string | undefined;
+  action: string;
+}
+
 export interface AddGameToCategoriesResponse {
   gameCategories: GameCategory[];
 }
@@ -117,6 +125,8 @@ export interface CallbackGameDto {
   method?: string | undefined;
   header: { [key: string]: any } | undefined;
   body?: string | undefined;
+  signature?: string | undefined;
+  path?: string | undefined;
 }
 
 export interface FindOneGameDto {
@@ -659,6 +669,8 @@ export interface GamingServiceClient {
 
   handleQtechCallback(request: QtechCallbackRequest): Observable<CallbackResponse>;
 
+  handleSpribeCallback(request: CallbackGameDto): Observable<CallbackResponse>;
+
   handleSmatVirtualCallback(request: SmatVirtualCallbackRequest): Observable<CallbackResponse>;
 
   xpressLogin(request: XpressRequest): Observable<XpressResponse>;
@@ -773,6 +785,10 @@ export interface GamingServiceController {
     request: QtechCallbackRequest,
   ): Promise<CallbackResponse> | Observable<CallbackResponse> | CallbackResponse;
 
+  handleSpribeCallback(
+    request: CallbackGameDto,
+  ): Promise<CallbackResponse> | Observable<CallbackResponse> | CallbackResponse;
+
   handleSmatVirtualCallback(
     request: SmatVirtualCallbackRequest,
   ): Promise<CallbackResponse> | Observable<CallbackResponse> | CallbackResponse;
@@ -836,6 +852,7 @@ export function GamingServiceControllerMethods() {
       "startGame",
       "handleCallback",
       "handleQtechCallback",
+      "handleSpribeCallback",
       "handleSmatVirtualCallback",
       "xpressLogin",
       "xpressBalance",
