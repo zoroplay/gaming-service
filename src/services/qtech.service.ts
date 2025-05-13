@@ -36,6 +36,7 @@ export class QtechService {
   private QTECH_IMAGE_URL: string;
   private QTECH_PASS_KEY: string;
   private CLIENT_ID: number;
+  private GAME_LINK: string;
 
   constructor(
     @InjectRepository(ProviderEntity)
@@ -110,7 +111,7 @@ export class QtechService {
     currencies: string = 'NGN,SSP,KES',
     languages: string = 'en_US',
     gameTypes: string = 'BINGO,CASUALGAME,ESPORTS,INSTANTWIN,LIVECASINO,SCRATCHCARD,SHOOTING,SLOT,SPORTS,TABLEGAME,VIDEOPOKER,VIRTUAL_SPORTS,LOTTERY,CRASH,GAME_SHOW',
-    includeFields: string = 'id,name,currencies,clientTypes,provider,description, images, languages',
+    includeFields: string = 'id,name,currencies,clientTypes,provider,description, images,languages,category',
   ): Promise<any> {
     const accessToken = await this.getAccessToken();
 
@@ -124,7 +125,12 @@ export class QtechService {
         includeFields: includeFields,
       }).toString();
 
-      const url = `${this.QTECH_BASEURL}/v2/games?${params}`;
+      let url = `${this.QTECH_BASEURL}/v2/games?${params}`;
+      if(this.GAME_LINK)
+        url = this.GAME_LINK;
+
+      console.log('Fetching games', url);
+      
       const headers = {
         Authorization: `Bearer ${accessToken}`,
         'Time-Zone': 'UTC',
@@ -133,7 +139,7 @@ export class QtechService {
       };
 
       const { data } = await this.httpService.get(url, { headers }).toPromise();
-      console.log('Get Games response:', JSON.stringify(data.items));
+      console.log('Get Games response:', JSON.stringify(data.links));
       return data;
     } catch (e) {
       console.error('Error in getCasinoGames:', e.message);
@@ -152,8 +158,8 @@ export class QtechService {
       // Validate response
       if (
         !gamesResponse ||
-        !gamesResponse.games ||
-        gamesResponse.games.length === 0
+        !gamesResponse.items ||
+        gamesResponse.items.length === 0
       ) {
         console.warn('No games available for processing');
         return {
@@ -163,11 +169,11 @@ export class QtechService {
         };
       }
 
-      console.log('Games retrieved:', gamesResponse.games);
+      console.log('Games retrieved:', gamesResponse.items);
 
       // Process and save each game
       const savedGames = await Promise.all(
-        gamesResponse.games.map(async (game: any) => {
+        gamesResponse.items.map(async (game: any) => {
           try {
             // Extract provider details
             const providerData = game.provider;
@@ -183,7 +189,7 @@ export class QtechService {
               const newProvider = this.providerRepository.create({
                 name: providerName,
                 parentProvider: 'qtech-games',
-                slug: providerName.toLowerCase().replace(/\s+/g, '-'),
+                slug: providerData.id, //providerName.toLowerCase().replace(/\s+/g, '-'),
                 description: `Games provided by ${providerName}`,
                 imagePath: providerData.imagePath || `${this.QTECH_IMAGE_URL}`,
               });
@@ -201,18 +207,18 @@ export class QtechService {
 
             // Prepare game data
             const gameData = {
-              gameId: game.gameId,
-              title: game.title,
+              gameId: game.id,
+              title: game.name,
               description:
                 game.description || `Enjoy ${game.title} by ${providerName}`,
               url: game.url,
-              imagePath: game.imagePath,
-              bannerPath: game.bannerPath,
+              imagePath: game?.images?.find(image => image.type === 'logo-square').url,
+              bannerPath: game?.images?.find(image => image.type === 'banner').url,
               status: game.status ?? true,
-              type: game.type || 'Slots',
+              type: game.category || 'Slots',
               provider: provider,
-              createdAt: game.createdAt || new Date().toISOString(),
-              updatedAt: game.updatedAt || new Date().toISOString(),
+              // createdAt: game.createdAt || new Date().toISOString(),
+              // updatedAt: game.updatedAt || new Date().toISOString(),
             };
 
             // Check or create the game
@@ -239,13 +245,17 @@ export class QtechService {
         }),
       );
 
+      if (gamesResponse.link[0].href) {
+        this.CLIENT_ID
+      }
+
       // Filter out unsuccessful saves
       const successfullySavedGames = savedGames.filter((game) => game !== null);
 
       return {
         success: true,
         message: 'Games synchronized successfully',
-        games: successfullySavedGames,
+        games: [],
       };
     } catch (error) {
       console.error('Error saving games:', error.message);
