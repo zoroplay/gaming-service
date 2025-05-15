@@ -411,7 +411,7 @@ export class SpribeService {
               user_id: player.playerId,
               username: player.playerNickname || 'Test User',
               balance: parseFloat(dataObject.data.availableBalance.toFixed(2)) || 0.00,
-              currency: player.currency,
+              currency: 'KES',
             }
           },
         };
