@@ -224,7 +224,7 @@ export class SpribeService {
         // Fetch the game details from the repository
         const gameExist = await this.gameRepository.findOne({ where: { id: gameId }, relations: { provider: true }});
         // console.log("Game retrieved from DB:", gameExist);
-    
+
         // If game doesn't exist, throw an error
         if (!gameExist) {
           console.error(`Game with ID ${gameId} not found`);
@@ -234,12 +234,28 @@ export class SpribeService {
             data: {},
           };
         }
+
+        //Generate game token
+        const res = await this.identityService.xpressLogin({ clientId, token: authCode });
+
+        // If game doesn't exist, throw an error
+        if (!res) {
+          console.error(`Coud not validate player with ID ${userId}`);
+          return {
+            status: HttpStatus.NOT_FOUND,
+            message: 'Invalid auth code',
+            data: {},
+          };
+        };
+
+        const user = res.data;
+
         const currency = 'KES';
     
         // Create query parameters for the URL
         const queryParams = new URLSearchParams({
           user: userId.toString(),
-          token: authCode,
+          token: user.sessionId,
           lang: language,
           currency: currency,
           operator: this.SPRIBE_OPERATOR_KEY,
@@ -1090,7 +1106,7 @@ export class SpribeService {
         console.log("user_token", token);
     
         if (token) {
-            const res = await this.identityService.validateToken({ clientId: data.clientId, token });
+            const res = await this.identityService.validateXpressSession({ clientId: data.clientId, sessionId: token });
             console.log("res", res);
 
             
