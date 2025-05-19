@@ -294,7 +294,7 @@ export class SpribeService {
         gameSession.balance_type = balanceType || null;
         gameSession.game_id = gameExist.gameId;
         gameSession.token = authCode || null;
-        gameSession.session_id = authCode || null;
+        gameSession.session_id = user.sessionId || null;
         gameSession.provider = gameExist.provider.slug;
     
         // Check if token is missing or invalid
@@ -337,9 +337,31 @@ export class SpribeService {
 
     async authenticate(clientId, token, callback, walletType) {
       console.log("Got to authenticate method");
+    
       const isValid = await this.identityService.validateToken({ clientId, token });
-  
-      let response: any;
+
+        // const res = {
+      //   success: true,
+      //   message: "Success",
+      //   data: {
+      //     id: 19,
+        //   username: '8137048054',
+        //   password: '$2a$10$abvFRcypU7Eqk7s6aY7d6OUz6ZE5cYkMyqbEAxTT8ZutzfsnZtjSu',
+        //   code: '231469',
+        //   roleId: 13,
+        //   auth_code: '1JCVJLDAF7OZZT5PQB6GZKXRRS7YAMATVOF0MI4E',
+        //   virtualToken: 'NMWBRXZFQLTEHQSOHVZQM982HEGWJDRDUFYCA3E0KIZP3ON05XHJMLQFYYXO',    registrationSource: null,
+        //   trackierToken: null,
+        //   trackierId: null,
+        //   lastLogin: '2025-05-19',    status: 1,
+        //   verified: 1,
+        //   pin: null,
+        //   createdAt: {},
+        //   updatedAt: {},
+        //   clientId: 4
+      //   }
+        let response: any;
+    
       const dataObject = typeof isValid.data === 'string' ? JSON.parse(isValid.data) : isValid.data;
   
       // console.log("dataObject", dataObject);
@@ -1100,33 +1122,53 @@ export class SpribeService {
     
         let player = null;
         let balanceType;
+        let sessionId = null;
     
         // Handle other actions with token validation
-        token = newBody.user_token ? newBody.user_token : newBody.session_token;
-        console.log("user_token", token);
+        sessionId = newBody.user_token ? newBody.user_token : newBody.session_token;
+        console.log("sessionId", sessionId);
     
-        if (token) {
-            const res = await this.identityService.validateXpressSession({ clientId: data.clientId, sessionId: token });
-            console.log("res", res);
+        if (sessionId) {
+            const responseData = await this.identityService.validateXpressSession({ clientId: data.clientId, sessionId: token });
+            console.log("res", responseData);
 
             
       // const res = {
       //   success: true,
       //   message: "Success",
       //   data: {
-      //     playerId: 214993,
-      //     clientId: 4,
-      //     playerNickname: 'pragmatic-play',
-      //     sessionId: '132',
-      //     balance: 9996.25,
-      //     casinoBalance: 0.0,
-      //     virtualBalance: 0.5,
-      //     group: null,
-      //     currency: 'NGN'
+      //     id: 19,
+        //   username: '8137048054',
+        //   password: '$2a$10$abvFRcypU7Eqk7s6aY7d6OUz6ZE5cYkMyqbEAxTT8ZutzfsnZtjSu',
+        //   code: '231469',
+        //   roleId: 13,
+        //   auth_code: '1JCVJLDAF7OZZT5PQB6GZKXRRS7YAMATVOF0MI4E',
+        //   virtualToken: 'NMWBRXZFQLTEHQSOHVZQM982HEGWJDRDUFYCA3E0KIZP3ON05XHJMLQFYYXO',    registrationSource: null,
+        //   trackierToken: null,
+        //   trackierId: null,
+        //   lastLogin: '2025-05-19',    status: 1,
+        //   verified: 1,
+        //   pin: null,
+        //   createdAt: {},
+        //   updatedAt: {},
+        //   clientId: 4
       //   }
         
-      // };
 
+            if (!responseData.success) {
+                response = {
+                    success: false,
+                    message: 'Invalid Session ID',
+                    status: HttpStatus.NOT_FOUND
+                };
+
+                await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
+                return response;
+            }
+
+            const res = await this.identityService.validateToken({ clientId: data.clientId, token: responseData.data.auth_code });
+
+            
             if (!res.success) {
                 response = {
                     success: false,
@@ -1137,6 +1179,9 @@ export class SpribeService {
                 await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
                 return response;
             }
+
+            token = res.data.auth_code;
+            console.log("token", token);
 
             if (!player) {
                 player = res.data;
