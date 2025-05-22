@@ -21,6 +21,7 @@ import {
   CommonResponse,
   CreateBonusRequest,
   CreateGameDto,
+  CreateGameKeyRequest,
   CreatePromotionRequest,
   CreateProviderDto,
   CreateTournamentDto,
@@ -1269,5 +1270,28 @@ async handleCasinoJackpotWinners(payload: SyncGameDto): Promise<any> {
   }
   
 }
+
+async addGameKeys(
+    createGameKeyDto: CreateGameKeyRequest,
+  ): Promise<any> {
+    console.log('addGameKeys', createGameKeyDto);
+    const newGameKey = new GameKey();
+
+    newGameKey.client_id = createGameKeyDto.clientId;
+    newGameKey.provider = createGameKeyDto.provider;
+    newGameKey.option = createGameKeyDto.option;
+    newGameKey.value = createGameKeyDto.value;
+
+    const savedKeys = await this.gameKeyRepository.save(newGameKey);
+    console.log('savedKeys', savedKeys);
+    return {
+      status: 200,
+      success: true,
+      message: 'Game keys created successfully',
+      data: savedKeys
+    };
+  }
+
+  
 
 }
