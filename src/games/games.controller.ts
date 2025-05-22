@@ -10,6 +10,7 @@ import {
   CommonResponse,
   CreateBonusRequest,
   CreateGameDto,
+  CreateGameKeyRequest,
   CreatePromotionRequest,
   CreateProviderDto,
   CreateTournamentDto,
@@ -360,8 +361,8 @@ async getGames(request?: GetGamesRequest) {
     return this.gamesService.handleCasinoJackpotWinners(payload);
   }
 
-  // @GrpcMethod(GAMING_SERVICE_NAME, 'handleSpribeCallback')
-  // async handleSpribeCallback(payload: SpribeCallbackRequest): Promise<any> {
-  //   return this.spribeService.handleCallback(payload);
-  // }
+  @GrpcMethod(GAMING_SERVICE_NAME, 'addGameKeys')
+  async createGameKeys(payload: CreateGameKeyRequest): Promise<any> {
+    return this.gamesService.addGameKeys(payload);
+  }
 }
