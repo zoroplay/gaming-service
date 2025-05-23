@@ -9,6 +9,8 @@ export const protobufPackage = "gaming";
 export interface GetGamesRequest {
   providerId?: number | undefined;
   categoryId?: number | undefined;
+  page?: number | undefined;
+  limit?: number | undefined;
 }
 
 export interface GetPromotions {

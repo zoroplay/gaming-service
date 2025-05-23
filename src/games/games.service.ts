@@ -204,6 +204,7 @@ export class GamesService {
     console.log(final);
     return final;
   }
+  
   // Make sure to import the interface
 
   // async fetchGames({
@@ -1045,31 +1046,45 @@ export class GamesService {
   }
 
   async getGamesWithCategories(payload?: GetGamesRequest) {
-  
+    // Pagination setup
+    const page = payload?.page && payload.page > 0 ? payload.page : 1;
+    const limit = payload?.limit && payload.limit > 0 && payload.limit <= 50 ? payload.limit : 50;
+    const skip = (page - 1) * limit;
+
     const filters: any = {};
-  
     if (payload?.providerId) {
       filters.provider = { id: payload.providerId };
     }
-  
-    const gameData = await this.gameRepository.find({
+
+    // Get total count for pagination
+    const [gameData, total] = await this.gameRepository.findAndCount({
       where: filters,
       relations: ['provider', 'categories'],
+      skip,
+      take: limit,
     });
-  
+
     // If filtering by categoryId, further filter the retrieved games
     let filteredGames = gameData;
+    let filteredTotal = total;
     if (payload?.categoryId) {
       filteredGames = gameData.filter(game =>
         game.categories.some(category => category.id === payload.categoryId)
       );
+      filteredTotal = filteredGames.length;
     }
-  
+
     return {
       status: 200,
       success: true,
       message: 'Games fetched successfully',
-      data: filteredGames
+      data: filteredGames,
+      pagination: {
+        page,
+        limit,
+        total: filteredTotal,
+        totalPages: Math.ceil(filteredTotal / limit)
+      }
     };
   }
 
