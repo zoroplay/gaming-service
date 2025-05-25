@@ -383,11 +383,19 @@ export interface CallbackResponse {
   data: { [key: string]: any } | undefined;
 }
 
+export interface Pagination {
+  page?: number | undefined;
+  limit?: number | undefined;
+  total?: number | undefined;
+  totalPages?: number | undefined;
+}
+
 export interface CommonResponseArray {
   status?: number | undefined;
   success?: boolean | undefined;
   message: string;
   data: { [key: string]: any }[];
+  pagination?: Pagination | undefined;
 }
 
 export interface XpressRequest {
