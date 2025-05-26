@@ -17,6 +17,10 @@ export interface GetPromotions {
   clientId?: number | undefined;
 }
 
+export interface GetKeysRequest {
+  clientId: number;
+}
+
 export interface StartDto {
   clientId: number;
   userId: number;
@@ -25,13 +29,13 @@ export interface StartDto {
 
 export interface CreateGameKeyRequest {
   clientId: number;
-  provider: string;
   keys: GameKeyEntry[];
 }
 
 export interface GameKeyEntry {
   option: string;
   value: string;
+  provider: string;
 }
 
 export interface SmatVirtualCallbackRequest {
@@ -680,7 +684,7 @@ export interface GamingServiceClient {
 
   addGameKeys(request: CreateGameKeyRequest): Observable<CommonResponse>;
 
-  fetchGameKeys(request: Empty): Observable<CommonResponse>;
+  fetchGameKeys(request: GetKeysRequest): Observable<CommonResponse>;
 
   handleCasinoJackpot(request: SyncGameDto): Observable<CommonResponse>;
 
@@ -796,7 +800,7 @@ export interface GamingServiceController {
 
   addGameKeys(request: CreateGameKeyRequest): Promise<CommonResponse> | Observable<CommonResponse> | CommonResponse;
 
-  fetchGameKeys(request: Empty): Promise<CommonResponse> | Observable<CommonResponse> | CommonResponse;
+  fetchGameKeys(request: GetKeysRequest): Promise<CommonResponse> | Observable<CommonResponse> | CommonResponse;
 
   handleCasinoJackpot(request: SyncGameDto): Promise<CommonResponse> | Observable<CommonResponse> | CommonResponse;
 
