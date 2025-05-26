@@ -26,6 +26,10 @@ export interface StartDto {
 export interface CreateGameKeyRequest {
   clientId: number;
   provider: string;
+  keys: GameKeyEntry[];
+}
+
+export interface GameKeyEntry {
   option: string;
   value: string;
 }
@@ -676,6 +680,8 @@ export interface GamingServiceClient {
 
   addGameKeys(request: CreateGameKeyRequest): Observable<CommonResponse>;
 
+  fetchGameKeys(request: Empty): Observable<CommonResponse>;
+
   handleCasinoJackpot(request: SyncGameDto): Observable<CommonResponse>;
 
   handleCasinoJackpotWinners(request: SyncGameDto): Observable<CommonResponse>;
@@ -790,6 +796,8 @@ export interface GamingServiceController {
 
   addGameKeys(request: CreateGameKeyRequest): Promise<CommonResponse> | Observable<CommonResponse> | CommonResponse;
 
+  fetchGameKeys(request: Empty): Promise<CommonResponse> | Observable<CommonResponse> | CommonResponse;
+
   handleCasinoJackpot(request: SyncGameDto): Promise<CommonResponse> | Observable<CommonResponse> | CommonResponse;
 
   handleCasinoJackpotWinners(
@@ -869,6 +877,7 @@ export function GamingServiceControllerMethods() {
       "removePromotion",
       "handleCasinoBonus",
       "addGameKeys",
+      "fetchGameKeys",
       "handleCasinoJackpot",
       "handleCasinoJackpotWinners",
       "startGame",
