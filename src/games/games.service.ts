@@ -1286,27 +1286,95 @@ async handleCasinoJackpotWinners(payload: SyncGameDto): Promise<any> {
   
 }
 
+// async addGameKeys(
+//     createGameKeyDto: CreateGameKeyRequest,
+//   ): Promise<any> {
+//     console.log('addGameKeys', createGameKeyDto);
+//     const newGameKey = new GameKey();
+
+//     newGameKey.client_id = createGameKeyDto.clientId;
+//     newGameKey.provider = createGameKeyDto.provider;
+//     newGameKey.option = createGameKeyDto.option;
+//     newGameKey.value = createGameKeyDto.value;
+
+//     const savedKeys = await this.gameKeyRepository.save(newGameKey);
+//     console.log('savedKeys', savedKeys);
+//     return {
+//       status: 200,
+//       success: true,
+//       message: 'Game keys created successfully',
+//       data: savedKeys
+//     };
+//   }
+
+
 async addGameKeys(
-    createGameKeyDto: CreateGameKeyRequest,
-  ): Promise<any> {
-    console.log('addGameKeys', createGameKeyDto);
-    const newGameKey = new GameKey();
+  createGameKeyDto: CreateGameKeyRequest,
+): Promise<any> {
+  console.log('addGameKeys', createGameKeyDto);
 
-    newGameKey.client_id = createGameKeyDto.clientId;
-    newGameKey.provider = createGameKeyDto.provider;
-    newGameKey.option = createGameKeyDto.option;
-    newGameKey.value = createGameKeyDto.value;
+  const { clientId, provider, keys } = createGameKeyDto;
 
-    const savedKeys = await this.gameKeyRepository.save(newGameKey);
-    console.log('savedKeys', savedKeys);
+  const savedKeys = [];
+
+  for (const key of keys) {
+    // Check if the key already exists for this clientId + provider + option
+    let gameKey = await this.gameKeyRepository.findOne({
+      where: {
+        client_id: clientId,
+        provider: provider,
+        option: key.option,
+      },
+    });
+
+    if (gameKey) {
+      // Update existing record
+      gameKey.value = key.value;
+    } else {
+      // Create new record
+      gameKey = new GameKey();
+      gameKey.client_id = clientId;
+      gameKey.provider = provider;
+      gameKey.option = key.option;
+      gameKey.value = key.value;
+    }
+
+    const savedKey = await this.gameKeyRepository.save(gameKey);
+    savedKeys.push(savedKey);
+  }
+
+  console.log('savedKeys', savedKeys);
+
+  return {
+    status: 200,
+    success: true,
+    message: 'Game keys processed successfully',
+    data: savedKeys,
+  };
+}
+
+  async fetchGameKeys(): Promise<any> {
+
+    const gameKeys = await this.gameKeyRepository.find({});
+
+    if (!gameKeys || gameKeys.length === 0) {
+      return {
+        status: 404,
+        success: false,
+        message: 'No game keys found for the specified client',
+        data: [],
+      };
+    }
+
     return {
       status: 200,
       success: true,
-      message: 'Game keys created successfully',
-      data: savedKeys
+      message: 'Game keys fetched successfully',
+      data: gameKeys,
     };
-  }
 
-  
+    
+
+  }
 
 }

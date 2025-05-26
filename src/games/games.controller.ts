@@ -365,4 +365,9 @@ async getGames(request?: GetGamesRequest) {
   async createGameKeys(payload: CreateGameKeyRequest): Promise<any> {
     return this.gamesService.addGameKeys(payload);
   }
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'fetchGameKeys')
+  async fetchGameKeys(): Promise<any> {
+    return this.gamesService.fetchGameKeys();
+  }
 }
