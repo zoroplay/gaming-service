@@ -32,6 +32,7 @@ import {
   Game,
   Games,
   GetGamesRequest,
+  GetKeysRequest,
   GetPromotions,
   PaginationDto,
   Promotion,
@@ -1313,7 +1314,7 @@ async addGameKeys(
 ): Promise<any> {
   console.log('addGameKeys', createGameKeyDto);
 
-  const { clientId, provider, keys } = createGameKeyDto;
+  const { clientId, keys } = createGameKeyDto;
 
   const savedKeys = [];
 
@@ -1322,7 +1323,6 @@ async addGameKeys(
     let gameKey = await this.gameKeyRepository.findOne({
       where: {
         client_id: clientId,
-        provider: provider,
         option: key.option,
       },
     });
@@ -1334,7 +1334,7 @@ async addGameKeys(
       // Create new record
       gameKey = new GameKey();
       gameKey.client_id = clientId;
-      gameKey.provider = provider;
+      gameKey.provider = key.provider;
       gameKey.option = key.option;
       gameKey.value = key.value;
     }
@@ -1353,9 +1353,9 @@ async addGameKeys(
   };
 }
 
-  async fetchGameKeys(): Promise<any> {
+  async fetchGameKeys(payload: GetKeysRequest): Promise<any> {
 
-    const gameKeys = await this.gameKeyRepository.find({});
+    const gameKeys = await this.gameKeyRepository.find({ where: { client_id: payload.clientId } });
 
     if (!gameKeys || gameKeys.length === 0) {
       return {

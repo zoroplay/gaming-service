@@ -24,6 +24,7 @@ import {
   Games,
   GAMING_SERVICE_NAME,
   GetGamesRequest,
+  GetKeysRequest,
   GetPromotions,
   PaginationDto,
   Provider,
@@ -367,7 +368,7 @@ async getGames(request?: GetGamesRequest) {
   }
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'fetchGameKeys')
-  async fetchGameKeys(): Promise<any> {
-    return this.gamesService.fetchGameKeys();
+  async fetchGameKeys(payload: GetKeysRequest): Promise<any> {
+    return this.gamesService.fetchGameKeys(payload);
   }
 }
