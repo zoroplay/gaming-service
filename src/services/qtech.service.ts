@@ -300,8 +300,18 @@ export class QtechService {
       const mode = 'real';
       const device = isMobile ? 'mobile' : 'desktop';
 
-      console.log('mode', 'device', mode, device);
+      // console.log('mode', 'device', mode, device);
+      // get user details
+      const res = await this.identityService.xpressLogin({ clientId: payload.clientId, token: authCode });
 
+      if (!res.status) {
+        return {
+          status: HttpStatus.BAD_REQUEST,
+          message: 'User is not signed in',
+          data: {},
+        };
+      } 
+      const user = res.data;
       // Construct the wallet session ID (if applicable)
       const walletSessionId = authCode || `session_${Date.now()}`;
 
@@ -358,8 +368,8 @@ export class QtechService {
       const requestBody = {
         playerId: userId,
         walletSessionId,
-        currency: 'NGN',
-        country: 'NG',
+        currency: user.currency,
+        country: user.country,
         lang: 'en_US',
         mode,
         device,
