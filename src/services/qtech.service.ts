@@ -420,8 +420,8 @@ export class QtechService {
       const requestBody = {
         playerId: userId,
         walletSessionId,
-        currency: user.currency || 'NGN',
-        country: user.country || 'NG',
+        currency: user ? user.currency : 'NGN',
+        country: user ? user.country : 'NG',
         lang: 'en_US',
         mode,
         device,
