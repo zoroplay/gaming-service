@@ -10,10 +10,10 @@ import * as crypto from 'crypto';
 import { firstValueFrom, lastValueFrom } from 'rxjs';
 import { BetService } from 'src/bet/bet.service';
 import { generateTrxNo } from 'src/common';
-import { CasinoGame } from 'src/entities/casino-game.entity';
+import { GameKey } from 'src/entities/game-key.entity';
 import { IdentityService } from 'src/identity/identity.service';
 import { CreditCasinoBetRequest, PlaceCasinoBetRequest, RollbackCasinoBetRequest, SettleCasinoBetRequest } from 'src/proto/betting.pb';
-import { CallbackGameDto, StartGameDto } from 'src/proto/gaming.pb';
+import { CallbackGameDto, StartGameDto, SyncGameDto } from 'src/proto/gaming.pb';
 import { WalletService } from 'src/wallet/wallet.service';
 import { Raw, Repository } from 'typeorm';
 import { CallbackLog, Game as GameEntity, GameSession, Provider as ProviderEntity } from '../entities';
@@ -36,8 +36,8 @@ export class PragmaticService {
     private gameRepository: Repository<GameEntity>,
     @InjectRepository(GameSession)
     private gameSessionRepo: Repository<GameSession>,
-    @InjectRepository(CasinoGame)
-    private casinoGameRepository: Repository<CasinoGame>,
+    @InjectRepository(GameKey)
+    private gameKeyRepository: Repository<GameKey>,
     private readonly betService: BetService,
     private readonly walletService: WalletService,
     private readonly identityService: IdentityService,
@@ -52,93 +52,189 @@ export class PragmaticService {
   }
 
   // Get Casino Games
-  async getCasinoGames(): Promise<any> {
+  async getCasinoGames(baseUrl, secureLogin, pragmaticKey): Promise<any> {
     try {
-      const hash = this.genHash({ secureLogin: this.PRAGMATIC_SECURE_LOGIN });
-      const { data } = await this.httpService
-        .post(`${this.PRAGMATIC_BASEURL}/getCasinoGames?secureLogin=${this.PRAGMATIC_SECURE_LOGIN}&hash=${hash}`)
-        .toPromise();
+        // Generate hash
+        const options = `GetFeatures,GetFrbDetails,GetLines,GetDataTypes,GetFcDetails`;
+        const hash = this.genHash({ secureLogin, options}, pragmaticKey);
+
+        // Make API request
+        const { data } = await this.httpService
+            .post(`${baseUrl}/getCasinoGames?secureLogin=${secureLogin}&hash=${hash}&options=${options}`)
+            .toPromise();
 
         console.log('data', data);
 
-      return data.gameList;
+        return data.gameList;
+    } catch (e) {
+        return new RpcException(e.message || 'Something went wrong');
+    }
+}
+
+
+  async getActiveJackpotFeeds(payload: SyncGameDto): Promise<any> {
+    try {
+
+      const gameKeys = await this.gameKeyRepository.find({
+        where: {
+            client_id: payload.clientId,
+            provider: payload.provider,
+        },
+    });
+
+    // Extract the necessary values
+    const secureLogin = gameKeys.find(key => key.option === 'PRAGMATIC_SECURE_LOGIN')?.value;
+    const pragmaticKey = gameKeys.find(key => key.option === 'PRAGMATIC_KEY')?.value;
+
+    if (!secureLogin) {
+        throw new Error('Missing required game keys for Pragmatic Play');
+    }
+
+      const currency = 'NGN';
+      const hash = this.genHash({ login: secureLogin, currency }, pragmaticKey);
+      console.log('hash', hash);
+      const { data } = await this.httpService
+        .get(`https://api.prerelease-env.biz/IntegrationService/v3/JackpotFeeds/extended/jackpots/?login=${secureLogin}&currency=${currency}&hash=${hash}`)
+        .toPromise();
+
+        console.log('data', data);
+        
+
+      return data;
     } catch (e) {
       return new RpcException(e.messag || 'Something went wrong')
     }
   }
 
-  async getActiveJackpotFeeds(): Promise<any> {
+  async getJackpotWinners(payload: SyncGameDto): Promise<any> {
     try {
-      const hash = this.genHash({ login: this.PRAGMATIC_SECURE_LOGIN });
-      console.log('hash', hash);
+
+      const getDate = Date.now();
+
+      const gameKeys = await this.gameKeyRepository.find({
+        where: {
+            client_id: payload.clientId,
+            provider: payload.provider,
+        },
+    });
+
+    const secureLogin = gameKeys.find(key => key.option === 'PRAGMATIC_SECURE_LOGIN')?.value;
+    const pragmaticKey = gameKeys.find(key => key.option === 'PRAGMATIC_KEY')?.value;
+
+      const hash = this.genHash({ 
+        login: secureLogin,
+        startTimepoint: getDate,
+        endTimepoint: getDate,
+       }, pragmaticKey);
+      console.log("hash", hash);
       const { data } = await this.httpService
-        .get(`https://api.prerelease-env.biz/IntegrationService/v3/JackpotFeeds/extended/jackpots/?login=${this.PRAGMATIC_SECURE_LOGIN}&hash=${hash}`)
+        .get(`https://api.prerelease-env.biz/IntegrationService/v3/JackpotFeeds/extended/winners?login=${secureLogin}&hash=${hash}&startTimepoint=${getDate}&endTimepoint=${getDate}`)
         .toPromise();
 
         console.log('data', data);
 
         // const data = {
-        //   "jackpots": [
+        //   "winners": [
         //     {
-        //       "mainJackpotID": 459,
-        //       "name": "test_name",
-        //       "level": "B",
-        //       "games": "vsprg20doghouse",
-        //       "status": "A",
-        //       "tiersNumber": 4,
-        //       "tiers": [
-        //         {
-        //           "jackpotTierID": 459,
-        //           "tier": 0,
-        //           "amount": 10
-        //         },
-        //         {
-        //           "jackpotTierID": 460,
-        //           "tier": 1,
-        //           "amount": 200
-        //         }
-        //       ]
+        //       "jackpotTierID": 3924,
+        //       "extPlayerID": "459",
+        //       "winAmount": 8.60,
+        //       "winDate": 1620890276322,
+        //       "winType": "W",
+        //       "playSessionID": 10293633659602,
+        //       "currency": "USD",
+        //       "username": "f***n"
         //     },
         //     {
-        //       "mainJackpotID": 459,
-        //       "name": "test_name",
-        //       "level": "B",
-        //       "games": "vsprg20doghouse",
-        //       "status": "A",
-        //       "tiersNumber": 4,
-        //       "tiers": [
-        //         {
-        //           "jackpotTierID": 459,
-        //           "tier": 0,
-        //           "amount": 10
-        //         },
-        //         {
-        //           "jackpotTierID": 460,
-        //           "tier": 1,
-        //           "amount": 200
-        //         }
-        //       ]
+        //       "jackpotTierID": 3925,
+        //       "extPlayerID": "460",
+        //       "winAmount": 15,
+        //       "winDate": 1620890648909,
+        //       "winType": "NW",
+        //       "playSessionID": 10293686600602,
+        //       "currency": "USD",
+        //       "username": "p***g"
         //     },
         //     {
-        //       "mainJackpotID": 459,
-        //       "name": "test_name",
-        //       "level": "B",
-        //       "games": "vsprg20doghouse",
-        //       "status": "A",
-        //       "tiersNumber": 4,
-        //       "tiers": [
-        //         {
-        //           "jackpotTierID": 459,
-        //           "tier": 0,
-        //           "amount": 10
-        //         },
-        //         {
-        //           "jackpotTierID": 460,
-        //           "tier": 1,
-        //           "amount": 200
-        //         }
-        //       ]
+        //       "jackpotTierID": 3925,
+        //       "extPlayerID": "460",
+        //       "winAmount": 15,
+        //       "winDate": 1620890648909,
+        //       "winType": "NW",
+        //       "playSessionID": 10293686600602,
+        //       "currency": "USD",
+        //       "username": "s***v"
         //     },
+        //     {
+        //       "jackpotTierID": 3925,
+        //       "extPlayerID": "460",
+        //       "winAmount": 15,
+        //       "winDate": 1620890648909,
+        //       "winType": "NW",
+        //       "playSessionID": 10293686600602,
+        //       "currency": "USD",
+        //       "username": "o***m"
+        //     },
+        //     {
+        //       "jackpotTierID": 3925,
+        //       "extPlayerID": "460",
+        //       "winAmount": 15,
+        //       "winDate": 1620890648909,
+        //       "winType": "NW",
+        //       "playSessionID": 10293686600602,
+        //       "currency": "USD",
+        //       "username": "t***u"
+        //     },
+        //     {
+        //       "jackpotTierID": 3925,
+        //       "extPlayerID": "460",
+        //       "winAmount": 15,
+        //       "winDate": 1620890648909,
+        //       "winType": "NW",
+        //       "playSessionID": 10293686600602,
+        //       "currency": "USD",
+        //       "username": "a***g"
+        //     },
+        //     {
+        //       "jackpotTierID": 3925,
+        //       "extPlayerID": "460",
+        //       "winAmount": 15,
+        //       "winDate": 1620890648909,
+        //       "winType": "NW",
+        //       "playSessionID": 10293686600602,
+        //       "currency": "USD",
+        //       "username": "o***g"
+        //     },
+        //     {
+        //       "jackpotTierID": 3925,
+        //       "extPlayerID": "460",
+        //       "winAmount": 15,
+        //       "winDate": 1620890648909,
+        //       "winType": "NW",
+        //       "playSessionID": 10293686600602,
+        //       "currency": "USD",
+        //       "username": "b***k"
+        //     },
+        //     {
+        //       "jackpotTierID": 3925,
+        //       "extPlayerID": "460",
+        //       "winAmount": 15,
+        //       "winDate": 1620890648909,
+        //       "winType": "NW",
+        //       "playSessionID": 10293686600602,
+        //       "currency": "USD",
+        //       "username": "f***d"
+        //     },
+        //     {
+        //       "jackpotTierID": 3925,
+        //       "extPlayerID": "460",
+        //       "winAmount": 15,
+        //       "winDate": 1620890648909,
+        //       "winType": "NW",
+        //       "playSessionID": 10293686600602,
+        //       "currency": "USD",
+        //       "username": "l***p"
+        //     }
         //   ],
         //   "error": "0",
         //   "description": "OK"
@@ -151,134 +247,25 @@ export class PragmaticService {
     }
   }
 
-  async getJackpotWinners(): Promise<any> {
-    try {
-      const hash = this.genHash({ secureLogin: this.PRAGMATIC_SECURE_LOGIN });
-      console.log("hash", hash);
-      // const { data } = await this.httpService
-      //   .get(`https://api.prerelease-env.biz/IntegrationService/v3/JackpotFeeds/extended/winners?login=${this.PRAGMATIC_SECURE_LOGIN}&hash=${hash}`)
-      //   .toPromise();
-
-      //   console.log('data', data);
-
-        const data = {
-          "winners": [
-            {
-              "jackpotTierID": 3924,
-              "extPlayerID": "459",
-              "winAmount": 8.60,
-              "winDate": 1620890276322,
-              "winType": "W",
-              "playSessionID": 10293633659602,
-              "currency": "USD",
-              "username": "f***g"
-            },
-            {
-              "jackpotTierID": 3925,
-              "extPlayerID": "460",
-              "winAmount": 15,
-              "winDate": 1620890648909,
-              "winType": "NW",
-              "playSessionID": 10293686600602,
-              "currency": "USD",
-              "username": "f***g"
-            },
-            {
-              "jackpotTierID": 3925,
-              "extPlayerID": "460",
-              "winAmount": 15,
-              "winDate": 1620890648909,
-              "winType": "NW",
-              "playSessionID": 10293686600602,
-              "currency": "USD",
-              "username": "f***g"
-            },
-            {
-              "jackpotTierID": 3925,
-              "extPlayerID": "460",
-              "winAmount": 15,
-              "winDate": 1620890648909,
-              "winType": "NW",
-              "playSessionID": 10293686600602,
-              "currency": "USD",
-              "username": "f***g"
-            },
-            {
-              "jackpotTierID": 3925,
-              "extPlayerID": "460",
-              "winAmount": 15,
-              "winDate": 1620890648909,
-              "winType": "NW",
-              "playSessionID": 10293686600602,
-              "currency": "USD",
-              "username": "f***g"
-            },
-            {
-              "jackpotTierID": 3925,
-              "extPlayerID": "460",
-              "winAmount": 15,
-              "winDate": 1620890648909,
-              "winType": "NW",
-              "playSessionID": 10293686600602,
-              "currency": "USD",
-              "username": "f***g"
-            },
-            {
-              "jackpotTierID": 3925,
-              "extPlayerID": "460",
-              "winAmount": 15,
-              "winDate": 1620890648909,
-              "winType": "NW",
-              "playSessionID": 10293686600602,
-              "currency": "USD",
-              "username": "f***g"
-            },
-            {
-              "jackpotTierID": 3925,
-              "extPlayerID": "460",
-              "winAmount": 15,
-              "winDate": 1620890648909,
-              "winType": "NW",
-              "playSessionID": 10293686600602,
-              "currency": "USD",
-              "username": "f***g"
-            },
-            {
-              "jackpotTierID": 3925,
-              "extPlayerID": "460",
-              "winAmount": 15,
-              "winDate": 1620890648909,
-              "winType": "NW",
-              "playSessionID": 10293686600602,
-              "currency": "USD",
-              "username": "f***g"
-            },
-            {
-              "jackpotTierID": 3925,
-              "extPlayerID": "460",
-              "winAmount": 15,
-              "winDate": 1620890648909,
-              "winType": "NW",
-              "playSessionID": 10293686600602,
-              "currency": "USD",
-              "username": "f***g"
-            }
-          ],
-          "error": "0",
-          "description": "OK"
-        }
-        
-
-      return data;
-    } catch (e) {
-      return new RpcException(e.messag || 'Something went wrong')
-    }
-  }
-
   
-  public async syncGames() {
+  public async syncGames(payload: SyncGameDto) {
     try {
-      const games: any = await this.getCasinoGames();
+
+      const gameKeys = await this.gameKeyRepository.find({
+        where: {
+            client_id: payload.clientId,
+            provider: payload.provider,
+        },
+    });
+
+    console.log("gameKeys", gameKeys, payload);
+
+    const baseUrl = gameKeys.find(key => key.option === 'PRAGMATIC_BASEURL')?.value;
+    const secureLogin = gameKeys.find(key => key.option === 'PRAGMATIC_SECURE_LOGIN')?.value;
+    const pragmaticKey = gameKeys.find(key => key.option === 'PRAGMATIC_KEY')?.value;
+    const imageUrl = gameKeys.find(key => key.option === 'PRAGMATIC_IMAGE_URL')?.value;
+
+      const games: any = await this.getCasinoGames(baseUrl, secureLogin, pragmaticKey);
       console.log("games", games);
   
       if (!games || games.length === 0) {
@@ -286,10 +273,11 @@ export class PragmaticService {
       }
   
       let provider = await this.providerRepository.findOne({
-        where: { name: 'Pragmatic Play' },
+        where: { slug: 'pragmatic-play' },
       });
-
+  
       console.log("provider", provider);
+
   
       if (!provider) {
         const newProvider: ProviderEntity = new ProviderEntity();
@@ -313,8 +301,8 @@ export class PragmaticService {
               type: 'Slots',
               provider: provider,
               status: true,
-              imagePath:`${this.PRAGMATIC_IMAGE_URL}/${games[key].gameID}.png`,
-              bannerPath: `${this.PRAGMATIC_IMAGE_URL}/${games[key].gameID}.png`,
+              imagePath:`${imageUrl}/${games[key].gameID}.png`,
+              bannerPath: `${imageUrl}/${games[key].gameID}.png`,
             };
   
             const gameExist = await this.gameRepository.findOne({
@@ -380,44 +368,60 @@ export class PragmaticService {
   async constructGameUrl(payload: StartGameDto): Promise<any> {
     try {
       // Log the incoming payload for debugging
-      console.log("Payload received:", payload);
+      // console.log("Payload received:", payload);
   
       const { gameId, language, authCode, userId, demo, balanceType, homeUrl } = payload;
   
       // Fetch the game details from the repository
       const gameExist = await this.gameRepository.findOne({ where: { id: gameId }, relations: { provider: true }});
-      console.log("Game retrieved from DB:", gameExist);
+      // console.log("Game retrieved from DB:", gameExist);
   
       // If game doesn't exist, throw an error
       if (!gameExist) {
         console.error(`Game with ID ${gameId} not found`);
         throw new NotFoundException('Game not found');
       }
+
+      const gameKeys = await this.gameKeyRepository.find({
+        where: {
+            client_id: payload.clientId,
+            provider: 'pragmatic-play',
+        },
+    });
+
+    // console.log("gameKeys", gameKeys);
+
+  
+
+    // Extract the necessary values
+    const secureLogin = gameKeys.find(key => key.option === 'PRAGMATIC_SECURE_LOGIN')?.value;
+    const baseUrl = gameKeys.find(key => key.option === 'PRAGMATIC_BASEURL')?.value;
+    const pragmaticKey = gameKeys.find(key => key.option === 'PRAGMATIC_KEY')?.value;
   
       // Generate the hash for the game session
       const hash = this.genHash({
-        secureLogin: this.PRAGMATIC_SECURE_LOGIN,
+        secureLogin,
         symbol: gameExist.gameId,
         lobbyUrl: homeUrl,
         language: language,
         externalPlayerId: userId,
         token: authCode,
-        ...(demo && { playMode: "DEMO" })
-      });
+        playMode: demo ? "DEMO" : "REAL" 
+      }, pragmaticKey);
 
-      console.log("Generated hash:", hash);
+      // console.log("Generated hash:", hash);
 
-      const playMode = demo ? 'playMode=DEMO' : '';
+      const playMode = demo ? 'DEMO' : 'REAL';
 
       const request = this.httpService.post(
-        `${this.PRAGMATIC_BASEURL}/game/url?secureLogin=${this.PRAGMATIC_SECURE_LOGIN}&symbol=${gameExist.gameId}&language=${language}&externalPlayerId=${userId}&token=${authCode}&hash=${hash}&${playMode}&lobbyUrl=${homeUrl}`,
+        `${baseUrl}/game/url?secureLogin=${secureLogin}&symbol=${gameExist.gameId}&language=${language}&externalPlayerId=${userId}&token=${authCode}&hash=${hash}&playMode=${playMode}&lobbyUrl=${homeUrl}`,
       );
 
-      console.log("Request response:", request);
+      // console.log("Request response:", request);
 
       const val = await lastValueFrom(request);
 
-      console.log("val response:", val);
+      // console.log("val response:", val);
   
       // Start creating the game session
       const gameSession = new GameSession();
@@ -430,7 +434,7 @@ export class PragmaticService {
       gameSession.provider = gameExist.provider.slug;
   
       // Log game session data before saving
-      console.log("Game session data to save:", gameSession);
+      // console.log("Game session data to save:", gameSession);
   
       // Check if token is missing or invalid
       if (!gameSession.token) {
@@ -441,15 +445,15 @@ export class PragmaticService {
       // Attempt to save the game session
       try {
         await this.gameSessionRepo.save(gameSession);
-        console.log("Game session saved successfully", gameSession);
+        // console.log("Game session saved successfully", gameSession);
       } catch (dbError) {
         console.error("Error saving game session:", dbError.message);
         throw new Error(`Failed to save game session: ${dbError.message}`);
       }
 
       const { data } = await lastValueFrom(request);
-      console.log("data", data);
-      console.log("gameUrl", data.gameURL);
+      // console.log("data", data);
+      // console.log("gameUrl", data.gameURL);
   
       // Return the game URL from the mocked request object
       return { url: data.gameURL };
@@ -462,31 +466,15 @@ export class PragmaticService {
   }
   
   async authenticate(clientId, token, callback, walletType) {
-    console.log("Got to authenticate method");
+    // console.log("Got to authenticate method");
     const isValid = await this.identityService.validateToken({ clientId, token });
 
-    //  const isValid = {
-    //     success: true,
-    //     status: HttpStatus.OK,
-    //     message: 'Success',
-    //     data: {
-    //       playerId: '1',
-    //       clientId: '4',
-    //       playerNickname: 'frank',
-    //       casinoBalance: 0.0,
-    //       sessionId: '123',
-    //       balance: 100.0,
-    //       virtualBalance: 0.0,
-    //       currency: 'NGN',
-    //       group: null,
-    //     }
-    //   }
     
-    console.log("isValid", isValid);
+    // console.log("isValid", isValid);
     let response: any;
     const dataObject = typeof isValid.data === 'string' ? JSON.parse(isValid.data) : isValid.data;
 
-    console.log("dataObject", dataObject);
+    // console.log("dataObject", dataObject);
 
     if(!isValid || !isValid.status) {
       response = {
@@ -510,7 +498,7 @@ export class PragmaticService {
         userId: dataObject.playerId,
         cash: parseFloat(dataObject.balance.toFixed(2)) || 0.00,
         currency: dataObject.currency,
-        bonus: parseFloat(dataObject.casinoBalance.toFixed(2)) || 0.00,
+        bonus: dataObject.casinoBalance ? parseFloat(dataObject.casinoBalance.toFixed(2)) : 0.00,
         token: token,
         error: 0,
         description: 'Success',
@@ -864,8 +852,6 @@ export class PragmaticService {
     }
   }
 
-
-
   async win(clientId, player, callback, body, balanceType) {
     console.log('Got to win method');
     console.log('player', player, body, balanceType);
@@ -996,10 +982,10 @@ export class PragmaticService {
         message: 'Win Successful',
         status: HttpStatus.OK,
         data: {
-          cash: parseFloat(updatedWallet.data.availableBalance.toFixed(2)) ||0.00,
+          cash: parseFloat(updatedWallet.data.availableBalance.toFixed(2)),
           transactionId: settle_bet.data.transactionId,
           currency: player.currency,
-          bonus: parseFloat(updatedWallet.data.casinoBonusBalance.toFixed(2)) || 0.00,
+          bonus: parseFloat(updatedWallet.data.casinoBonusBalance.toFixed(2)),
           error: 0,
           description: 'Successful',
         },
@@ -1576,10 +1562,9 @@ export class PragmaticService {
   }
 
   async handleCallback(data: CallbackGameDto) {
-    console.log("_data", data);
-
+    // console.log("_data", data);
+    
     const callback = await this.saveCallbackLog(data);
-    console.log("callback-4", callback);
     let response;
     let body = {};
 
@@ -1593,56 +1578,7 @@ export class PragmaticService {
         console.log("existingRequest", existingRequest);
         console.log("existingResponse", existingResponse);
 
-        if (existingRequest?.userId) {
-          // Get userId from the response
-
-          console.log("Got to the updated wallet block");
-          const userId = existingRequest.userId;
-    
-          try {
-              // Fetch the wallet details for the user
-              const getWallet = await this.walletService.getWallet({
-                userId,
-                clientId: data.clientId
-              });
-
-              console.log("getWallet", getWallet);
-
-
-              if(!getWallet || !getWallet.status) {
-                response = {
-                  success: false,
-                  status: HttpStatus.BAD_REQUEST,
-                  message: 'Invalid auth code, please login to try again',
-                  data: {}
-                }
-          
-                const val = await this.callbackLogRepository.update({ id: callback.id}, { response: JSON.stringify(response)});
-                console.log("val", val);
-          
-                return response;
-              } 
-    
-              if (getWallet && getWallet.data.availableBalance !== undefined) {
-                  // Update the cash field with the updated balance
-                  existingResponse.data.cash = getWallet.data.availableBalance;
-    
-                  // Save the updated response back to the log
-                  await this.callbackLogRepository.update(
-                      { id: callback.id },
-                      { response: JSON.stringify(existingResponse) }
-                  );
-    
-                  console.log("Updated response with wallet balance:", existingResponse);
-                  return existingResponse;
-              }
-          } catch (error) {
-              console.error("Error fetching wallet details or updating response:", error);
-              // Handle errors if needed, e.g., log or return the original response
-          }
-      }  else {
-        return JSON.parse(callback.response);
-      }
+        return existingResponse;
   
     } 
     // Parse the body if it exists
@@ -1663,7 +1599,20 @@ export class PragmaticService {
         }
     }
 
-    console.log("body", body);
+    // console.log("body", body);
+
+    const gameKeys = await this.gameKeyRepository.find({
+      where: {
+          client_id: data.clientId,
+          provider: 'pragmatic-play',
+      },
+    });
+
+    // console.log("gameKeys", gameKeys);
+
+
+    const pragmaticKey = gameKeys.find(key => key.option === 'PRAGMATIC_KEY')?.value;
+
 
     let token = null;
 
@@ -1671,7 +1620,7 @@ export class PragmaticService {
     if (body instanceof URLSearchParams) {
         const parsedBody = Object.fromEntries(body.entries());
 
-        if (this.hashCheck(parsedBody)) {
+        if (this.hashCheck(parsedBody, pragmaticKey)) {
             response = {
                 success: false,
                 message: 'Invalid Hash Signature',
@@ -1740,25 +1689,7 @@ export class PragmaticService {
 
         if (token) {
             const res = await this.identityService.validateToken({ clientId: data.clientId, token });
-            console.log("res", res);
-
-            
-      // const res = {
-      //   success: true,
-      //   message: "Success",
-      //   data: {
-      //     playerId: 214993,
-      //     clientId: 4,
-      //     playerNickname: 'pragmatic-play',
-      //     sessionId: '132',
-      //     balance: 9996.25,
-      //     casinoBalance: 0.0,
-      //     virtualBalance: 0.5,
-      //     group: null,
-      //     currency: 'NGN'
-      //   }
-        
-      // };
+            // console.log("res", res);
 
             if (!res.success) {
                 response = {
@@ -1823,19 +1754,20 @@ export class PragmaticService {
     return crypto.createHash("md5").update(hash).digest("hex");
   };
 
-  genHash = (query) => {
+  genHash = (query, pragmaticKey) => {
+
     const queries = Object.keys(query);
     const unhash = queries.filter((item) => item !== "hash");
     unhash.sort();
     const queryParams = unhash.map((key) => `${key}=${query[key]}`).join("&");
     console.log("queryParams", queryParams);
 
-    const hash = this.md5Algo(`${queryParams}${this.PRAGMATIC_KEY}`);
+    const hash = this.md5Algo(`${queryParams}${pragmaticKey}`);
     return hash;
   };
 
-  hashCheck = (query) => {
-    const hash = this.genHash(query);
+  hashCheck = (query, pragmaticKey) => {
+    const hash = this.genHash(query, pragmaticKey);
     return query.hash !== hash;
   };
 
@@ -1852,11 +1784,9 @@ export class PragmaticService {
   }
 
   async saveCallbackLog(data) {
-    console.log('body-data', data);
     const action = data.action;
     const body = data.body ? new URLSearchParams(data.body) : new URLSearchParams();
 
-    console.log('body-Callback', body);
     const transactionId = 
       action === 'Authenticate' 
         ? body.get('hash') 
@@ -1882,9 +1812,12 @@ export class PragmaticService {
       if (action !== 'Balance' && action !== 'Authenticate') {
         console.log("Got in this box");
         // Check for an existing callback for actions other than Authenticate
+        console.log("transactionId", transactionId);
         callback = await this.callbackLogRepository.findOne({
           where: { transactionId, request_type: action },
         });
+
+        console.log("callback-idem", callback);
   
         if (callback) return callback;
       }

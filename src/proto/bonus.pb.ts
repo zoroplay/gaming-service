@@ -77,18 +77,22 @@ export interface CreateBonusRequest {
   applicableBetType: string;
   maximumWinning: number;
   bonusAmount: number;
-  status: number;
-  created: string;
-  updated: string;
-  id: number;
+  status?: number | undefined;
+  created?: string | undefined;
+  updated?: string | undefined;
+  id?: number | undefined;
   minimumLostGames: number;
   rolloverCount: number;
   name: string;
   minimumEntryAmount: number;
   maxAmount: number;
   product: string;
-  gameId?: string | undefined;
+  gameId: string[];
   casinoSpinCount?: number | undefined;
+  providerId?: number | undefined;
+  bonusId?: number | undefined;
+  userIds: string[];
+  provider?: string | undefined;
 }
 
 export interface CreateBonusResponse {
@@ -368,7 +372,7 @@ export interface BonusServiceClient {
 
   searchBonus(request: GetBonusByClientID): Observable<SearchBonusResponse>;
 
-  getActiveUserBonus(request: CheckDepositBonusRequest): Observable<CreateBonusResponse>;
+  getActiveUserBonus(request: CheckDepositBonusRequest): Observable<CommonResponseObj>;
 
   getBonus(request: GetBonusRequest): Observable<GetBonusResponse>;
 
@@ -428,7 +432,7 @@ export interface BonusServiceController {
 
   getActiveUserBonus(
     request: CheckDepositBonusRequest,
-  ): Promise<CreateBonusResponse> | Observable<CreateBonusResponse> | CreateBonusResponse;
+  ): Promise<CommonResponseObj> | Observable<CommonResponseObj> | CommonResponseObj;
 
   getBonus(request: GetBonusRequest): Promise<GetBonusResponse> | Observable<GetBonusResponse> | GetBonusResponse;
 

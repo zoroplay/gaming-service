@@ -6,6 +6,81 @@ import { Struct } from "./google/protobuf/struct.pb";
 
 export const protobufPackage = "identity";
 
+/** Additional Audit Info */
+export interface AdditionalInfo {
+  browser: string;
+  os: string;
+  platform: string;
+}
+
+/** AuditLog */
+export interface AuditLog {
+  id: number;
+  userId: number;
+  userName: string;
+  clientId: number;
+  action: string;
+  endpoint: string;
+  method: string;
+  statusCode: number;
+  payload: string;
+  response: string;
+  additionalInfo: AdditionalInfo | undefined;
+  ipAddress: string;
+  userAgent: string;
+  timestamp: string;
+}
+
+/** Request message for creating an audit log */
+export interface CreateLogRequest {
+  auditLog: AuditLog | undefined;
+}
+
+/** audit User */
+export interface AuditUser {
+  roleId: number;
+  username: string;
+}
+
+/** Response message for creating an audit log */
+export interface CreateLogResponse {
+  success: boolean;
+  status: number;
+  message: string;
+}
+
+export interface AuditQuery {
+  startDate?: string | undefined;
+  endDate?: string | undefined;
+  page?: number | undefined;
+  perPage?: number | undefined;
+  username?: string | undefined;
+  platform?: string | undefined;
+  ipAddress?: string | undefined;
+}
+
+/** GetAllLogs */
+export interface GetAllLogsRequest {
+  clientId?: number | undefined;
+  userName?: string | undefined;
+  page?: number | undefined;
+  limit?: number | undefined;
+  ipAddress: string;
+  userAgent: string;
+  os: string;
+  browser: string;
+  platform: string;
+  endpoint: string;
+  method: string;
+  auditQuery: AuditQuery | undefined;
+}
+
+/** GetAllLogsResponse */
+export interface GetAllLogsResponse {
+  logs: AuditLog[];
+  meta?: Meta | undefined;
+}
+
 /** HandlePin */
 export interface HandlePinRequest {
   pin: number;
@@ -516,6 +591,11 @@ export interface UserInfo {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  lossCount: number;
+  betCount: number;
+  stakeAmount: number;
+  lastPlayed: string;
+  totalBalance: number;
 }
 
 export interface UserData {
@@ -667,6 +747,17 @@ export interface ValidateResponse_User {
 export interface ValidateClientResponse {
   status: number;
   error: string;
+  clientId: number;
+}
+
+export interface ValidateGroupCodeRequest {
+  groupName: string;
+}
+
+export interface ValidateGroupCodeResponse {
+  status: number;
+  error: string;
+  groupName: string;
   clientId: number;
 }
 
@@ -859,6 +950,7 @@ export interface RegistrationReportRequest {
   source: string;
   page?: number | undefined;
   limit?: number | undefined;
+  reportType?: string | undefined;
 }
 
 export interface PlayersListResponse {
@@ -997,6 +1089,7 @@ export interface XpressLoginResponse_XpressData {
   sessionId: string;
   group: string;
   currency: string;
+  country?: string | undefined;
 }
 
 export interface EmptyRequest {
@@ -1033,6 +1126,8 @@ export interface IdentityServiceClient {
   xpressGameLogout(request: SessionRequest): Observable<XpressLoginResponse>;
 
   validate(request: ValidateRequest): Observable<ValidateResponse>;
+
+  validateGroupCode(request: GetClientRequest): Observable<ValidateGroupCodeResponse>;
 
   validateClient(request: ValidateRequest): Observable<ValidateClientResponse>;
 
@@ -1134,6 +1229,8 @@ export interface IdentityServiceClient {
 
   getUserRiskSettings(request: GetRiskSettingRequest): Observable<CommonResponseObj>;
 
+  fetchPlayerLosersByBetCount(request: FetchPlayerFilterRequest): Observable<PaginationResponse>;
+
   /** retail services */
 
   listAgentUsers(request: GetAgentUsersRequest): Observable<CommonResponseArray>;
@@ -1183,6 +1280,10 @@ export interface IdentityServiceClient {
   getNetworkSalesReport(request: GetNetworkSalesRequest): Observable<CommonResponseObj>;
 
   getTrackierKeys(request: SingleItemRequest): Observable<CommonResponseObj>;
+
+  getAllLogs(request: GetAllLogsRequest): Observable<GetAllLogsResponse>;
+
+  createLog(request: CreateLogRequest): Observable<CreateLogResponse>;
 }
 
 export interface IdentityServiceController {
@@ -1213,6 +1314,10 @@ export interface IdentityServiceController {
   ): Promise<XpressLoginResponse> | Observable<XpressLoginResponse> | XpressLoginResponse;
 
   validate(request: ValidateRequest): Promise<ValidateResponse> | Observable<ValidateResponse> | ValidateResponse;
+
+  validateGroupCode(
+    request: GetClientRequest,
+  ): Promise<ValidateGroupCodeResponse> | Observable<ValidateGroupCodeResponse> | ValidateGroupCodeResponse;
 
   validateClient(
     request: ValidateRequest,
@@ -1394,6 +1499,10 @@ export interface IdentityServiceController {
     request: GetRiskSettingRequest,
   ): Promise<CommonResponseObj> | Observable<CommonResponseObj> | CommonResponseObj;
 
+  fetchPlayerLosersByBetCount(
+    request: FetchPlayerFilterRequest,
+  ): Promise<PaginationResponse> | Observable<PaginationResponse> | PaginationResponse;
+
   /** retail services */
 
   listAgentUsers(
@@ -1487,6 +1596,12 @@ export interface IdentityServiceController {
   getTrackierKeys(
     request: SingleItemRequest,
   ): Promise<CommonResponseObj> | Observable<CommonResponseObj> | CommonResponseObj;
+
+  getAllLogs(
+    request: GetAllLogsRequest,
+  ): Promise<GetAllLogsResponse> | Observable<GetAllLogsResponse> | GetAllLogsResponse;
+
+  createLog(request: CreateLogRequest): Promise<CreateLogResponse> | Observable<CreateLogResponse> | CreateLogResponse;
 }
 
 export function IdentityServiceControllerMethods() {
@@ -1501,6 +1616,7 @@ export function IdentityServiceControllerMethods() {
       "validateAuthCode",
       "xpressGameLogout",
       "validate",
+      "validateGroupCode",
       "validateClient",
       "getUserDetails",
       "createClient",
@@ -1551,6 +1667,7 @@ export function IdentityServiceControllerMethods() {
       "getWithdrawalSettings",
       "getUserIdandName",
       "getUserRiskSettings",
+      "fetchPlayerLosersByBetCount",
       "listAgentUsers",
       "listAgents",
       "getAgentUser",
@@ -1575,6 +1692,8 @@ export function IdentityServiceControllerMethods() {
       "payOutNormalBonus",
       "getNetworkSalesReport",
       "getTrackierKeys",
+      "getAllLogs",
+      "createLog",
     ];
     for (const method of grpcMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);

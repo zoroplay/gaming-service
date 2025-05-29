@@ -6,7 +6,7 @@ import { slugify } from 'src/common';
 import { FirebaseService } from 'src/common/services/firebaseUpload';
 import { Category } from 'src/entities/category.entity';
 import { GameKey } from 'src/entities/game-key.entity';
-import { GameCategory } from 'src/entities/game.category.entity';
+// import { GameCategory } from 'src/entities/game.category.entity';
 import { Promotion as PromotionEntity } from 'src/entities/promotion.entity';
 import {
   Tournament,
@@ -19,9 +19,8 @@ import {
   CallbackGameDto,
   Categories,
   CommonResponse,
-  CommonResponseArray,
+  CreateBonusRequest,
   CreateGameDto,
-  CreatePromotionDto,
   CreatePromotionRequest,
   CreateProviderDto,
   CreateTournamentDto,
@@ -31,17 +30,16 @@ import {
   FindOneTournamentDto,
   Game,
   Games,
+  GetGamesRequest,
+  GetPromotions,
   PaginationDto,
   Promotion,
-  Promotions,
-  QtechCallbackRequest,
-  QtechRollbackRequest,
-  QtechtransactionRequest,
   SaveCategoryRequest,
+  StartDto,
   StartGameDto,
   SyncGameDto,
   Tournaments,
-  UpdateGameDto,
+  UpdateGameDto
 } from 'src/proto/gaming.pb';
 import {
   C2GamingService,
@@ -50,14 +48,17 @@ import {
   TadaGamingService,
 } from 'src/services';
 
+import { TournamentGame } from 'src/entities/tournament-game.entity';
 import { EntityToProtoService } from 'src/services/entity-to-proto.service';
 import { EvoPlayService } from 'src/services/evo-play.service';
 import { PragmaticService } from 'src/services/pragmatic-play.service';
 import { QtechService } from 'src/services/qtech.service';
+import { SmatVirtualService } from 'src/services/smatvirtual.service';
 import { FindManyOptions, ILike, In, Repository } from 'typeorm';
 import { Game as GameEntity } from '../entities/game.entity';
 import { Provider as ProviderEntity } from '../entities/provider.entity';
-import { TournamentGame } from 'src/entities/tournament-game.entity';
+import { SpribeService } from 'src/services/spribe.service';
+// import { GameCategoryEntity } from 'src/entities/game.category.entity';
 
 @Injectable()
 export class GamesService {
@@ -66,8 +67,8 @@ export class GamesService {
     private gameRepository: Repository<GameEntity>,
     @InjectRepository(Category)
     private categoryRepository: Repository<Category>,
-    @InjectRepository(GameCategory)
-    private gameCategoryRepository: Repository<GameCategory>,
+    // @InjectRepository(GameCategoryEntity)
+    // private gameCategoryRepository: Repository<GameCategoryEntity>,
     @InjectRepository(TournamentGame)
     private tournamentGameRepository: Repository<TournamentGame>,
     @InjectRepository(ProviderEntity)
@@ -88,6 +89,8 @@ export class GamesService {
     private readonly identityService: IdentityService,
     private readonly qtechService: QtechService,
     private readonly firebaseService: FirebaseService,
+    private readonly smatVirtualService: SmatVirtualService,
+    private readonly spribeService: SpribeService,
   ) {}
 
   async createProvider(
@@ -132,6 +135,25 @@ export class GamesService {
   }
 
   async findAllProvider(): Promise<CommonResponse> {
+    const providers = await this.providerRepository.find({
+      where: {
+        status: 1
+      }
+    });
+    // const protoResponse: Provider[] = resp.map(
+    //   (entity: ProviderEntity) => entity as unknown as Provider,
+    // );
+    // const final = {
+    //   providers: protoResponse,
+    // };
+    return {
+      success: true,
+      message: 'Providers retrieved successfully',
+      data: providers,
+    };
+  }
+
+  async findAdminProviders(): Promise<CommonResponse> {
     const providers = await this.providerRepository.find({});
     // const protoResponse: Provider[] = resp.map(
     //   (entity: ProviderEntity) => entity as unknown as Provider,
@@ -183,63 +205,127 @@ export class GamesService {
   }
   // Make sure to import the interface
 
-  async fetchGames({
-    categoryId,
-    providerId,
-  }: FetchGamesRequest): Promise<Games> {
-    // Build the base query to filter games by status
-    const query = this.gameRepository
-      .createQueryBuilder('games')
-      .where('games.status = :status', { status: 1 });
+  // async fetchGames({
+  //   categoryId,
+  //   providerId,
+  // }: FetchGamesRequest): Promise<Games> {
+  //   // Build the base query to filter games by status
+  //   const query = this.gameRepository
+  //     .createQueryBuilder('games')
+  //     .where('games.status = :status', { status: 1 });
 
-    if (categoryId && categoryId !== 1) {
-      query
-        .leftJoin(GameCategory, 'gamecat', 'gamecat.gameId = games.id')
-        .andWhere('gamecat.categoryId = :category', { category: categoryId });
+  //   if (categoryId && categoryId !== 1) {
+  //     query
+  //       .leftJoin(GameCategoryEntity, 'gamecat', 'gamecat.game_id = games.id')
+  //       .andWhere('gamecat.category_id = :category', { category: categoryId });
+  //   }
+
+  //   if (providerId) {
+  //     query.andWhere('games.providerId = :providerId', { providerId });
+  //   }
+
+  //   // Fetch the games based on the query
+  //   const games = await query.getMany();
+
+  //   // Convert TypeORM entities to proto-generated types
+  //   const protoResponse: Game[] = games.map((entity: GameEntity) =>
+  //     this.entityToProtoService.entityToProto(entity),
+  //   );
+
+  //   // Return the games and totalGames, ensuring that it matches the Games interface
+  //   const final: Games = {
+  //     games: protoResponse,
+  //   };
+
+  //   return final;
+  // }
+
+  // async fetchGames(payload?: GetGamesRequest) {
+  //   console.log("hereeee")
+  //   const filters: any = {};
+  
+  //   if (payload?.providerId) {
+  //     filters.provider = { id: payload.providerId };
+  //   }
+  
+  //   const gameData = await this.gameRepository.find({
+  //     where: filters,
+  //     relations: ['provider', 'categories'],
+  //   });
+
+  //   console.log("gameData", gameData);
+  
+  //   // If filtering by categoryId, further filter the retrieved games
+  //   let filteredGames = gameData;
+  //   if (payload?.categoryId) {
+  //     filteredGames = gameData.filter(game =>
+  //       game.categories.some(category => category.id === payload.categoryId)
+  //     );
+  //   }
+  
+  //   return {
+  //     status: 200,
+  //     success: true,
+  //     message: 'Games fetched successfully',
+  //     data: filteredGames
+  //   };
+  // }
+
+  async fetchGames(payload?: GetGamesRequest) {
+    const filters: any = { status: 1 }; // Ensure only active games are fetched
+
+    if (payload?.providerId) {
+      filters.provider = { id: payload.providerId };
     }
 
-    if (providerId) {
-      query.andWhere('games.providerId = :providerId', { providerId });
+    const gameData = await this.gameRepository.find({
+      where: filters,
+      relations: ['provider', 'categories'],
+    });
+
+    // If filtering by categoryId, further filter the retrieved games
+    let filteredGames = gameData;
+    if (payload?.categoryId) {
+      filteredGames = gameData.filter(game =>
+        game.categories.some(category => category.id === payload.categoryId)
+      );
     }
 
-    // Fetch the games based on the query
-    const games = await query.getMany();
-
-    // Convert TypeORM entities to proto-generated types
-    const protoResponse: Game[] = games.map((entity: GameEntity) =>
-      this.entityToProtoService.entityToProto(entity),
-    );
-
-    // Return the games and totalGames, ensuring that it matches the Games interface
-    const final: Games = {
-      games: protoResponse,
+    return {
+      status: 200,
+      success: true,
+      message: 'Games fetched successfully',
+      data: filteredGames
     };
-
-    return final;
-  }
+}
 
   async fetchGamesByName(searchGamesDto: FetchGamesRequest): Promise<Games> {
     const { gameName } = searchGamesDto;
-
-    const query = this.gameRepository.createQueryBuilder('games');
-
+  
+    const query = this.gameRepository.createQueryBuilder('games')
+      // Join with the provider table to check provider status
+      .leftJoin('games.provider', 'provider')
+      // Only include games where both the game status and provider status are not 0
+      .andWhere('games.status != :gameStatus', { gameStatus: 0 })
+      .andWhere('provider.status != :providerStatus', { providerStatus: 0 });
+  
     if (gameName) {
       // Use LIKE to allow partial match (wildcard search) on gameName
       query.andWhere('games.title LIKE :gameName', {
         gameName: `%${gameName}%`,
       });
     }
-
+  
     const games = await query.getMany();
     // Convert TypeORM entities to proto-generated types
     const protoResponse: Game[] = games.map((entity: GameEntity) =>
       this.entityToProtoService.entityToProto(entity),
     );
-
+  
     const final = {
       games: protoResponse,
     };
-
+  
     return final;
   }
 
@@ -285,43 +371,39 @@ export class GamesService {
   }
 
   async addGameToCategories(dto: AddGameToCategoriesDto) {
-    console.log('got to this part');
+  
     const game = await this.gameRepository.findOne({
       where: { id: dto.gameId },
     });
+
     if (!game) {
       throw new NotFoundException('Game not found');
     }
 
-    console.log('game', game);
 
     const categories = await this.categoryRepository.find({
       where: { id: In(dto.categories) },
     });
 
-    console.log('categories', categories);
 
     if (categories.length !== dto.categories.length) {
       throw new NotFoundException('Some categories not found');
     }
 
-    const gameCategories = categories.map((category) => {
-      const gameCategory = new GameCategory();
-      gameCategory.game = game;
-      gameCategory.category = category;
-      return gameCategory;
-    });
+    game.categories = categories;
 
-    console.log('gameCategories', gameCategories);
+    const val = await this.gameRepository.save(game);
 
-    const val = await this.gameCategoryRepository.save(gameCategories);
-    return val[0];
+    return val;
   }
 
   async removeGameCategories(dto: AddGameToCategoriesDto) {
+    
     const game = await this.gameRepository.findOne({
       where: { id: dto.gameId },
+      relations: ['provider', 'categories'],
     });
+
     if (!game) {
       throw new NotFoundException('Game not found');
     }
@@ -334,12 +416,13 @@ export class GamesService {
       throw new NotFoundException('Some categories not found');
     }
 
-    await this.gameCategoryRepository.delete({
-      game,
-      category: In(categories.map((category) => category.id)),
-    });
+    game.categories = game.categories.filter(
+      (category) => !categories.some((c) => c.id === category.id)
+    );
 
-    return { message: 'Categories removed successfully' };
+    const val = await this.gameRepository.save(game);
+
+    return val;
   }
 
   async fetchCategories(): Promise<Categories> {
@@ -413,15 +496,27 @@ export class GamesService {
     if (!updateProvider) {
       throw new NotFoundException(`Provider ${createProviderDto.id} not found`);
     }
-    updateProvider.name = createProviderDto.name;
-    updateProvider.slug = createProviderDto.slug;
-    updateProvider.description = createProviderDto.description;
-    updateProvider.imagePath = createProviderDto.imagePath;
+    console.log("updateProvider", createProviderDto);
+
+    updateProvider.name = createProviderDto.name || updateProvider.name;
+    updateProvider.slug = createProviderDto.slug || updateProvider.slug;
+    updateProvider.description = createProviderDto.description || updateProvider.description;
+    updateProvider.imagePath = createProviderDto.imagePath || updateProvider.imagePath;
+    updateProvider.status = createProviderDto.status;
+
     const savedProvider = await this.providerRepository.save(updateProvider);
+
+    console.log("savedProvider", savedProvider);
+
+    if(!savedProvider) {
+      console.log("Error saving provider update");
+    }
+
     return savedProvider as unknown as Provider;
   }
 
   async update(updateGameDto: UpdateGameDto): Promise<GameEntity> {
+    console.log("here", updateGameDto);
     const provider: ProviderEntity = await this.providerRepository.findOneBy({
       id: updateGameDto.providerId,
     });
@@ -436,15 +531,16 @@ export class GamesService {
     if (!updateGame) {
       throw new NotFoundException(`Game ${updateGameDto.id} not found`);
     }
-    updateGame.gameId = updateGameDto.gameId;
-    updateGame.title = updateGameDto.title;
-    updateGame.description = updateGameDto.description;
-    updateGame.url = updateGameDto.url;
-    updateGame.imagePath = updateGameDto.imagePath;
-    updateGame.bannerPath = updateGameDto.bannerPath;
-    updateGame.status = updateGameDto.status;
-    updateGame.type = updateGameDto.type;
+    updateGame.gameId = updateGameDto.gameId  || updateGame.gameId;
+    updateGame.title = updateGameDto.title || updateGame.title;
+    updateGame.description = updateGameDto.description || updateGame.description;
+    updateGame.url = updateGameDto.url || updateGame.url;
+    updateGame.imagePath = updateGameDto.imagePath || updateGame.imagePath;
+    updateGame.bannerPath = updateGameDto.bannerPath || updateGame.bannerPath;
+    updateGame.status = updateGameDto.status !== undefined ? updateGameDto.status : updateGame.status;
+    updateGame.type = updateGameDto.type || updateGame.type;
     updateGame.provider = provider;
+    updateGame.priority = updateGameDto.priority || updateGame.priority;
     const savedGame = await this.gameRepository.save(updateGame);
     return savedGame;
   }
@@ -488,6 +584,10 @@ export class GamesService {
         console.log('using pragmatic-play');
         return await this.pragmaticPlayService.constructGameUrl(startGameDto);
 
+      case 'spribe':
+        console.log('using spribe');
+        return await this.spribeService.constructGameUrl(startGameDto);
+
       case 'evolution':
         // return await this.smartSoftService.constructGameUrl(
         //   startGameDto,
@@ -502,7 +602,7 @@ export class GamesService {
             option: 'SMART_SOFT_PORTAL',
             provider: 'smart-soft',
           },
-        });
+        });7
 
         return await this.smartSoftService.constructGameUrl(
           startGameDto,
@@ -521,29 +621,33 @@ export class GamesService {
     }
   }
 
+  async startSmatGames(payload: StartDto): Promise<Game[] | any> {
+    // Fetch the game list from your API (adjust the method name and params accordingly)
+    return await this.smatVirtualService.activateSession(payload);
+  }
+
   async sync(syncGameDto: SyncGameDto): Promise<any> {
     switch (syncGameDto.provider) {
       case 'shack-evolution':
         return await this.syncShackGames();
-        break;
       case 'c27':
         return await this.syncC2Games();
-        break;
       case 'tada':
         return await this.tadaGamingService.syncGames();
-        break;
       case 'evo-play':
         console.log('syncing here');
-        return await this.evoPlayService.syncGames();
-        break;
+        return await this.evoPlayService.syncGames(syncGameDto);
       case 'pragmatic-play':
         console.log('pragmatic syncing here');
-        return await this.pragmaticPlayService.syncGames();
-        break;
+        return await this.pragmaticPlayService.syncGames(syncGameDto);
       case 'qtech-games':
         console.log('qtech syncing here');
-        return await this.qtechService.syncGames();
+        return await this.qtechService.syncGames(syncGameDto.clientId);
         break;
+      case 'spribe':
+          console.log('qtech syncing here');
+          return await this.spribeService.syncGames();
+          break;
       default:
         throw new NotFoundException(
           'Specified provider does not support sync feature',
@@ -705,9 +809,9 @@ export class GamesService {
 
   async syncEvoPlayGames(): Promise<Game[] | any> {
     // Fetch the game list from your API (adjust the method name and params accordingly)
-    const gameList = await this.evoPlayService.getGames();
+    // const gameList = await this.evoPlayService.getGames();
 
-    return gameList;
+    // return gameList;
     // Find or create the 'Shack Evolution' provider
     // let provider = await this.providerRepository.findOneBy({
     //   name: 'Shack Evolution',
@@ -754,11 +858,11 @@ export class GamesService {
     // return savedGames;
   }
 
-  async syncPragmaticPlayGames(): Promise<Game[] | any> {
+  async syncPragmaticPlayGames(clientId: number): Promise<Game[] | any> {
     // Fetch the game list from your API (adjust the method name and params accordingly)
-    const gameList = await this.pragmaticPlayService.getCasinoGames();
+    // const gameList = await this.pragmaticPlayService.getCasinoGames(clientId);
 
-    return gameList;
+   console.log("clientId"), clientId
   }
 
   async handleGamesCallback(_data: CallbackGameDto): Promise<any> {
@@ -778,11 +882,15 @@ export class GamesService {
             provider: 'smart-soft',
           },
         });
+
+        console.log('smart-soft callback', _data.action);
         
-        return await this.smartSoftService.handleCallback(
+        const smartRes = await this.smartSoftService.handleCallback(
           _data,
           privateKeyQuery.value,
         );
+        console.log(smartRes)
+        return smartRes;
 
       case 'evolution':
         return await this.handleC2Games(_data.body, _data.header);
@@ -800,83 +908,21 @@ export class GamesService {
     // return gameList;
   }
 
-  async handleQtechCallback(request: QtechCallbackRequest): Promise<any> {
-    console.log('start-service', request);
-    // //(request);
-    const resp = await this.qtechService.handleQTGamesCallback(request);
-    console.log('resp', resp);
-
-    return resp;
-  }
-
-  async handleQtechRollback(request: QtechRollbackRequest): Promise<any> {
-    console.log('Start Game service Roll back');
-
-    const resp = await this.qtechService.refund(request);
-
-    return resp;
-  }
-
-  async handleQtechGetBalance(request: QtechCallbackRequest): Promise<any> {
-    console.log('Get Balance');
-    const result = await this.qtechService.getBalance(request);
-
-    return result;
-  }
-
-  async handleQtechBet(request: QtechtransactionRequest): Promise<any> {
-    try {
-      console.log('Bet Balance');
-      const result = await this.qtechService.bet(request);
-      console.log('Game-Game', result);
-      return result;
-    } catch (error) {
-      console.log('THIS', error);
-    }
-  }
-
-  async handleQtechWin(request: QtechtransactionRequest): Promise<any> {
-    console.log('Win Balance');
-    const result = await this.qtechService.win(request);
-    console.log(result);
-    return result;
-  }
-  
   async handleC2Games(body: any, headers: any): Promise<any> {
     console.log(body);
     console.log(headers);
     throw new Error('Method not implemented.');
   }
 
-
-  // async createPromotion(
-  //   createPromotionDto: CreatePromotionDto,
-  // ): Promise<Promotion> {
-  //   console.log('createPromotionDto', createPromotionDto);
-  //   const newPromotion: Promotion = new PromotionEntity();
-
-  //   newPromotion.title = createPromotionDto.title;
-  //   newPromotion.imageUrl = createPromotionDto.imageUrl;
-  //   newPromotion.content = createPromotionDto.content;
-  //   newPromotion.type = createPromotionDto.type;
-  //   newPromotion.endDate = createPromotionDto.endDate;
-  //   newPromotion.startDate = createPromotionDto.startDate;
-
-  //   const savedPromotion = await this.promotionRepository.save(newPromotion);
-  //   console.log('savedPromotion', savedPromotion);
-  //   return savedPromotion;
-  // }
-
   async createPromotion(
-    createPromotionDto: CreatePromotionRequest
+    createPromotionDto: CreatePromotionRequest,
   ): Promise<Promotion> {
     console.log('createPromotionDto service', createPromotionDto);
-  
-  
+
     // Define the folder and file name for the image in Firebase
     const folderName = 'promotions'; // Example: folder to store promotion images
     const fileName = `${Date.now()}_uploaded-file`; // Unique file name
-  
+
     try {
       // Upload the file to Firebase and get the public URL
       const imageUrl = await this.firebaseService.uploadFileToFirebase(
@@ -884,26 +930,25 @@ export class GamesService {
         fileName,
         createPromotionDto.file,
       );
-  
+
       console.log('Uploaded image URL:', imageUrl);
-  
+
       // Create a new promotion entity and assign values
       const newPromotion: any = new PromotionEntity();
 
-      const newPromotion: Promotion = new PromotionEntity();
-  
       newPromotion.title = createPromotionDto.metadata.title;
-      newPromotion.imageUrl = imageUrl || ''; // Assign the uploaded image URL
+      newPromotion.imageUrl = imageUrl || createPromotionDto.metadata.content; // Assign the uploaded image URL
       newPromotion.content = createPromotionDto.metadata.content;
       newPromotion.type = createPromotionDto.metadata.type;
       newPromotion.startDate = createPromotionDto.metadata.startDate;
       newPromotion.endDate = createPromotionDto.metadata.endDate;
       newPromotion.targetUrl = createPromotionDto.metadata.targetUrl;
+      newPromotion.clientId = createPromotionDto.metadata.clientId;
   
       // Save the promotion entity to the database
       const savedPromotion = await this.promotionRepository.save(newPromotion);
-      console.log('Saved promotion:', savedPromotion);
-  
+      // console.log('Saved promotion:', savedPromotion);
+
       return savedPromotion;
     } catch (error) {
       console.error('Error creating promotion:', error.message);
@@ -913,7 +958,7 @@ export class GamesService {
 
   async findOnePromotion(request: FindOnePromotionDto): Promise<any> {
     const { id } = request;
-    console.log('id', id);
+    // console.log('id', id);
     const promotion = await this.promotionRepository.findOne({
       where: { id },
     });
@@ -924,9 +969,16 @@ export class GamesService {
     return promotion;
   }
 
-  async fetchPromotions(): Promise<any> {
-    const promotions = await this.promotionRepository.find();
-    console.log('promotions', promotions);
+  async fetchPromotions(payload: GetPromotions): Promise<any> {
+
+    console.log("payload", payload);
+  
+    const promotions = await this.promotionRepository.find({
+      where: {
+        clientId: payload.clientId
+      },
+    });
+  
     return { data: promotions };
   }
 
@@ -935,50 +987,51 @@ export class GamesService {
   ): Promise<any> {
     const { id } = updatePromotionDto;
   
-  ): Promise<Promotion> {
-    console.log("updatePromotionDto", updatePromotionDto);
-    const { id } = updatePromotionDto.metadata;
-      
     // Find the promotion by ID
     const promotion = await this.promotionRepository.findOneBy({ id });
-
-    console.log("promotion", promotion);
-
+  
     if (!promotion) {
-      throw new Error(`Promotion with ID ${updatePromotionDto.id} not found`);
+      throw new Error(`Promotion with ID ${id} not found`);
     }
-
-    // Define the folder and file name for the image in Firebase
-    const folderName = 'promotions'; // Example: folder to store promotion images
-    const fileName = `${Date.now()}_uploaded-file`; // Unique file name
-
-    let imageUrl: string;
-
-    if(updatePromotionDto.file) {
-      imageUrl = await this.firebaseService.uploadFileToFirebase(
-        folderName,
-        fileName,
-        updatePromotionDto.file,
-      );
+  
+    try {
+      let imageUrl: string | undefined;
+  
+      if (updatePromotionDto.file) {
+        // Define folder and file name for the new image in Firebase
+        const folderName = 'promotions';
+        const fileName = `${Date.now()}_uploaded-file`;
+  
+        // Upload the new file to Firebase and get the public URL
+        imageUrl = await this.firebaseService.uploadFileToFirebase(
+          folderName,
+          fileName,
+          updatePromotionDto.file,
+        );
+  
+        console.log('Uploaded image URL:', imageUrl);
+      }
+  
+      // Update fields dynamically
+      promotion.title = updatePromotionDto.metadata.title ?? promotion.title;
+      promotion.imageUrl = imageUrl || promotion.imageUrl;
+      promotion.content = updatePromotionDto.metadata.content ?? promotion.content;
+      promotion.type = updatePromotionDto.metadata.type ?? promotion.type;
+      promotion.targetUrl = updatePromotionDto.metadata.targetUrl ?? promotion.targetUrl;
+      promotion.startDate = updatePromotionDto.metadata.startDate ?? promotion.startDate;
+      promotion.endDate = updatePromotionDto.metadata.endDate ?? promotion.endDate;
+  
+      // Save the updated promotion
+      const updatedPromotion = await this.promotionRepository.save(promotion);
+      console.log('Updated promotion:', updatedPromotion);
+  
+      return updatedPromotion;
+    } catch (error) {
+      console.error('Error updating promotion:', error.message);
+      throw new Error('Failed to update promotion. Please try again later.');
     }
-
-    console.log('Uploaded image URL:', imageUrl);
-
-    // Update fields with provided values or retain existing ones
-    // promotion.clientId = updatePromotionDto.clientId ?? promotion.clientId;
-    promotion.title = updatePromotionDto.metadata.title ?? promotion.title;
-    promotion.imageUrl = imageUrl ?? promotion.imageUrl;
-    promotion.content = updatePromotionDto.metadata.content ?? promotion.content;
-    promotion.type = updatePromotionDto.metadata.type ?? promotion.type;
-    promotion.targetUrl = updatePromotionDto.metadata.targetUrl ?? promotion.targetUrl;
-    promotion.startDate = updatePromotionDto.metadata.startDate;
-    promotion.endDate = updatePromotionDto.metadata.endDate;
-
-    // Save the updated promotion
-    const updatedPromotion = await this.promotionRepository.save(promotion);
-    return updatedPromotion;
   }
-
+  
   async removePromotion(request: FindOnePromotionDto) {
     const { id } = request;
     console.log('Deleting promotion with ID:', id);
@@ -991,124 +1044,32 @@ export class GamesService {
     await this.promotionRepository.remove(promotion);
   }
 
-  async getAllGamesWithCategories() {
-    const games = await this.gameRepository.find({
-      relations: ['provider', 'categories'], // Ensure the 'categories' relation exists in the Game entity
+  async getGamesWithCategories(payload?: GetGamesRequest) {
+  
+    const filters: any = {};
+  
+    if (payload?.providerId) {
+      filters.provider = { id: payload.providerId };
+    }
+  
+    const gameData = await this.gameRepository.find({
+      where: filters,
+      relations: ['provider', 'categories'],
     });
-
-    const response = {
-      games: games.map((game) => ({
-        id: game.id,
-        status: game.status,
-        provider_id: game.provider?.id || null,
-        provider_name: game.provider?.name || null,
-        game_id: game.gameId,
-        game_name: game.title,
-        image: game.imagePath,
-        description: game.description,
-        category: [],
-        // category: game.categories.map((category) => ({
-        //   id: category.id,
-        //   category_id: category.id, // Map correctly if `category_id` exists in DB
-        //   name: category.name,
-        //   status: category.status,
-        //   priority: category.priority,
-        // })),
-      })),
-    };
-
-    console.log('Response:', response); // Log the response in a readable format
-    return response;
-  }
-
-  // async getGameCategories(
-  //   page = 1,
-  //   perPage = 50,
-  // ): Promise<any> {
-  //   const skip = (page - 1) * perPage;
-
-  //   // Fetch games with their related categories
-  //   const [games, total] = await this.gameRepository
-  //     .createQueryBuilder('game')
-  //     .leftJoinAndSelect('game.provider', 'provider')
-  //     .leftJoinAndSelect('game.categories', 'gameCategory')
-  //     .leftJoinAndSelect('gameCategory.category', 'category')
-  //     .take(perPage)
-  //     .skip(skip)
-  //     .getManyAndCount();
-
-  //     console.log("games", games);
-
-  //   // Transform games with categories into the required response structure
-  //   const data = games.map((game) => ({
-  //     id: game.id,
-  //     status: game.status,
-  //     provider_id: game.provider?.id || 0,
-  //     provider_name: game.provider?.name || '',
-  //     game_id: game.gameId,
-  //     game_name: game.title,
-  //     image: game.imagePath,
-  //     description: game.description || '',
-  //     // priority: game.priority || 0,
-  //     // category: game.categories.map((gc) => ({
-  //     //   id: gc.id,
-  //     //   category_id: gc.category.id,
-  //     //   name: gc.category.name,
-  //     // })),
-  //   }));
-
-  //   // Return paginated response
-  //   return {
-  //     total,
-  //     per_page: perPage,
-  //     current_page: page,
-  //     last_page: Math.ceil(total / perPage),
-  //     from: skip + 1,
-  //     to: skip + data.length,
-  //     data,
-  //   };
-  // }
-
-  async getGamesWithCategories(): Promise<CommonResponseArray> {
-    const [games] = await this.gameRepository
-      .createQueryBuilder('game')
-      .leftJoinAndSelect('game.gameCategories', 'gameCategory')
-      .leftJoinAndSelect('gameCategory.category', 'category')
-      .leftJoinAndSelect('game.provider', 'provider')
-      .getManyAndCount();
-
-    console.log('games', games);
-
-    const gameData = games.map((game) => ({
-      id: game.id,
-      status: game.status,
-      provider_id: game.provider ? game.provider.id : 0,
-      provider_name: game.provider ? game.provider.name : '',
-      game_id: game.gameId,
-      game_name: game.title,
-      image: game.imagePath,
-      description: game.description,
-      priority: game.priority,
-      category: game.gameCategories.map((gc) => ({
-        id: gc.category.id,
-        name: gc.category.name,
-      })),
-    }));
-
-    // const gameDatas = {
-    //   total,
-    //   per_page: perPage,
-    //   current_page: page,
-    //   last_page: Math.ceil(total / perPage),
-    //   from: skip + 1,
-    //   to: skip + gameData.length,
-    // }
-
+  
+    // If filtering by categoryId, further filter the retrieved games
+    let filteredGames = gameData;
+    if (payload?.categoryId) {
+      filteredGames = gameData.filter(game =>
+        game.categories.some(category => category.id === payload.categoryId)
+      );
+    }
+  
     return {
       status: 200,
       success: true,
-      message: 'Games retrieved successfully',
-      data: gameData,
+      message: 'Games fetched successfully',
+      data: filteredGames
     };
   }
 
@@ -1214,7 +1175,6 @@ export class GamesService {
     console.log('TournamentGames', TournamentGames);
 
     const val = await this.tournamentGameRepository.save(TournamentGames);
-    console.log('val', val);
     return val[0];
   }
 
@@ -1237,4 +1197,78 @@ export class GamesService {
 
     return { message: 'Categories removed successfully' };
   }
+
+
+  async handleCasinoBonus(request: CreateBonusRequest): Promise<any> {
+    try {
+      console.log('handleCasinoBonus');
+      const value = await this.evoPlayService.registerBonus(request);
+
+      console.log("value", value);
+
+      return {
+        status: 1,
+        description: "Success",
+        success: true,
+        bonusId: value[0].registry_id
+      }
+
+    } catch (error) {
+      console.log('error', error);
+      return {
+        error: error.message,
+        success: false
+      }
+    }
+    
+}
+
+async handleCasinoJackpot(payload: SyncGameDto): Promise<any> {
+  try {
+    console.log('HandleCasinoJackpot');
+    const value = await this.pragmaticPlayService.getActiveJackpotFeeds(payload);
+
+    console.log("value", value);
+
+    return {
+      status: 1,
+      message: "Success",
+      success: true,
+      data: value
+    }
+
+  } catch (error) {
+    console.log('error', error);
+    return {
+      error: error.message,
+      success: false
+    }
+  }
+  
+}
+
+async handleCasinoJackpotWinners(payload: SyncGameDto): Promise<any> {
+  try {
+
+    const value = await this.pragmaticPlayService.getJackpotWinners(payload);
+
+    console.log("value", value);
+
+    return {
+      status: 1,
+      message: "Success",
+      success: true,
+      data: value
+    }
+
+  } catch (error) {
+    console.log('error', error);
+    return {
+      error: error.message,
+      success: false
+    }
+  }
+  
+}
+
 }

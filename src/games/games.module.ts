@@ -21,7 +21,7 @@ import { IdentityModule } from 'src/identity/identity.module';
 import { GameKey } from 'src/entities/game-key.entity';
 import { CacheModule } from '@nestjs/cache-manager';
 import { Category } from 'src/entities/category.entity';
-import { GameCategory } from 'src/entities/game.category.entity';
+// import { GameCategory } from 'src/entities/game.category.entity';
 import { ScheduleModule } from '@nestjs/schedule';
 import { PragmaticService } from 'src/services/pragmatic-play.service';
 import { CasinoGame } from 'src/entities/casino-game.entity';
@@ -31,6 +31,9 @@ import { Tournament } from 'src/entities/tournament.entity';
 import { FirebaseService } from 'src/common/services/firebaseUpload';
 import { TournamentGame } from 'src/entities/tournament-game.entity';
 import { BonusModule } from 'src/bonus/bonus.module';
+import { SmatVirtualService } from 'src/services/smatvirtual.service';
+import { SpribeService } from 'src/services/spribe.service';
+// import { GameCategoryEntity } from 'src/entities/game.category.entity';
 
 
 
@@ -41,7 +44,7 @@ import { BonusModule } from 'src/bonus/bonus.module';
       max: 1000,
       isGlobal: true,
     }),
-    TypeOrmModule.forFeature([GameSession, CallbackLog, Category, Game, Promotion, Tournament, GameCategory, GameKey, Provider, CasinoGame, TournamentGame ]),
+    TypeOrmModule.forFeature([GameSession, CallbackLog, Category, Game, Promotion, Tournament, GameKey, Provider, CasinoGame, TournamentGame ]),
     HttpModule,
     IdentityModule,
     BonusModule,
@@ -61,7 +64,9 @@ import { BonusModule } from 'src/bonus/bonus.module';
     VirtualService,
     PragmaticService,
     QtechService,
-    FirebaseService
+    FirebaseService,
+    SmatVirtualService,
+    SpribeService
   ],
 })
 export class GamesModule {}
