@@ -274,7 +274,7 @@ export class QtechService {
 
   async launchGames(payload: StartGameDto): Promise<any> {
     try {
-      const { gameId, userId, authCode, balanceType, isMobile, homeUrl } =
+      const { gameId, userId, authCode, balanceType, isMobile, homeUrl, type } =
         payload;
       
       await this.setKeys(payload.clientId);
@@ -284,8 +284,6 @@ export class QtechService {
         where: { id: gameId },
         relations: { provider: true },
       });
-
-      console.log('Game retrieved from DB:', gameExist);
 
       if (!gameExist) {
         console.error(`Game with ID ${gameId} not found`);
@@ -297,26 +295,21 @@ export class QtechService {
       }
 
       // Determine mode and device
-      const mode = 'real';
+      let mode = 'real';
       const device = isMobile ? 'mobile' : 'desktop';
 
-      // console.log('mode', 'device', mode, device);
+      let user;
       // get user details
       const res = await this.identityService.xpressLogin({ clientId: payload.clientId, token: authCode });
 
-      if (!res.status) {
-        return {
-          status: HttpStatus.BAD_REQUEST,
-          message: 'User is not signed in',
-          data: {},
-        };
-      } 
-      const user = res.data;
+      if (res.status) {
+        user = res.data;
+      }  else {
+        mode = 'demo'
+      }
+
       // Construct the wallet session ID (if applicable)
       const walletSessionId = authCode || `session_${Date.now()}`;
-
-      // Log the mode and device selection for debugging
-      console.log('Selected mode:', mode, 'Selected device:', device);
 
       // Define the return URL
       const returnUrl = homeUrl;
@@ -328,8 +321,6 @@ export class QtechService {
       gameSession.provider = gameExist.provider.slug;
       gameSession.balance_type = balanceType || null;
       gameSession.token = authCode;
-
-      console.log('Game session data to save:', gameSession);
 
       // Validate and save the game session
       if (!gameSession.token) {
@@ -355,9 +346,11 @@ export class QtechService {
       }
 
       // Prepare the API request URL
-      const requestUrl = `${this.QTECH_BASEURL}/v1/games/${gameExist.gameId}/launch-url`;
+      let requestUrl = `${this.QTECH_BASEURL}/v1/games/${gameExist.gameId}/launch-url`;
 
-      console.log('requestUrl:', requestUrl);
+      if (type && type === 'lobby') {
+        requestUrl = `${this.QTECH_BASEURL}/v1/games/lobby-url`;
+      }
 
       // Set up headers
       const headers = {
@@ -368,22 +361,19 @@ export class QtechService {
       const requestBody = {
         playerId: userId,
         walletSessionId,
-        currency: user.currency,
-        country: user.country,
+        currency: user.currency || 'NGN',
+        country: user.country || 'NG',
         lang: 'en_US',
         mode,
         device,
         returnUrl,
       };
 
-      console.log('requestBody:', requestBody);
       // Make the API request
       const { data } = await this.httpService
         .post(requestUrl, requestBody, { headers })
         .toPromise();
 
-      console.log('Response data:', data);
-      console.log('Response returnUrl:', data.url);
 
       // Return the game URL
       return { url: data.url };
@@ -455,7 +445,7 @@ export class QtechService {
       });
 
       const currency = player.data.currency;
-      const balance = parseFloat(player.data.availableBalance.toFixed(2));
+      const balance = parseFloat(player.data.availableBalance ? player.data.availableBalance.toFixed(2) : "0.00");
 
       // console.log('Balance:', balance, 'Currency:', currency);
 

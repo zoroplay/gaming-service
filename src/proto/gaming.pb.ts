@@ -210,6 +210,7 @@ export interface StartGameDto {
   language?: string | undefined;
   isBonus?: boolean | undefined;
   bonusType?: string | undefined;
+  type?: string | undefined;
 }
 
 export interface StartGameResponse {

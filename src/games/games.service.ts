@@ -885,11 +885,15 @@ export class GamesService {
             provider: 'smart-soft',
           },
         });
+
+        console.log('smart-soft callback', _data.action);
         
-        return await this.smartSoftService.handleCallback(
+        const smartRes = await this.smartSoftService.handleCallback(
           _data,
           privateKeyQuery.value,
         );
+        console.log(smartRes)
+        return smartRes;
 
       case 'evolution':
         return await this.handleC2Games(_data.body, _data.header);
