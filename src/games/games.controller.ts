@@ -206,6 +206,18 @@ export class GamesController {
     }
   }
 
+  @GrpcMethod(GAMING_SERVICE_NAME, 'qtechLobby')
+  async qtechLobby(request: StartGameDto): Promise<any> {
+    console.log('startGame', request);
+    try {
+      const resp = await this.qtechService.launchGames(request);
+      return resp;
+    } catch (error) {
+      console.error('grpc error');
+      console.error(error);
+    }
+  }
+
   @GrpcMethod(GAMING_SERVICE_NAME, 'startSmatGame')
   async startSmatGame(request: StartDto): Promise<any> {
     console.log('startGame', request);
