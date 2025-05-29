@@ -693,6 +693,8 @@ export interface GamingServiceClient {
 
   startGame(request: StartGameDto): Observable<StartGameResponse>;
 
+  qtechLobby(request: StartGameDto): Observable<StartGameResponse>;
+
   queryGames(request: Observable<PaginationDto>): Observable<Games>;
 
   handleCallback(request: CallbackGameDto): Observable<CallbackResponse>;
@@ -811,6 +813,8 @@ export interface GamingServiceController {
 
   startGame(request: StartGameDto): Promise<StartGameResponse> | Observable<StartGameResponse> | StartGameResponse;
 
+  qtechLobby(request: StartGameDto): Promise<StartGameResponse> | Observable<StartGameResponse> | StartGameResponse;
+
   queryGames(request: Observable<PaginationDto>): Observable<Games>;
 
   handleCallback(request: CallbackGameDto): Promise<CallbackResponse> | Observable<CallbackResponse> | CallbackResponse;
@@ -886,6 +890,7 @@ export function GamingServiceControllerMethods() {
       "handleCasinoJackpot",
       "handleCasinoJackpotWinners",
       "startGame",
+      "qtechLobby",
       "handleCallback",
       "handleQtechCallback",
       "handleSpribeCallback",
