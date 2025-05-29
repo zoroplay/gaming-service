@@ -10,6 +10,7 @@ import {
   CommonResponse,
   CreateBonusRequest,
   CreateGameDto,
+  CreateGameKeyRequest,
   CreatePromotionRequest,
   CreateProviderDto,
   CreateTournamentDto,
@@ -23,6 +24,7 @@ import {
   Games,
   GAMING_SERVICE_NAME,
   GetGamesRequest,
+  GetKeysRequest,
   GetPromotions,
   PaginationDto,
   Provider,
@@ -35,9 +37,10 @@ import {
   SyncGameDto,
   UpdateGameDto
 } from 'src/proto/gaming.pb';
-import { GamesService } from './games.service';
 import { QtechService } from 'src/services';
 import { SmatVirtualService } from 'src/services/smatvirtual.service';
+import { SpribeService } from 'src/services/spribe.service';
+import { GamesService } from './games.service';
 
 @Controller()
 export class GamesController {
@@ -45,6 +48,7 @@ export class GamesController {
     private readonly gamesService: GamesService,
     private readonly qtechService: QtechService,
     private readonly smatVirtualService: SmatVirtualService,
+    private readonly spribeService: SpribeService,
   ) {}
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'createProvider')
@@ -206,6 +210,18 @@ export class GamesController {
     }
   }
 
+  @GrpcMethod(GAMING_SERVICE_NAME, 'qtechLobby')
+  async qtechLobby(request: StartGameDto): Promise<any> {
+    console.log('startGame', request);
+    try {
+      const resp = await this.qtechService.launchLobby(request);
+      return resp;
+    } catch (error) {
+      console.error('grpc error');
+      console.error(error);
+    }
+  }
+
   @GrpcMethod(GAMING_SERVICE_NAME, 'startSmatGame')
   async startSmatGame(request: StartDto): Promise<any> {
     console.log('startGame', request);
@@ -356,5 +372,15 @@ async getGames(request?: GetGamesRequest) {
   HandleCasinoJackpotWinners(payload: SyncGameDto): Promise<any> {
     console.log('handleCasinoJackpotWinners');
     return this.gamesService.handleCasinoJackpotWinners(payload);
+  }
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'addGameKeys')
+  async createGameKeys(payload: CreateGameKeyRequest): Promise<any> {
+    return this.gamesService.addGameKeys(payload);
+  }
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'fetchGameKeys')
+  async fetchGameKeys(payload: GetKeysRequest): Promise<any> {
+    return this.gamesService.fetchGameKeys(payload);
   }
 }

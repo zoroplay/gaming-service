@@ -20,7 +20,3 @@ const { privateKey } = JSON.parse(process.env.FIREBASE_PRIVATE_KEY)
   'universe_domain': process.env.FIREBASE_DOMAIN
 
 } as ServiceAccount;
-
-
-
-

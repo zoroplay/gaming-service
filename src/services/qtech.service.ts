@@ -382,6 +382,68 @@ export class QtechService {
     }
   }
 
+  async launchLobby(payload: StartGameDto): Promise<any> {
+    try {
+       const { userId, authCode, isMobile, homeUrl } =
+        payload;
+      
+      await this.setKeys(payload.clientId);
+
+      // Determine mode and device
+      let mode = 'real';
+      const device = isMobile ? 'mobile' : 'desktop';
+
+      let user;
+      // get user details
+      const res = await this.identityService.xpressLogin({ clientId: payload.clientId, token: authCode });
+
+      if (res.status) {
+        user = res.data;
+      }  else {
+        mode = 'demo'
+      }
+      // Construct the wallet session ID (if applicable)
+      const walletSessionId = authCode || `session_${Date.now()}`;
+
+      // Define the return URL
+      const returnUrl = homeUrl;
+
+      // Prepare the API request URL
+      const requestUrl = `${this.QTECH_BASEURL}/v1/games/lobby-url`;
+
+      // Set up headers
+      const headers = {
+        Authorization: `Bearer ${await this.getAccessToken()}`,
+      };
+
+      // Prepare the payload
+      const requestBody = {
+        playerId: userId,
+        walletSessionId,
+        currency: user ? user.currency : 'NGN',
+        country: user ? user.country : 'NG',
+        lang: 'en_US',
+        mode,
+        device,
+        returnUrl,
+      };
+
+      // Make the API request
+      const { data } = await this.httpService
+        .post(requestUrl, requestBody, { headers })
+        .toPromise();
+
+      // Return the game URL
+      return { url: data.url };
+
+    } catch (e) {
+      console.error('Error in launchGames:', e.message);
+      throw new RpcException(
+        e.response?.data?.message || 'Launch Lobby failed',
+      );
+    }
+  }
+
   async verifySession(payload: QtechCallbackRequest, callback: CallbackLog): Promise<any> {
     const { walletSessionId, clientId, playerId } = payload;
     try {
