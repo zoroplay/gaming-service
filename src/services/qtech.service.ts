@@ -369,7 +369,7 @@ export class QtechService {
         playerId: userId,
         walletSessionId,
         currency: user.currency,
-        country: user.country,
+        country: user.country || 'NG',
         lang: 'en_US',
         mode,
         device,
