@@ -470,11 +470,11 @@ export class PragmaticService {
     const isValid = await this.identityService.validateToken({ clientId, token });
 
     
-    // console.log("isValid", isValid);
+    console.log("isValid", isValid);
     let response: any;
     const dataObject = typeof isValid.data === 'string' ? JSON.parse(isValid.data) : isValid.data;
 
-    // console.log("dataObject", dataObject);
+    console.log("dataObject", dataObject);
 
     if(!isValid || !isValid.status) {
       response = {

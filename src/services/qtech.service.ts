@@ -307,6 +307,7 @@ export class QtechService {
       }  else {
         mode = 'demo'
       }
+
       // Construct the wallet session ID (if applicable)
       const walletSessionId = authCode || `session_${Date.now()}`;
 
