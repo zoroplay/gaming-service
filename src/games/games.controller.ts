@@ -214,7 +214,7 @@ export class GamesController {
   async qtechLobby(request: StartGameDto): Promise<any> {
     console.log('startGame', request);
     try {
-      const resp = await this.qtechService.launchGames(request);
+      const resp = await this.qtechService.launchLobby(request);
       return resp;
     } catch (error) {
       console.error('grpc error');
