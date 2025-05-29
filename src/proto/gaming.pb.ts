@@ -9,16 +9,33 @@ export const protobufPackage = "gaming";
 export interface GetGamesRequest {
   providerId?: number | undefined;
   categoryId?: number | undefined;
+  page?: number | undefined;
+  limit?: number | undefined;
 }
 
 export interface GetPromotions {
   clientId?: number | undefined;
 }
 
+export interface GetKeysRequest {
+  clientId: number;
+}
+
 export interface StartDto {
   clientId: number;
   userId: number;
   token: string;
+}
+
+export interface CreateGameKeyRequest {
+  clientId: number;
+  keys: GameKeyEntry[];
+}
+
+export interface GameKeyEntry {
+  option: string;
+  value: string;
+  provider: string;
 }
 
 export interface SmatVirtualCallbackRequest {
@@ -75,6 +92,14 @@ export interface QtechCallbackRequest {
   action: string;
 }
 
+export interface SpribeCallbackRequest {
+  clientId: number;
+  provider: string;
+  signature?: string | undefined;
+  body?: string | undefined;
+  action: string;
+}
+
 export interface AddGameToCategoriesResponse {
   gameCategories: GameCategory[];
 }
@@ -117,6 +142,8 @@ export interface CallbackGameDto {
   method?: string | undefined;
   header: { [key: string]: any } | undefined;
   body?: string | undefined;
+  signature?: string | undefined;
+  path?: string | undefined;
 }
 
 export interface FindOneGameDto {
@@ -183,6 +210,7 @@ export interface StartGameDto {
   language?: string | undefined;
   isBonus?: boolean | undefined;
   bonusType?: string | undefined;
+  type?: string | undefined;
 }
 
 export interface StartGameResponse {
@@ -364,11 +392,19 @@ export interface CallbackResponse {
   data: { [key: string]: any } | undefined;
 }
 
+export interface Pagination {
+  page?: number | undefined;
+  limit?: number | undefined;
+  total?: number | undefined;
+  totalPages?: number | undefined;
+}
+
 export interface CommonResponseArray {
   status?: number | undefined;
   success?: boolean | undefined;
   message: string;
   data: { [key: string]: any }[];
+  pagination?: Pagination | undefined;
 }
 
 export interface XpressRequest {
@@ -647,6 +683,10 @@ export interface GamingServiceClient {
 
   handleCasinoBonus(request: CreateBonusRequest): Observable<CreateBonusResponse>;
 
+  addGameKeys(request: CreateGameKeyRequest): Observable<CommonResponse>;
+
+  fetchGameKeys(request: GetKeysRequest): Observable<CommonResponse>;
+
   handleCasinoJackpot(request: SyncGameDto): Observable<CommonResponse>;
 
   handleCasinoJackpotWinners(request: SyncGameDto): Observable<CommonResponse>;
@@ -658,6 +698,8 @@ export interface GamingServiceClient {
   handleCallback(request: CallbackGameDto): Observable<CallbackResponse>;
 
   handleQtechCallback(request: QtechCallbackRequest): Observable<CallbackResponse>;
+
+  handleSpribeCallback(request: CallbackGameDto): Observable<CallbackResponse>;
 
   handleSmatVirtualCallback(request: SmatVirtualCallbackRequest): Observable<CallbackResponse>;
 
@@ -757,6 +799,10 @@ export interface GamingServiceController {
     request: CreateBonusRequest,
   ): Promise<CreateBonusResponse> | Observable<CreateBonusResponse> | CreateBonusResponse;
 
+  addGameKeys(request: CreateGameKeyRequest): Promise<CommonResponse> | Observable<CommonResponse> | CommonResponse;
+
+  fetchGameKeys(request: GetKeysRequest): Promise<CommonResponse> | Observable<CommonResponse> | CommonResponse;
+
   handleCasinoJackpot(request: SyncGameDto): Promise<CommonResponse> | Observable<CommonResponse> | CommonResponse;
 
   handleCasinoJackpotWinners(
@@ -771,6 +817,10 @@ export interface GamingServiceController {
 
   handleQtechCallback(
     request: QtechCallbackRequest,
+  ): Promise<CallbackResponse> | Observable<CallbackResponse> | CallbackResponse;
+
+  handleSpribeCallback(
+    request: CallbackGameDto,
   ): Promise<CallbackResponse> | Observable<CallbackResponse> | CallbackResponse;
 
   handleSmatVirtualCallback(
@@ -831,11 +881,14 @@ export function GamingServiceControllerMethods() {
       "updatePromotion",
       "removePromotion",
       "handleCasinoBonus",
+      "addGameKeys",
+      "fetchGameKeys",
       "handleCasinoJackpot",
       "handleCasinoJackpotWinners",
       "startGame",
       "handleCallback",
       "handleQtechCallback",
+      "handleSpribeCallback",
       "handleSmatVirtualCallback",
       "xpressLogin",
       "xpressBalance",
