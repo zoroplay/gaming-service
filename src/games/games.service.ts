@@ -21,6 +21,7 @@ import {
   CommonResponse,
   CreateBonusRequest,
   CreateGameDto,
+  CreateGameKeyRequest,
   CreatePromotionRequest,
   CreateProviderDto,
   CreateTournamentDto,
@@ -31,6 +32,7 @@ import {
   Game,
   Games,
   GetGamesRequest,
+  GetKeysRequest,
   GetPromotions,
   PaginationDto,
   Promotion,
@@ -203,6 +205,7 @@ export class GamesService {
     console.log(final);
     return final;
   }
+  
   // Make sure to import the interface
 
   // async fetchGames({
@@ -899,6 +902,9 @@ export class GamesService {
       case 'pragmatic-play':
         console.log('using pragmatic-play');
         return await this.pragmaticPlayService.handleCallback(_data);
+      case 'spribe':
+        console.log('using spribe');
+        return await this.spribeService.handleCallback(_data);
       default:
         throw new NotFoundException('Unknown provider');
     }
@@ -1045,31 +1051,45 @@ export class GamesService {
   }
 
   async getGamesWithCategories(payload?: GetGamesRequest) {
-  
+    // Pagination setup
+    const page = payload?.page && payload.page > 0 ? payload.page : 1;
+    const limit = payload?.limit && payload.limit > 0 && payload.limit <= 50 ? payload.limit : 50;
+    const skip = (page - 1) * limit;
+
     const filters: any = {};
-  
     if (payload?.providerId) {
       filters.provider = { id: payload.providerId };
     }
-  
-    const gameData = await this.gameRepository.find({
+
+    // Get total count for pagination
+    const [gameData, total] = await this.gameRepository.findAndCount({
       where: filters,
       relations: ['provider', 'categories'],
+      skip,
+      take: limit,
     });
-  
+
     // If filtering by categoryId, further filter the retrieved games
     let filteredGames = gameData;
+    let filteredTotal = total;
     if (payload?.categoryId) {
       filteredGames = gameData.filter(game =>
         game.categories.some(category => category.id === payload.categoryId)
       );
+      filteredTotal = filteredGames.length;
     }
-  
+
     return {
       status: 200,
       success: true,
       message: 'Games fetched successfully',
-      data: filteredGames
+      data: filteredGames,
+      pagination: {
+        page,
+        limit,
+        total: filteredTotal,
+        totalPages: Math.ceil(filteredTotal / limit)
+      }
     };
   }
 
@@ -1270,5 +1290,95 @@ async handleCasinoJackpotWinners(payload: SyncGameDto): Promise<any> {
   }
   
 }
+
+// async addGameKeys(
+//     createGameKeyDto: CreateGameKeyRequest,
+//   ): Promise<any> {
+//     console.log('addGameKeys', createGameKeyDto);
+//     const newGameKey = new GameKey();
+
+//     newGameKey.client_id = createGameKeyDto.clientId;
+//     newGameKey.provider = createGameKeyDto.provider;
+//     newGameKey.option = createGameKeyDto.option;
+//     newGameKey.value = createGameKeyDto.value;
+
+//     const savedKeys = await this.gameKeyRepository.save(newGameKey);
+//     console.log('savedKeys', savedKeys);
+//     return {
+//       status: 200,
+//       success: true,
+//       message: 'Game keys created successfully',
+//       data: savedKeys
+//     };
+//   }
+
+
+async addGameKeys(
+  createGameKeyDto: CreateGameKeyRequest,
+): Promise<any> {
+  console.log('addGameKeys', createGameKeyDto);
+
+  const { clientId, keys } = createGameKeyDto;
+
+  const savedKeys = [];
+
+  for (const key of keys) {
+    // Check if the key already exists for this clientId + provider + option
+    let gameKey = await this.gameKeyRepository.findOne({
+      where: {
+        client_id: clientId,
+        option: key.option,
+      },
+    });
+
+    if (gameKey) {
+      // Update existing record
+      gameKey.value = key.value;
+    } else {
+      // Create new record
+      gameKey = new GameKey();
+      gameKey.client_id = clientId;
+      gameKey.provider = key.provider;
+      gameKey.option = key.option;
+      gameKey.value = key.value;
+    }
+
+    const savedKey = await this.gameKeyRepository.save(gameKey);
+    savedKeys.push(savedKey);
+  }
+
+  console.log('savedKeys', savedKeys);
+
+  return {
+    status: 200,
+    success: true,
+    message: 'Game keys processed successfully',
+    data: savedKeys,
+  };
+}
+
+  async fetchGameKeys(payload: GetKeysRequest): Promise<any> {
+
+    const gameKeys = await this.gameKeyRepository.find({ where: { client_id: payload.clientId } });
+
+    if (!gameKeys || gameKeys.length === 0) {
+      return {
+        status: 404,
+        success: false,
+        message: 'No game keys found for the specified client',
+        data: [],
+      };
+    }
+
+    return {
+      status: 200,
+      success: true,
+      message: 'Game keys fetched successfully',
+      data: gameKeys,
+    };
+
+    
+
+  }
 
 }
