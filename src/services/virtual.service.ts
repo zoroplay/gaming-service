@@ -47,7 +47,7 @@ export class VirtualService {
         const data = {
           playerId: user.playerId,
           currency: user.currency,
-          balance: user.balance ? user.balance.toFixed(2) : "0.00",
+          balance: user.balance ? user.balance.toFixed(2) : "0",
           sessionId: user.sessionId,
           group: user.group,
           timestamp: dayjs().toISOString(),
@@ -106,7 +106,7 @@ export class VirtualService {
         const data = {
           playerId, // operator identifier+playerID
           currency,
-          balance: walletRes.data.availableBalance ? walletRes.data.availableBalance.toFixed(2) : "0.00",
+          balance: walletRes.data.availableBalance ? walletRes.data.availableBalance.toFixed(2) : "0",
           sessionId,
           group,
           timestamp: dayjs().toISOString(),
@@ -217,7 +217,7 @@ export class VirtualService {
         const data = {
           playerId,
           currency: params.currency,
-          balance: debitRes.data.balance ? debitRes.data.balance.toFixed(2) : "0.00",
+          balance: debitRes.data.balance ? debitRes.data.balance.toFixed(2) : "0",
           oldBalance: oldBalance.toFixed(2),
           transactionId,
           sessionId,
