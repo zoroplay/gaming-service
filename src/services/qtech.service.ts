@@ -428,6 +428,7 @@ export class QtechService {
         returnUrl,
       };
 
+      console.log("REQUEST BODY", requestBody)
       // Make the API request
       const { data } = await this.httpService
         .post(requestUrl, requestBody, { headers })
