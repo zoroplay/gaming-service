@@ -358,7 +358,7 @@ export class QtechService {
       const requestBody = {
         playerId: userId,
         walletSessionId,
-        currency: user.currency,
+        currency: user.currency || 'NGN',
         country: user.country || 'NG',
         lang: 'en_US',
         mode,
