@@ -85,7 +85,6 @@ export class QtechService {
           `${this.QTECH_BASEURL}/v1/auth/token?grant_type=password&response_type=token&username=${this.QTECH_USERNAME}&password=${this.QTECH_PASSWORD}`,
         )
         .toPromise();
-      console.log('data', data);
 
       return data.access_token;
     } catch (e) {
@@ -98,7 +97,6 @@ export class QtechService {
       const { data } = await this.httpService
         .delete(`${this.QTECH_BASEURL}/v1/auth/token`)
         .toPromise();
-      console.log('data', data);
 
       return data.access_token;
     } catch (e) {
@@ -428,7 +426,6 @@ export class QtechService {
         returnUrl,
       };
 
-      console.log("REQUEST BODY", requestBody)
       // Make the API request
       const { data } = await this.httpService
         .post(requestUrl, requestBody, { headers })
