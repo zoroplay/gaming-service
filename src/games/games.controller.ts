@@ -6,6 +6,7 @@ import { Observable } from 'rxjs';
 import {
   AddGameToCategoriesDto,
   AddGameToTournamentDto,
+  BonusGameRequest,
   CallbackGameDto,
   CommonResponse,
   CreateBonusRequest,
@@ -383,4 +384,15 @@ async getGames(request?: GetGamesRequest) {
   async fetchGameKeys(payload: GetKeysRequest): Promise<any> {
     return this.gamesService.fetchGameKeys(payload);
   }
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'fetchBonusGames')
+  async getUserBonusGames(payload: BonusGameRequest): Promise<any> {
+    return this.gamesService.getUserBonusGames(payload);
+  }
+
+  @GrpcMethod(GAMING_SERVICE_NAME, 'deleteGameKeys')
+  async removeGameKey(payload: FindOneGameDto): Promise<any> {
+    return this.gamesService.removeGameKey(payload);
+  }
+  
 }

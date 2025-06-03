@@ -16,6 +16,7 @@ import { IdentityService } from 'src/identity/identity.service';
 import {
   AddGameToCategoriesDto,
   AddGameToTournamentDto,
+  BonusGameRequest,
   CallbackGameDto,
   Categories,
   CommonResponse,
@@ -27,6 +28,7 @@ import {
   CreateTournamentDto,
   FetchGamesRequest,
   FindOneCategoryDto,
+  FindOneGameDto,
   FindOnePromotionDto,
   FindOneTournamentDto,
   Game,
@@ -60,6 +62,8 @@ import { FindManyOptions, ILike, In, Repository } from 'typeorm';
 import { Game as GameEntity } from '../entities/game.entity';
 import { Provider as ProviderEntity } from '../entities/provider.entity';
 import { SpribeService } from 'src/services/spribe.service';
+import { BonusService } from 'src/bonus/bonus.service';
+
 // import { GameCategoryEntity } from 'src/entities/game.category.entity';
 
 @Injectable()
@@ -93,6 +97,7 @@ export class GamesService {
     private readonly firebaseService: FirebaseService,
     private readonly smatVirtualService: SmatVirtualService,
     private readonly spribeService: SpribeService,
+    private readonly bonusService: BonusService,
   ) {}
 
   async createProvider(
@@ -1291,27 +1296,6 @@ async handleCasinoJackpotWinners(payload: SyncGameDto): Promise<any> {
   
 }
 
-// async addGameKeys(
-//     createGameKeyDto: CreateGameKeyRequest,
-//   ): Promise<any> {
-//     console.log('addGameKeys', createGameKeyDto);
-//     const newGameKey = new GameKey();
-
-//     newGameKey.client_id = createGameKeyDto.clientId;
-//     newGameKey.provider = createGameKeyDto.provider;
-//     newGameKey.option = createGameKeyDto.option;
-//     newGameKey.value = createGameKeyDto.value;
-
-//     const savedKeys = await this.gameKeyRepository.save(newGameKey);
-//     console.log('savedKeys', savedKeys);
-//     return {
-//       status: 200,
-//       success: true,
-//       message: 'Game keys created successfully',
-//       data: savedKeys
-//     };
-//   }
-
 
 async addGameKeys(
   createGameKeyDto: CreateGameKeyRequest,
@@ -1357,6 +1341,25 @@ async addGameKeys(
   };
 }
 
+async removeGameKey(request: FindOneGameDto) {
+    const { id } = request;
+    console.log('Deleting promotion with ID:', id);
+
+    const gameKey = await this.gameKeyRepository.findOneBy({ id });
+    if (!gameKey) {
+      throw new Error(`Game Key with ID ${id} not found`);
+    }
+
+    await this.gameKeyRepository.remove(gameKey); 
+
+    return {
+    status: 200,
+    success: true,
+    message: 'Game keys deleted successfully',
+    data: {}
+  }
+}
+
   async fetchGameKeys(payload: GetKeysRequest): Promise<any> {
 
     const gameKeys = await this.gameKeyRepository.find({ where: { client_id: payload.clientId } });
@@ -1380,5 +1383,47 @@ async addGameKeys(
     
 
   }
+
+  async getUserBonusGames(payload: BonusGameRequest): Promise<any> {
+  try {
+    const getBonusGames = await this.bonusService.getUserBnus({
+      clientId: payload.clientId,
+      userId: payload.userId
+    });
+
+    console.log("getBonusGames", getBonusGames);
+
+    if (getBonusGames.data && getBonusGames.data.gameId && Array.isArray(getBonusGames.data.gameId)) {
+      const gameIds = getBonusGames.data.gameId;
+      
+      // Find all games that match the gameIds in the bonus
+      const gameList = await this.gameRepository.find({
+        where: {
+          gameId: In(gameIds) // Using TypeORM's In operator
+        }
+      });
+
+      return {
+        status: getBonusGames.status,
+        success: getBonusGames.success,
+        message: 'Bonus games fetched',
+        data: gameList
+      };
+    }
+
+    // If no gameId array found, return the original response
+    return getBonusGames;
+
+  } catch (error) {
+    console.error('Error fetching user bonus games:', error);
+    return {
+      status: 0,
+      success: false,
+      message: 'Failed to fetch bonus games',
+      data: null
+    };
+  }
+}
+
 
 }
