@@ -2,7 +2,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ClientGrpc } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
-import { AwardBonusRequest, BONUS_SERVICE_NAME, BonusServiceClient, CreateBonusRequest, DeleteBonusRequest, GetBonusRequest, protobufPackage } from 'src/proto/bonus.pb';
+import { AwardBonusRequest, BONUS_SERVICE_NAME, BonusServiceClient, CheckDepositBonusRequest, CreateBonusRequest, DeleteBonusRequest, GetBonusRequest, protobufPackage } from 'src/proto/bonus.pb';
 
 
 @Injectable()
@@ -32,6 +32,10 @@ export class BonusService {
 
   deleteBonus(data: DeleteBonusRequest) {
     return firstValueFrom(this.svc.deleteBonus(data));
+  }
+
+  getUserBnus(data: CheckDepositBonusRequest) {
+    return firstValueFrom(this.svc.getActiveUserBonus(data));
   }
 
 }
