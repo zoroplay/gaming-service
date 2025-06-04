@@ -364,12 +364,15 @@ export class QtechService {
         returnUrl,
       };
 
+      console.log('REQUEST DATA', requestBody);
+
+
       // Make the API request
       const { data } = await this.httpService
         .post(requestUrl, requestBody, { headers })
         .toPromise();
 
-
+      console.log('RESPONSE DATA', data);
       // Return the game URL
       return { url: data.url };
     } catch (error) {
