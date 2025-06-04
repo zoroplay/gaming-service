@@ -1644,7 +1644,7 @@ export class PragmaticService {
     }
 
     let player = null;
-    let balanceType;
+    let balanceType = 'real';
 
     // Handle PromoWin without token
     if (data.action === 'PromoWin') {
