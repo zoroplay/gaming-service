@@ -272,6 +272,7 @@ export class QtechService {
 
   async launchGames(payload: StartGameDto): Promise<any> {
     try {
+      console.log('Launch game payload', payload)
       const { gameId, userId, authCode, balanceType, isMobile, homeUrl } =
         payload;
       
@@ -347,6 +348,7 @@ export class QtechService {
       // Prepare the API request URL
       const requestUrl = `${this.QTECH_BASEURL}/v1/games/${gameExist.gameId}/launch-url`;
 
+      console.log('Request URL', requestUrl);
       // Set up headers
       const headers = {
         Authorization: `Bearer ${await this.getAccessToken()}`,
