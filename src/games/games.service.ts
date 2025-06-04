@@ -307,7 +307,56 @@ export class GamesService {
     };
 }
 
-  async fetchGamesByName(searchGamesDto: FetchGamesRequest): Promise<Games> {
+  async adminFetchGamesByName(searchGamesDto: FetchGamesRequest) {
+    const { gameName } = searchGamesDto;
+  
+    const query = this.gameRepository.createQueryBuilder('games')
+       // Join with the provider table to check provider status
+      .leftJoin('games.provider', 'provider')
+      // Join with categories to populate them as well
+      .leftJoin('games.categories', 'categories')
+      // Add relations to populate provider and categories in the result
+      .leftJoinAndSelect('games.provider', 'gameProvider')
+      .leftJoinAndSelect('games.categories', 'gameCategories')
+      // Only include games where both the game status and provider status are not 0
+      // .andWhere('games.status != :gameStatus', { gameStatus: 0 })
+      // .andWhere('provider.status != :providerStatus', { providerStatus: 0 });
+  
+    if (gameName) {
+      // Use LIKE to allow partial match (wildcard search) on gameName
+      query.andWhere('games.title LIKE :gameName', {
+        gameName: `%${gameName}%`,
+      });
+    }
+  
+    const games = await query.getMany();
+
+    let filteredGames = games;
+    if (searchGamesDto?.categoryId) {
+      filteredGames = games.filter(game =>
+        game.categories.some(category => category.id === searchGamesDto.categoryId)
+      );
+    }
+
+
+    // Convert TypeORM entities to proto-generated types
+    // const protoResponse: Game[] = games.map((entity: GameEntity) =>
+    //   this.entityToProtoService.entityToProto(entity),
+    // );
+
+    const final = {
+      games: filteredGames,
+    };
+  
+    return {
+      status: 200,
+      success: true,
+      message: 'Games fetched successfully',
+      data: final,
+    };
+  }
+
+    async fetchGamesByName(searchGamesDto: FetchGamesRequest): Promise<Games> {
     const { gameName } = searchGamesDto;
   
     const query = this.gameRepository.createQueryBuilder('games')
