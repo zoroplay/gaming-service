@@ -1725,6 +1725,7 @@ export class PragmaticService {
     }
 
     console.log("player", player);
+    console.log("balanceType", balanceType);
 
     // Handle game actions
     switch (data.action) {
