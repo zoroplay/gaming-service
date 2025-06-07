@@ -1,32 +1,30 @@
 /* eslint-disable prettier/prettier */
 import { HttpService } from '@nestjs/axios';
 import { HttpStatus, Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { BetService } from 'src/bet/bet.service';
-import { CasinoGame } from 'src/entities/casino-game.entity';
 import { IdentityService } from 'src/identity/identity.service';
 import { WalletService } from 'src/wallet/wallet.service';
 import { Repository } from 'typeorm';
 
+import { firstValueFrom } from 'rxjs';
+import { GameKey } from 'src/entities/game-key.entity';
+import {
+  CreditCasinoBetRequest,
+  PlaceCasinoBetRequest,
+  RollbackCasinoBetRequest,
+} from 'src/proto/betting.pb';
+import {
+  QtechCallbackRequest,
+  StartGameDto
+} from 'src/proto/gaming.pb';
 import {
   CallbackLog,
   Game as GameEntity,
   GameSession,
   Provider as ProviderEntity,
 } from '../entities';
-import {
-  QtechCallbackRequest,
-  StartGameDto,
-} from 'src/proto/gaming.pb';
-import {
-  CreditCasinoBetRequest,
-  PlaceCasinoBetRequest,
-  RollbackCasinoBetRequest,
-} from 'src/proto/betting.pb';
-import { firstValueFrom } from 'rxjs';
-import { GameKey } from 'src/entities/game-key.entity';
 
 @Injectable()
 export class QtechService {
@@ -1020,4 +1018,104 @@ export class QtechService {
       await this.gameSessionRepo.update(where, data)
     ]);
   }
+
+  //Register Bonus
+    // async registerBonus(data: CreateBonusRequest) {
+    //   console.log('data', data);
+    //   try {
+
+    //     await this.setKeys(data.clientId);
+
+    //     const accessToken = await this.getAccessToken();
+  
+    //     const gameKeys = await this.gameKeyRepository.find({
+    //       where: {
+    //           client_id: data.clientId,
+    //           provider: "evo-play",
+    //       },
+    //   });
+  
+    //     const newData: any = {
+    //       games: Array.isArray(data.gameId) ? data.gameId.join(',') : data.gameId,
+    //       users: Array.isArray(data.userIds) ? data.userIds.join(',') : data.clientId,
+    //       currency: 'NGN',
+    //     };
+        
+    //     if (data.bonusType === 'free_rounds') {
+    //       newData.extra_bonuses = {
+    //         bonus_spins: {
+    //           spins_count: data.casinoSpinCount,
+    //           bet_in_money: data.minimumEntryAmount,
+    //         },
+    //       };
+        
+    //       newData.settings = {
+    //         expire: formattedDateSpace,
+    //       };
+    //     }
+  
+    //     // if (data.bonusType === 'feature_trigger') {
+    //     //   newData.extra_bonuses = {
+    //     //     freespins_on_start: {
+    //     //       freespins_count: data.casinoSpinCount,
+    //     //       bet_in_money: data.minimumEntryAmount,
+    //     //     },
+    //     //   };
+        
+    //     //   newData.settings = {
+    //     //     expire: formattedDateSpace,
+    //     //   };
+    //     // }
+  
+    //     // const signature = this.getSignature(
+    //     //   parseFloat(project),
+    //     //   parseFloat(version),
+    //     //   newData,
+    //     //   token
+    //     // );
+  
+    //     const url = `${this.QTECH_BASEURL}/v1/bonus/free-rounds`;
+
+    //     const headers = {
+    //       Authorization: `Bearer ${accessToken}`,
+    //       'Time-Zone': 'UTC',
+    //       'Accept-Language': 'en-US',
+    //       Accept: 'application/json',
+    //     };
+
+    //     const requestBody = {
+    //       txnId: "",
+    //       playerId: ""
+    //     }
+
+    //     // // Prepare the payload
+    //     // const requestBody = {
+    //     //   playerId: userId,
+    //     //   walletSessionId,
+    //     //   currency: user.currency,
+    //     //   country: user.country || 'NG',
+    //     //   lang: 'en_US',
+    //     //   mode,
+    //     //   device,
+    //     //   returnUrl,
+    //     // };
+  
+    //     const { data } = await this.httpService.get(url, requestBody, { headers }).toPromise();
+  
+    //     if(!response) {
+    //       return {
+    //         error: 0,
+    //         success: false,
+    //         message: 'Can not register evo-play bonus'
+    //       }
+    //     }
+  
+    //     console.log("response", response);
+    //     console.log("response-data", response.data.data);
+  
+    //     return response.data.data;
+    //   } catch (e) {
+    //     console.error(e.message);
+    //   }
+    // }
 }

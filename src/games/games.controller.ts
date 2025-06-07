@@ -111,6 +111,12 @@ export class GamesController {
     return this.gamesService.fetchGamesByName(payload);
   }
 
+   @GrpcMethod(GAMING_SERVICE_NAME, 'adminFetchGamesByName')
+    adminFetchGamesByName(payload: FetchGamesRequest): Promise<any> {
+      console.log('fetch gameNames');
+      return this.gamesService.adminFetchGamesByName(payload);
+    }
+
   @GrpcMethod(GAMING_SERVICE_NAME, 'addGameToCategories')
   addGameToCategories(payload: AddGameToCategoriesDto): Promise<any> {
     return this.gamesService.addGameToCategories(payload);
@@ -357,5 +363,5 @@ async getGames(request?: GetGamesRequest) {
   async removeGameKey(payload: FindOneGameDto): Promise<any> {
     return this.gamesService.removeGameKey(payload);
   }
-  
+
 }

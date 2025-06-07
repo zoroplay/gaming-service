@@ -1644,7 +1644,7 @@ export class PragmaticService {
     }
 
     let player = null;
-    let balanceType;
+    let balanceType = 'real';
 
     // Handle PromoWin without token
     if (data.action === 'PromoWin') {
@@ -1725,6 +1725,7 @@ export class PragmaticService {
     }
 
     console.log("player", player);
+    console.log("balanceType", balanceType);
 
     // Handle game actions
     switch (data.action) {
