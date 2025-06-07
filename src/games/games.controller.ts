@@ -54,7 +54,6 @@ export class GamesController {
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'createProvider')
   createProvider(request: CreateProviderDto): Promise<CommonResponse> {
-    console.log('createProvider', request);
     return this.gamesService.createProvider(request);
   }
 
@@ -62,13 +61,11 @@ export class GamesController {
   updateProvider(
     request: CreateProviderDto,
   ): Provider | Observable<Provider> | Promise<Provider> | Promise<any> {
-    console.log('updateProvider', request);
     return this.gamesService.updateProvider(request);
   }
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'findOneProvider')
   findOneProvider(request: FindOneGameDto): Promise<any> {
-    console.log('findOneProvider', request);
     return this.gamesService.findOneProvider(request.id);
   }
 
@@ -83,7 +80,6 @@ export class GamesController {
   findAllProviders(
     request: Empty,
   ): Providers | Observable<Providers> | Promise<CommonResponse> {
-    console.log('findAllProviders', request);
     return this.gamesService.findAllProvider();
   }
 
@@ -91,32 +87,27 @@ export class GamesController {
   findAdminProviders(
     request: Empty,
   ): Providers | Observable<Providers> | Promise<CommonResponse> {
-    console.log('findAllProviders', request);
     return this.gamesService.findAdminProviders();
   }
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'createGame')
   createGame(createGameDto: CreateGameDto): Promise<any> {
-    console.log('createGame', createGameDto);
     return this.gamesService.create(createGameDto);
   }
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'findAllGames')
   findAllGames(): Promise<any> {
-    console.log('findAllGames');
     const resp = this.gamesService.findAll('');
     return resp;
   }
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'FetchGames')
   fetchGames(payload: FetchGamesRequest): Promise<any> {
-    console.log('fetch games');
     return this.gamesService.fetchGames(payload);
   }
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'fetchGamesByName')
   fetchGamesByName(payload: FetchGamesRequest): Promise<any> {
-    console.log('fetch gameNames');
     return this.gamesService.fetchGamesByName(payload);
   }
 
@@ -128,37 +119,31 @@ export class GamesController {
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'addGameToCategories')
   addGameToCategories(payload: AddGameToCategoriesDto): Promise<any> {
-    console.log('addGameToCategories');
     return this.gamesService.addGameToCategories(payload);
   }
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'removeGameToCategories')
   removeGameCategories(payload: AddGameToCategoriesDto): Promise<any> {
-    console.log('removeGameToCategories');
     return this.gamesService.removeGameCategories(payload);
   }
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'saveCategory')
   createCategories(payload: SaveCategoryRequest): Promise<any> {
-    console.log('fetch gameNames');
     return this.gamesService.saveCategory(payload);
   }
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'updateCategory')
   updateCategory(payload: SaveCategoryRequest): Promise<any> {
-    console.log('fetch gameNames');
     return this.gamesService.updateCategory(payload);
   }
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'findOneCategory')
   findOneCategory(payload: FindOneCategoryDto): Promise<any> {
-    console.log('fetch category', payload);
     return this.gamesService.findOneCategory(payload);
   }
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'deleteCategory')
   async deleteCategory(payload: FindOneCategoryDto): Promise<void> {
-    console.log('Payload received by gRPC server for deletion:', payload);
     const { id } = payload;
 
     if (!id) {
@@ -170,13 +155,11 @@ export class GamesController {
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'FetchCategories')
   FetchCategories(): Promise<any> {
-    console.log('fetch categories');
     return this.gamesService.fetchCategories();
   }
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'syncGames')
   syncGames(syncGameDto: SyncGameDto) {
-    console.log('syncGames', syncGameDto);
     return this.gamesService.sync(syncGameDto);
   }
 
@@ -184,8 +167,6 @@ export class GamesController {
   findOneGame(
     request: FindOneGameDto,
   ): Promise<Game> | Observable<Game> | Game | any {
-    console.log(request);
-    console.log('findOneGame', request);
     return this.gamesService.findOne(request.id);
   }
 
@@ -193,7 +174,6 @@ export class GamesController {
   updateGame(
     request: UpdateGameDto,
   ): Promise<Game> | Observable<Game> | Game | any {
-    console.log('updateGame', request);
     return this.gamesService.update(request);
   }
 
@@ -201,13 +181,11 @@ export class GamesController {
   removeGame(
     request: UpdateGameDto,
   ): Promise<Game> | Observable<Game> | Game | any {
-    console.log('removeGame', request);
     return this.gamesService.remove(request.id);
   }
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'startGame')
   async startGame(request: StartGameDto): Promise<any> {
-    console.log('startGame', request);
     try {
       const resp = await this.gamesService.start(request);
       return resp;
@@ -219,7 +197,6 @@ export class GamesController {
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'qtechLobby')
   async qtechLobby(request: StartGameDto): Promise<any> {
-    console.log('startGame', request);
     try {
       const resp = await this.qtechService.launchLobby(request);
       return resp;
@@ -231,7 +208,6 @@ export class GamesController {
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'startSmatGame')
   async startSmatGame(request: StartDto): Promise<any> {
-    console.log('startGame', request);
     try {
       const resp = await this.gamesService.startSmatGames(request);
       return resp;
@@ -243,13 +219,11 @@ export class GamesController {
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'queryGames')
   queryGames(request: Observable<PaginationDto>): Observable<Games> | any {
-    console.log('queryGames', request);
     return this.gamesService.queryGames(request);
   }
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'handleCallback')
   async handleCallback(request: CallbackGameDto): Promise<any> {
-    // console.log('request', request);
     try {
       return await this.gamesService.handleGamesCallback(request);
     } catch (error) {
@@ -262,7 +236,6 @@ export class GamesController {
   async createPromotion(
     payload: CreatePromotionRequest, 
   ): Promise<any> {
-    console.log('Received payload', payload);
     // Pass the payload and file to the games service
     const newPromo = await this.gamesService.createPromotion(payload);
     return newPromo;
@@ -306,32 +279,27 @@ async getGames(request?: GetGamesRequest) {
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'createTournament')
   async createTournament(payload: CreateTournamentDto): Promise<any> {
-    console.log('tournament', payload);
     const newPromo = await this.gamesService.createTournament(payload);
     return newPromo;
   }
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'updateTournament')
   updateTournament(payload: CreateTournamentDto): Promise<any> {
-    console.log('tournament');
     return this.gamesService.updateTournament(payload);
   }
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'findAllTournaments')
   fetchTournaments(): Promise<any> {
-    console.log('find Promotions');
     return this.gamesService.fetchTournaments();
   }
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'findOneTournament')
   findOneTournament(payload: FindOneTournamentDto): Promise<any> {
-    console.log('fetch tournament', payload);
     return this.gamesService.findOneTournament(payload);
   }
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'deleteTournament')
   async removeTournament(payload: FindOneTournamentDto): Promise<void> {
-    console.log('Payload received by gRPC server for deletion:', payload);
     const { id } = payload;
 
     if (!id) {
@@ -353,31 +321,26 @@ async getGames(request?: GetGamesRequest) {
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'addTournamentGame')
   addTournamentGame(payload: AddGameToTournamentDto): Promise<any> {
-    console.log('addGameToCategories');
     return this.gamesService.addTournamentGame(payload);
   }
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'removeTournamentGame')
   removeTournamentGames(payload: AddGameToTournamentDto): Promise<any> {
-    console.log('removeGameToCategories');
     return this.gamesService.removeTournamentGames(payload);
   }
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'handleCasinoBonus')
   handleCasinoBonus(payload: CreateBonusRequest): Promise<any> {
-    console.log('handleCasinoBonus');
     return this.gamesService.handleCasinoBonus(payload);
   }
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'handleCasinoJackpot')
   HandleCasinoJackpot(payload: SyncGameDto): Promise<any> {
-    console.log('HandleCasinoJackpot');
     return this.gamesService.handleCasinoJackpot(payload);
   }
 
   @GrpcMethod(GAMING_SERVICE_NAME, 'handleCasinoJackpotWinners')
   HandleCasinoJackpotWinners(payload: SyncGameDto): Promise<any> {
-    console.log('handleCasinoJackpotWinners');
     return this.gamesService.handleCasinoJackpotWinners(payload);
   }
 
