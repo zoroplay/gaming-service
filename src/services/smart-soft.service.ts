@@ -13,11 +13,13 @@ import { ConfigService } from '@nestjs/config'; // Import your SettingService
 import { InjectRepository } from '@nestjs/typeorm';
 import { firstValueFrom } from 'rxjs';
 import { IdentityService } from 'src/identity/identity.service';
+
 import {
   CreditCasinoBetRequest,
   PlaceCasinoBetRequest,
   RollbackCasinoBetRequest,
 } from 'src/proto/betting.pb';
+
 import { CallbackGameDto } from 'src/proto/gaming.pb';
 import { Repository } from 'typeorm';
 import { BetService } from '../bet/bet.service';

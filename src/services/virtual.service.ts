@@ -42,10 +42,12 @@ export class VirtualService {
 
         if (!privateKeyQuery) errorHandler.invalidSecureToken();
 
+        console.log('user', user);
+
         const data = {
           playerId: user.playerId,
           currency: user.currency,
-          balance: user.balance.toFixed(2),
+          balance: user.balance ? user.balance.toFixed(2) : "0",
           sessionId: user.sessionId,
           group: user.group,
           timestamp: dayjs().toISOString(),
@@ -53,12 +55,7 @@ export class VirtualService {
           fingerprint: '',
         };
 
-        console.log(data)
-
-
         const hashStr = `${data.playerId}${data.currency}${data.balance}${data.sessionId}${data.group}${data.timestamp}${data.requestId}${privateKeyQuery.value}`;
-
-        console.log('hash string', hashStr)
 
         data.fingerprint = MD5(hashStr).toString();
 
@@ -104,7 +101,7 @@ export class VirtualService {
         const data = {
           playerId, // operator identifier+playerID
           currency,
-          balance: walletRes.data.availableBalance.toFixed(2),
+          balance: walletRes.data.availableBalance ? walletRes.data.availableBalance.toFixed(2) : "0",
           sessionId,
           group,
           timestamp: dayjs().toISOString(),
@@ -215,7 +212,7 @@ export class VirtualService {
         const data = {
           playerId,
           currency: params.currency,
-          balance: debitRes.data.balance.toFixed(2),
+          balance: debitRes.data.balance ? debitRes.data.balance.toFixed(2) : "0",
           oldBalance: oldBalance.toFixed(2),
           transactionId,
           sessionId,

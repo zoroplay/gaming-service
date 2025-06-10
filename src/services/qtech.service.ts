@@ -83,7 +83,6 @@ export class QtechService {
           `${this.QTECH_BASEURL}/v1/auth/token?grant_type=password&response_type=token&username=${this.QTECH_USERNAME}&password=${this.QTECH_PASSWORD}`,
         )
         .toPromise();
-      console.log('data', data);
 
       return data.access_token;
     } catch (e) {
@@ -96,7 +95,6 @@ export class QtechService {
       const { data } = await this.httpService
         .delete(`${this.QTECH_BASEURL}/v1/auth/token`)
         .toPromise();
-      console.log('data', data);
 
       return data.access_token;
     } catch (e) {
@@ -272,6 +270,7 @@ export class QtechService {
 
   async launchGames(payload: StartGameDto): Promise<any> {
     try {
+      console.log('Launch game payload', payload)
       const { gameId, userId, authCode, balanceType, isMobile, homeUrl } =
         payload;
       
@@ -347,6 +346,7 @@ export class QtechService {
       // Prepare the API request URL
       const requestUrl = `${this.QTECH_BASEURL}/v1/games/${gameExist.gameId}/launch-url`;
 
+      console.log('Request URL', requestUrl);
       // Set up headers
       const headers = {
         Authorization: `Bearer ${await this.getAccessToken()}`,
@@ -356,7 +356,7 @@ export class QtechService {
       const requestBody = {
         playerId: userId,
         walletSessionId,
-        currency: user.currency,
+        currency: user.currency || 'NGN',
         country: user.country || 'NG',
         lang: 'en_US',
         mode,
@@ -364,12 +364,15 @@ export class QtechService {
         returnUrl,
       };
 
+      console.log('REQUEST DATA', requestBody);
+
+
       // Make the API request
       const { data } = await this.httpService
         .post(requestUrl, requestBody, { headers })
         .toPromise();
 
-
+      console.log('RESPONSE DATA', data);
       // Return the game URL
       return { url: data.url };
     } catch (error) {
