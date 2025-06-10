@@ -342,6 +342,8 @@ export class SpribeService {
     
       const isValid = await this.identityService.validateXpressSession({ clientId, sessionId: token });
 
+      console.log("isValid", isValid);
+
         // const res = {
       //   success: true,
       //   message: "Success",
@@ -366,7 +368,7 @@ export class SpribeService {
     
       const dataObject = typeof isValid.data === 'string' ? JSON.parse(isValid.data) : isValid.data;
   
-      // console.log("dataObject", dataObject);
+      console.log("dataObject", dataObject);
   
       if(!isValid || !isValid.status) {
         response = {
@@ -477,7 +479,7 @@ export class SpribeService {
 
     return response;
     }
-    
+
     // Place Bet
     async placeBet(data: PlaceCasinoBetRequest) {
       return firstValueFrom(this.betService.placeCasinoBet(data));
