@@ -365,12 +365,8 @@ export class SpribeService {
         //   clientId: 4
       //   }
         let response: any;
-    
-      const dataObject = typeof isValid.data === 'string' ? JSON.parse(isValid.data) : isValid.data;
-  
-      console.log("dataObject", dataObject);
-  
-      if(!isValid || !isValid.status) {
+
+       if(!isValid || !isValid.status) {
         response = {
           success: false,
           status: HttpStatus.BAD_REQUEST,
@@ -386,6 +382,33 @@ export class SpribeService {
   
         return response;
       } 
+    
+      const dataObject = typeof isValid.data === 'string' ? JSON.parse(isValid.data) : isValid.data;
+  
+      console.log("dataObject", dataObject);
+
+      const playerData = await this.identityService.validateToken({ clientId, token: dataObject.auth_code });
+
+      console.log("playerData", playerData);
+
+       if(!playerData || !playerData.status) {
+        response = {
+          success: false,
+          status: HttpStatus.BAD_REQUEST,
+          message: 'Invalid auth code, please login to try again',
+          data: {
+            code: 401,
+            message: "User token is invalid"
+          }
+        }
+  
+        const val = await this.callbackLogRepository.update({ id: callback.id}, { response: JSON.stringify(response)});
+        console.log("val", val);
+  
+        return response;
+      } 
+
+      const safeBalance = playerData.data?.balance ? parseFloat(playerData.data.balance.toFixed(2)) : 0.00;
   
       response = {
         success: true,
@@ -395,9 +418,9 @@ export class SpribeService {
           code: 200,
           message: "ok",
           data: {
-            user_id: dataObject.playerId,
-            username: dataObject.playerNickname || 'Test User',
-            balance: parseFloat(dataObject.balance.toFixed(2)) || 0.00,
+            user_id: playerData.data.playerId,
+            username: playerData.data.playerNickname || 'Test User',
+            balance: safeBalance,
             currency: 'KES',
           }
         }
@@ -1170,25 +1193,25 @@ export class SpribeService {
                 return response;
             }
 
-            const res = await this.identityService.validateToken({ clientId: data.clientId, token: responseData.data.auth_code });
+            // const res = await this.identityService.validateToken({ clientId: data.clientId, token: responseData.data.auth_code });
 
             
-            if (!res.success) {
-                response = {
-                    success: false,
-                    message: 'Invalid Session ID',
-                    status: HttpStatus.NOT_FOUND
-                };
+            // if (!res.success) {
+            //     response = {
+            //         success: false,
+            //         message: 'Invalid Session ID',
+            //         status: HttpStatus.NOT_FOUND
+            //     };
 
-                await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
-                return response;
-            }
+            //     await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
+            //     return response;
+            // }
 
-            token = res.data.auth_code;
+            token = responseData.data.virtualToken;
             console.log("token", token);
 
             if (!player) {
-                player = res.data;
+                player = responseData.data;
             }
         } else {
             response = {
