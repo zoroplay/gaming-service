@@ -238,6 +238,8 @@ export class SpribeService {
         //Generate game token
         const res = await this.identityService.xpressLogin({ clientId, token: authCode });
 
+        console.log("res", res);
+
         // If game doesn't exist, throw an error
         if (!res) {
           console.error(`Coud not validate player with ID ${userId}`);
@@ -338,7 +340,7 @@ export class SpribeService {
     async authenticate(clientId, token, callback, walletType) {
       console.log("Got to authenticate method");
     
-      const isValid = await this.identityService.validateToken({ clientId, token });
+      const isValid = await this.identityService.validateXpressSession({ clientId, sessionId: token });
 
         // const res = {
       //   success: true,
@@ -475,7 +477,7 @@ export class SpribeService {
 
     return response;
     }
-
+    
     // Place Bet
     async placeBet(data: PlaceCasinoBetRequest) {
       return firstValueFrom(this.betService.placeCasinoBet(data));
