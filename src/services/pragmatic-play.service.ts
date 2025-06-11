@@ -757,7 +757,7 @@ export class PragmaticService {
         description: `Casino Bet: (${gameExist.title}:${body.get('reference')})`,
         username: player.playerNickname,
         wallet: balanceType,
-        subject: 'Bet Deposit (Casino)',
+        subject: balanceType === 'bonus' ? 'Bonus Bet (Casino)' : 'Bet Deposit (Casino)',
         channel: 'web',
       });
 
