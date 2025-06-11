@@ -1156,7 +1156,7 @@ export class SpribeService {
         console.log("sessionId", sessionId);
     
         if (sessionId) {
-            const responseData = await this.identityService.validateXpressSession({ clientId: data.clientId, sessionId: token });
+            const responseData = await this.identityService.validateXpressSession({ clientId: data.clientId, sessionId });
             console.log("res", responseData);
 
             
