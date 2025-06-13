@@ -56,7 +56,7 @@ export class VirtualService {
         };
 
         const hashStr = `${data.playerId}${data.currency}${data.balance}${data.sessionId}${data.group}${data.timestamp}${data.requestId}${privateKeyQuery.value}`;
-
+        console.log(hashStr)
         data.fingerprint = MD5(hashStr).toString();
 
         return {
