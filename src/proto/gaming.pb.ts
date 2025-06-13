@@ -624,6 +624,8 @@ export interface GamingServiceClient {
 
   fetchGamesByName(request: FetchGamesRequest): Observable<Games>;
 
+  adminFetchGamesByName(request: FetchGamesRequest): Observable<CommonResponse>;
+
   syncGames(request: SyncGameDto): Observable<Games>;
 
   findOneGame(request: FindOneGameDto): Observable<Game>;
@@ -739,6 +741,10 @@ export interface GamingServiceController {
   ): Promise<CommonResponseArray> | Observable<CommonResponseArray> | CommonResponseArray;
 
   fetchGamesByName(request: FetchGamesRequest): Promise<Games> | Observable<Games> | Games;
+
+  adminFetchGamesByName(
+    request: FetchGamesRequest,
+  ): Promise<CommonResponse> | Observable<CommonResponse> | CommonResponse;
 
   syncGames(request: SyncGameDto): Promise<Games> | Observable<Games> | Games;
 
@@ -866,6 +872,7 @@ export function GamingServiceControllerMethods() {
       "findAllGames",
       "fetchGames",
       "fetchGamesByName",
+      "adminFetchGamesByName",
       "syncGames",
       "findOneGame",
       "updateGame",
