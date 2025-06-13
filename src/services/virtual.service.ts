@@ -56,7 +56,7 @@ export class VirtualService {
         };
 
         const hashStr = `${data.playerId}${data.currency}${parseFloat(data.balance)}${data.sessionId}${data.group}${data.timestamp}${data.requestId}${privateKeyQuery.value}`;
-        console.log(hashStr)
+        console.log('login hash string', hashStr)
         data.fingerprint = MD5(hashStr).toString();
 
         return {
@@ -108,8 +108,9 @@ export class VirtualService {
           requestId,
           fingerprint: '',
         };
-        const hashStr = `${data.playerId}${data.currency}${data.balance}${data.sessionId}${data.group}${data.timestamp}${data.requestId}${privateKeyQuery.value}`;
+        const hashStr = `${data.playerId}${data.currency}${parseFloat(data.balance)}${data.sessionId}${data.group}${data.timestamp}${data.requestId}${privateKeyQuery.value}`;
 
+        console.log('balance hash string', hashStr)
         data.fingerprint = MD5(hashStr).toString();
 
         return {
@@ -231,7 +232,9 @@ export class VirtualService {
           },
         });
 
-        const hashStr = `${data.playerId}${data.currency}${data.balance}${data.oldBalance}${data.transactionId}${data.sessionId}${data.group}${data.timestamp}${data.requestId}${privateKeyQuery.value}`;
+        const hashStr = `${data.playerId}${data.currency}${parseFloat(data.balance)}${parseFloat(data.oldBalance)}${data.transactionId}${data.sessionId}${data.group}${data.timestamp}${data.requestId}${privateKeyQuery.value}`;
+
+        console.log('debit hash string', hashStr)
 
         data.fingerprint = MD5(hashStr).toString();
 
@@ -337,7 +340,9 @@ export class VirtualService {
         },
       });
 
-      const hashStr = `${data.playerId}${data.currency}${data.balance}${data.oldBalance}${data.transactionId}${data.sessionId}${data.group}${data.timestamp}${data.requestId}${privateKeyQuery.value}`;
+      const hashStr = `${data.playerId}${data.currency}${parseFloat(data.balance)}${parseFloat(data.oldBalance)}${data.transactionId}${data.sessionId}${data.group}${data.timestamp}${data.requestId}${privateKeyQuery.value}`;
+
+      console.log('credit hash string', hashStr)
 
       data.fingerprint = MD5(hashStr).toString();
 
@@ -435,7 +440,9 @@ export class VirtualService {
         },
       });
 
-      const hashStr = `${data.playerId}${data.currency}${data.balance}${data.oldBalance}${data.transactionId}${data.sessionId}${data.group}${data.timestamp}${data.requestId}${privateKeyQuery.value}`;
+      const hashStr = `${data.playerId}${data.currency}${parseFloat(data.balance)}${parseFloat(data.oldBalance)}${data.transactionId}${data.sessionId}${data.group}${data.timestamp}${data.requestId}${privateKeyQuery.value}`;
+      
+      console.log('rollback hash string', hashStr)
 
       data.fingerprint = MD5(hashStr).toString();
 
