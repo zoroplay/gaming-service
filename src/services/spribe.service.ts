@@ -1150,78 +1150,51 @@ export class SpribeService {
         let player = null;
         let balanceType;
         let sessionId = null;
+        let userDeets = null;
+
     
         // Handle other actions with token validation
-        sessionId = newBody.user_token ? newBody.user_token : newBody.session_token;
+        sessionId = newBody.user_token ? newBody.user_token : null;
+        userDeets = newBody.user_id ? newBody.user_id : null;
         console.log("sessionId", sessionId);
+
+        let responseData;
     
         if (sessionId) {
-            const responseData = await this.identityService.validateXpressSession({ clientId: data.clientId, sessionId });
-            console.log("res", responseData);
-
-            
-      // const res = {
-      //   success: true,
-      //   message: "Success",
-      //   data: {
-      //     id: 19,
-        //   username: '8137048054',
-        //   password: '$2a$10$abvFRcypU7Eqk7s6aY7d6OUz6ZE5cYkMyqbEAxTT8ZutzfsnZtjSu',
-        //   code: '231469',
-        //   roleId: 13,
-        //   auth_code: '1JCVJLDAF7OZZT5PQB6GZKXRRS7YAMATVOF0MI4E',
-        //   virtualToken: 'NMWBRXZFQLTEHQSOHVZQM982HEGWJDRDUFYCA3E0KIZP3ON05XHJMLQFYYXO',    registrationSource: null,
-        //   trackierToken: null,
-        //   trackierId: null,
-        //   lastLogin: '2025-05-19',    status: 1,
-        //   verified: 1,
-        //   pin: null,
-        //   createdAt: {},
-        //   updatedAt: {},
-        //   clientId: 4
-      //   }
-        
-
-            if (!responseData.success) {
-                response = {
-                    success: false,
-                    message: 'Invalid Session ID',
-                    status: HttpStatus.NOT_FOUND
-                };
-
-                await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
-                return response;
-            }
-
-            // const res = await this.identityService.validateToken({ clientId: data.clientId, token: responseData.data.auth_code });
-
-            
-            // if (!res.success) {
-            //     response = {
-            //         success: false,
-            //         message: 'Invalid Session ID',
-            //         status: HttpStatus.NOT_FOUND
-            //     };
-
-            //     await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
-            //     return response;
-            // }
-
-            token = responseData.data.virtualToken;
-            console.log("token", token);
-
-            if (!player) {
-                player = responseData.data;
-            }
+          responseData = await this.identityService.validateXpressSession({ clientId: data.clientId, sessionId });
+          console.log("responseData from validateXpressSession", responseData);
+        } else if(userDeets) {
+          responseData = await this.identityService.getDetails({ clientId: data.clientId, userId: newBody.user_id });
+          console.log("responseData from getUserDetails", responseData);
         } else {
             response = {
                 success: false,
-                message: 'Token is missing',
+                message: 'Token or User ID is missing',
                 status: HttpStatus.BAD_REQUEST
             };
 
             await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
             return response;
+        }
+        
+
+        if (!responseData.success) {
+            response = {
+                success: false,
+                message: 'Invalid Session ID',
+                status: HttpStatus.NOT_FOUND
+            };
+
+            await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
+            return response;
+        }
+
+
+        token = responseData.data.virtualToken;
+        console.log("token", token);
+
+        if (!player) {
+            player = responseData.data;
         }
     
         const gameSession = await this.gameSessionRepo.findOne({ where: { session_id: token } });
