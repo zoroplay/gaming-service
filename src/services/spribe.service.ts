@@ -541,7 +541,7 @@ export class SpribeService {
           }
     
           const getWallet = await this.walletService.getWallet({
-            userId: player.playerId,
+            userId: player.id,
             clientId
           });
     
@@ -757,7 +757,7 @@ export class SpribeService {
           response = {
             success: false,
             status: HttpStatus.BAD_REQUEST,
-            message: `Player with userId ${player.playerId} not found`,
+            message: `Player with userId ${player.id} not found`,
             data: {},
           };
       
@@ -831,12 +831,12 @@ export class SpribeService {
           }
       
           const creditResponse = await this.walletService.credit({
-            userId: player.playerId,
+            userId: player.id,
             clientId,
             amount: amount,
             source: gameExist.provider.slug,
             description: `Casino Bet: (${gameExist.title})`,
-            username: player.playerNickname,
+            username: player.username,
             wallet: balanceType,
             subject: 'Bet Win (Casino)',
             channel: gameExist.type,
@@ -854,7 +854,7 @@ export class SpribeService {
           console.log('creditResponse', creditResponse);
       
           const updatedWallet = await this.walletService.getWallet({
-            userId: player.playerId,
+            userId: player.id,
             clientId,
           });
       
@@ -880,7 +880,7 @@ export class SpribeService {
                 operator_tx_id: settle_bet.data.transactionId,
                 new_balance: parseFloat(updatedWallet.data.availableBalance.toFixed(2)),
                 old_balance: parseFloat(updatedWallet.data.availableBalance.toFixed(2)) + amount,
-                user_id: player.playerId,
+                user_id: player.id,
                 currency: 'KES',
                 provider: body.provider,
                 provider_tx_id: body.provider_tx_id,
@@ -894,7 +894,7 @@ export class SpribeService {
           response = {
             success: false,
             status: HttpStatus.BAD_REQUEST,
-            message: `Player with userId ${player.playerId} not found`,
+            message: `Player with userId ${player.id} not found`,
             data: {}
           };
     
@@ -1148,7 +1148,7 @@ export class SpribeService {
         // }
     
         let player = null;
-        let balanceType;
+        let balanceType = 'main';
         let sessionId = null;
         let userDeets = null;
 
