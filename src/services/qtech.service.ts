@@ -429,14 +429,14 @@ export class QtechService {
         returnUrl,
       };
 
-      console.log(`🚀 ~ file: qtech.service.ts:432 ~ REQUEST DATA:`)
+      console.log(`🚀 ~ file: qtech.service.ts:432 ~ REQUEST DATA:`, requestBody)
 
       // Make the API request
       const { data } = await this.httpService
         .post(requestUrl, requestBody, { headers })
         .toPromise();
 
-      console.log(`🚀 ~ file: qtech.service.ts:438 ~ RESPONSE DATA:`)
+      console.log(`🚀 ~ file: qtech.service.ts:438 ~ RESPONSE DATA:`, data)
 
       // Return the game URL
       return { url: data.url };
@@ -453,7 +453,7 @@ export class QtechService {
     const { walletSessionId, clientId, playerId } = payload;
     try {
       const id = parseInt(playerId);
-      
+
       if (isNaN(id)) {
         const response = this.createErrorResponse('ACCOUNT_BLOCKED', HttpStatus.FORBIDDEN, 'Invalid account');
         // update callback logs, and gaming session
