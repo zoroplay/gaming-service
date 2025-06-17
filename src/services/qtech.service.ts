@@ -452,6 +452,8 @@ export class QtechService {
   async verifySession(payload: QtechCallbackRequest, callback: CallbackLog): Promise<any> {
     const { walletSessionId, clientId, playerId } = payload;
     try {
+      console.log(`🚀 ~ file: qtech.service.ts:455 ~ REQUEST PAYLOAD:`, payload)
+      
       const id = parseInt(playerId);
 
       if (isNaN(id)) {
@@ -468,7 +470,7 @@ export class QtechService {
         token: walletSessionId,
       });
       
-      // console.log('Validation Result:', auth);
+      console.log(`🚀 ~ file: qtech.service.ts:473 ~ VALIDATION RESULT:`, auth)
 
       if (!auth || !auth.success) {
         const response = this.createErrorResponse('INVALID_TOKEN', HttpStatus.BAD_REQUEST, 'Missing, invalid or expired player (wallet) session token.');
