@@ -439,7 +439,7 @@ export class SpribeService {
     if (player) {
       //TODO: USE PLAYER UserID AND ClientID to get balance from wallet service;
       const wallet = await this.walletService.getWallet({
-        userId: player.playerId,
+        userId: player.id,
         clientId,
         wallet: walletType
       });
@@ -473,8 +473,8 @@ export class SpribeService {
             code: 200,
             message: 'ok',
             data: {
-              user_id: player.playerId,
-              username: player.playerNickname || 'Test User',
+              user_id: player.id,
+              username: player.username || 'Test User',
               balance: parseFloat(dataObject.data.availableBalance.toFixed(2)) || 0.00,
               currency: 'KES',
             }
@@ -598,9 +598,9 @@ export class SpribeService {
           }
     
           const placeBetPayload: PlaceCasinoBetRequest = {
-            userId: player.playerId,
+            userId: player.id,
             clientId,
-            username: player.playerNickname,
+            username: player.username,
             roundId: body.action_id,
             transactionId: body.action_id,
             gameId: body.game,
@@ -651,12 +651,12 @@ export class SpribeService {
           }
     
           const debit = await this.walletService.debit({
-            userId: player.playerId,
+            userId: player.id,
             clientId,
             amount: betAmount.toString(),
             source: gameExist.provider.slug,
             description: `Casino Bet: (${gameExist.title}:${body.game})`,
-            username: player.playerNickname,
+            username: player.username,
             wallet: balanceType,
             subject: 'Bet Deposit (Casino)',
             channel: 'web',
@@ -687,7 +687,7 @@ export class SpribeService {
           }
     
           const getUpdatedWallet = await this.walletService.getWallet({
-            userId: player.playerId,
+            userId: player.id,
             clientId
           });
     
@@ -721,7 +721,7 @@ export class SpribeService {
                 operator_tx_id: place_bet.data.transactionId,
                 new_balance: parseFloat(getUpdatedWallet.data.availableBalance.toFixed(2)),
                 old_balance: parseFloat(getUpdatedWallet.data.availableBalance.toFixed(2)) + betAmount,
-                user_id: player.playerId,
+                user_id: player.id,
                 currency: 'KES',
                 provider: body.provider,
                 provider_tx_id: body.provider_tx_id,
@@ -739,7 +739,7 @@ export class SpribeService {
           response = {
             success: false,
             status: HttpStatus.BAD_REQUEST,
-            message: `Player with userId ${player.playerId} not found`,
+            message: `Player with userId ${player.id} not found`,
             data: {}
           }
     
@@ -993,12 +993,12 @@ export class SpribeService {
           }
     
           const rollbackWalletRes = await this.walletService.credit({
-            userId: player.playerId,
+            userId: player.id,
             clientId,
             amount: callbackPayload.amount,
             source: gameExist.provider.slug,
             description: `Bet Cancelled: (${gameExist.title})`,
-            username: player.playerNickname,
+            username: player.username,
             wallet: balanceType,
             subject: 'Bet refund (Casino)',
             channel: gameExist.title,
@@ -1039,7 +1039,7 @@ export class SpribeService {
           }
 
           const updatedWallet = await this.walletService.getWallet({
-            userId: player.playerId,
+            userId: player.id,
             clientId,
           });
       
@@ -1065,7 +1065,7 @@ export class SpribeService {
                 operator_tx_id: transaction.data.transactionId,
                 new_balance: parseFloat(updatedWallet.data.availableBalance.toFixed(2)),
                 old_balance: parseFloat(updatedWallet.data.availableBalance.toFixed(2)) + parseFloat(callbackPayload.amount),
-                user_id: player.playerId,
+                user_id: player.id,
                 currency: 'KES',
                 provider: body.provider,
                 provider_tx_id: body.provider_tx_id,
@@ -1081,7 +1081,7 @@ export class SpribeService {
           response = {
             success: false,
             status: HttpStatus.BAD_REQUEST,
-            message: `Player with userId ${player.playerId} not found`,
+            message: `Player with userId ${player.id} not found`,
             data: {}
           }
     
