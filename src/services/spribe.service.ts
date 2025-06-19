@@ -408,7 +408,7 @@ export class SpribeService {
         return response;
       } 
 
-      const safeBalance = playerData.data?.balance ? parseFloat(playerData.data.balance.toFixed(2)) : 0.00;
+      const safeBalance = playerData.data?.balance ? Math.ceil(playerData.data.balance) : 0;
   
       response = {
         success: true,
@@ -475,7 +475,7 @@ export class SpribeService {
             data: {
               user_id: player.id,
               username: player.username || 'Test User',
-              balance: parseFloat(dataObject.data.availableBalance.toFixed(2)) || 0.00,
+              balance: Math.ceil(dataObject.data.availableBalance) || 0,
               currency: 'KES',
             }
           },
@@ -709,6 +709,8 @@ export class SpribeService {
           //   }
           // }
 
+          const old_balance = parseFloat(getUpdatedWallet.data.availableBalance.toFixed(2)) + betAmount
+
     
           response = {
             success: true,
@@ -719,8 +721,8 @@ export class SpribeService {
               message: "ok",
               data: {
                 operator_tx_id: place_bet.data.transactionId,
-                new_balance: parseFloat(getUpdatedWallet.data.availableBalance.toFixed(2)),
-                old_balance: parseFloat(getUpdatedWallet.data.availableBalance.toFixed(2)) + betAmount,
+                new_balance: Math.ceil(getUpdatedWallet.data.availableBalance),
+                old_balance: Math.ceil(old_balance),
                 user_id: player.id,
                 currency: 'KES',
                 provider: body.provider,
@@ -868,6 +870,8 @@ export class SpribeService {
             await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
             return response;
           }
+
+          const old_balance = parseFloat(updatedWallet.data.availableBalance.toFixed(2)) + amount;
       
           response = {
             success: true,
@@ -878,8 +882,8 @@ export class SpribeService {
               message: "ok",
               data: {
                 operator_tx_id: settle_bet.data.transactionId,
-                new_balance: parseFloat(updatedWallet.data.availableBalance.toFixed(2)),
-                old_balance: parseFloat(updatedWallet.data.availableBalance.toFixed(2)) + amount,
+                new_balance: Math.ceil(updatedWallet.data.availableBalance),
+                old_balance: Math.ceil(old_balance),
                 user_id: player.id,
                 currency: 'KES',
                 provider: body.provider,
@@ -1054,6 +1058,8 @@ export class SpribeService {
             return response;
           }
 
+          const old_balance = parseFloat(updatedWallet.data.availableBalance.toFixed(2)) + parseFloat(callbackPayload.amount)
+
           response = {
             success: true,
             message: 'Refund Successful',
@@ -1063,8 +1069,8 @@ export class SpribeService {
               message: "ok",
               data: {
                 operator_tx_id: transaction.data.transactionId,
-                new_balance: parseFloat(updatedWallet.data.availableBalance.toFixed(2)),
-                old_balance: parseFloat(updatedWallet.data.availableBalance.toFixed(2)) + parseFloat(callbackPayload.amount),
+                new_balance: Math.ceil(updatedWallet.data.availableBalance),
+                old_balance: Math.ceil(old_balance),
                 user_id: player.id,
                 currency: 'KES',
                 provider: body.provider,
