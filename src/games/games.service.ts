@@ -1115,6 +1115,10 @@ export class GamesService {
       filters.provider = { id: payload.providerId };
     }
 
+    if (payload?.categoryId) {
+      filters.categories = { id: payload.categoryId };
+    }
+
     // Get total count for pagination
     const [gameData, total] = await this.gameRepository.findAndCount({
       where: filters,
@@ -1132,6 +1136,8 @@ export class GamesService {
       );
       filteredTotal = filteredGames.length;
     }
+
+    console.log("filteredGames", filteredGames)
 
     return {
       status: 200,
