@@ -238,6 +238,8 @@ export class SpribeService {
         //Generate game token
         const res = await this.identityService.xpressLogin({ clientId, token: authCode });
 
+        console.log("res", res);
+
         // If game doesn't exist, throw an error
         if (!res) {
           console.error(`Coud not validate player with ID ${userId}`);
@@ -338,7 +340,9 @@ export class SpribeService {
     async authenticate(clientId, token, callback, walletType) {
       console.log("Got to authenticate method");
     
-      const isValid = await this.identityService.validateToken({ clientId, token });
+      const isValid = await this.identityService.validateXpressSession({ clientId, sessionId: token });
+
+      console.log("isValid", isValid);
 
         // const res = {
       //   success: true,
@@ -361,12 +365,8 @@ export class SpribeService {
         //   clientId: 4
       //   }
         let response: any;
-    
-      const dataObject = typeof isValid.data === 'string' ? JSON.parse(isValid.data) : isValid.data;
-  
-      // console.log("dataObject", dataObject);
-  
-      if(!isValid || !isValid.status) {
+
+       if(!isValid || !isValid.status) {
         response = {
           success: false,
           status: HttpStatus.BAD_REQUEST,
@@ -382,6 +382,33 @@ export class SpribeService {
   
         return response;
       } 
+    
+      const dataObject = typeof isValid.data === 'string' ? JSON.parse(isValid.data) : isValid.data;
+  
+      console.log("dataObject", dataObject);
+
+      const playerData = await this.identityService.validateToken({ clientId, token: dataObject.auth_code });
+
+      console.log("playerData", playerData);
+
+       if(!playerData || !playerData.status) {
+        response = {
+          success: false,
+          status: HttpStatus.BAD_REQUEST,
+          message: 'Invalid auth code, please login to try again',
+          data: {
+            code: 401,
+            message: "User token is invalid"
+          }
+        }
+  
+        const val = await this.callbackLogRepository.update({ id: callback.id}, { response: JSON.stringify(response)});
+        console.log("val", val);
+  
+        return response;
+      } 
+
+      const safeBalance = playerData.data?.balance ? Math.ceil(playerData.data.balance) : 0;
   
       response = {
         success: true,
@@ -391,9 +418,9 @@ export class SpribeService {
           code: 200,
           message: "ok",
           data: {
-            user_id: dataObject.playerId,
-            username: dataObject.playerNickname || 'Test User',
-            balance: parseFloat(dataObject.balance.toFixed(2)) || 0.00,
+            user_id: playerData.data.playerId,
+            username: playerData.data.playerNickname || 'Test User',
+            balance: safeBalance,
             currency: 'KES',
           }
         }
@@ -412,7 +439,7 @@ export class SpribeService {
     if (player) {
       //TODO: USE PLAYER UserID AND ClientID to get balance from wallet service;
       const wallet = await this.walletService.getWallet({
-        userId: player.playerId,
+        userId: player.id,
         clientId,
         wallet: walletType
       });
@@ -446,9 +473,9 @@ export class SpribeService {
             code: 200,
             message: 'ok',
             data: {
-              user_id: player.playerId,
-              username: player.playerNickname || 'Test User',
-              balance: parseFloat(dataObject.data.availableBalance.toFixed(2)) || 0.00,
+              user_id: player.id,
+              username: player.username || 'Test User',
+              balance: Math.ceil(dataObject.data.availableBalance) || 0,
               currency: 'KES',
             }
           },
@@ -514,7 +541,7 @@ export class SpribeService {
           }
     
           const getWallet = await this.walletService.getWallet({
-            userId: player.playerId,
+            userId: player.id,
             clientId
           });
     
@@ -571,9 +598,9 @@ export class SpribeService {
           }
     
           const placeBetPayload: PlaceCasinoBetRequest = {
-            userId: player.playerId,
+            userId: player.id,
             clientId,
-            username: player.playerNickname,
+            username: player.username,
             roundId: body.action_id,
             transactionId: body.action_id,
             gameId: body.game,
@@ -624,12 +651,12 @@ export class SpribeService {
           }
     
           const debit = await this.walletService.debit({
-            userId: player.playerId,
+            userId: player.id,
             clientId,
             amount: betAmount.toString(),
             source: gameExist.provider.slug,
             description: `Casino Bet: (${gameExist.title}:${body.game})`,
-            username: player.playerNickname,
+            username: player.username,
             wallet: balanceType,
             subject: 'Bet Deposit (Casino)',
             channel: 'web',
@@ -660,7 +687,7 @@ export class SpribeService {
           }
     
           const getUpdatedWallet = await this.walletService.getWallet({
-            userId: player.playerId,
+            userId: player.id,
             clientId
           });
     
@@ -682,6 +709,8 @@ export class SpribeService {
           //   }
           // }
 
+          const old_balance = parseFloat(getUpdatedWallet.data.availableBalance.toFixed(2)) + betAmount
+
     
           response = {
             success: true,
@@ -692,9 +721,9 @@ export class SpribeService {
               message: "ok",
               data: {
                 operator_tx_id: place_bet.data.transactionId,
-                new_balance: parseFloat(getUpdatedWallet.data.availableBalance.toFixed(2)),
-                old_balance: parseFloat(getUpdatedWallet.data.availableBalance.toFixed(2)) + betAmount,
-                user_id: player.playerId,
+                new_balance: Math.ceil(getUpdatedWallet.data.availableBalance),
+                old_balance: Math.ceil(old_balance),
+                user_id: player.id,
                 currency: 'KES',
                 provider: body.provider,
                 provider_tx_id: body.provider_tx_id,
@@ -712,7 +741,7 @@ export class SpribeService {
           response = {
             success: false,
             status: HttpStatus.BAD_REQUEST,
-            message: `Player with userId ${player.playerId} not found`,
+            message: `Player with userId ${player.id} not found`,
             data: {}
           }
     
@@ -730,7 +759,7 @@ export class SpribeService {
           response = {
             success: false,
             status: HttpStatus.BAD_REQUEST,
-            message: `Player with userId ${player.playerId} not found`,
+            message: `Player with userId ${player.id} not found`,
             data: {},
           };
       
@@ -804,12 +833,12 @@ export class SpribeService {
           }
       
           const creditResponse = await this.walletService.credit({
-            userId: player.playerId,
+            userId: player.id,
             clientId,
             amount: amount,
             source: gameExist.provider.slug,
             description: `Casino Bet: (${gameExist.title})`,
-            username: player.playerNickname,
+            username: player.username,
             wallet: balanceType,
             subject: 'Bet Win (Casino)',
             channel: gameExist.type,
@@ -827,7 +856,7 @@ export class SpribeService {
           console.log('creditResponse', creditResponse);
       
           const updatedWallet = await this.walletService.getWallet({
-            userId: player.playerId,
+            userId: player.id,
             clientId,
           });
       
@@ -841,6 +870,8 @@ export class SpribeService {
             await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
             return response;
           }
+
+          const old_balance = parseFloat(updatedWallet.data.availableBalance.toFixed(2)) + amount;
       
           response = {
             success: true,
@@ -851,9 +882,9 @@ export class SpribeService {
               message: "ok",
               data: {
                 operator_tx_id: settle_bet.data.transactionId,
-                new_balance: parseFloat(updatedWallet.data.availableBalance.toFixed(2)),
-                old_balance: parseFloat(updatedWallet.data.availableBalance.toFixed(2)) + amount,
-                user_id: player.playerId,
+                new_balance: Math.ceil(updatedWallet.data.availableBalance),
+                old_balance: Math.ceil(old_balance),
+                user_id: player.id,
                 currency: 'KES',
                 provider: body.provider,
                 provider_tx_id: body.provider_tx_id,
@@ -867,7 +898,7 @@ export class SpribeService {
           response = {
             success: false,
             status: HttpStatus.BAD_REQUEST,
-            message: `Player with userId ${player.playerId} not found`,
+            message: `Player with userId ${player.id} not found`,
             data: {}
           };
     
@@ -966,12 +997,12 @@ export class SpribeService {
           }
     
           const rollbackWalletRes = await this.walletService.credit({
-            userId: player.playerId,
+            userId: player.id,
             clientId,
             amount: callbackPayload.amount,
             source: gameExist.provider.slug,
             description: `Bet Cancelled: (${gameExist.title})`,
-            username: player.playerNickname,
+            username: player.username,
             wallet: balanceType,
             subject: 'Bet refund (Casino)',
             channel: gameExist.title,
@@ -1012,7 +1043,7 @@ export class SpribeService {
           }
 
           const updatedWallet = await this.walletService.getWallet({
-            userId: player.playerId,
+            userId: player.id,
             clientId,
           });
       
@@ -1027,6 +1058,8 @@ export class SpribeService {
             return response;
           }
 
+          const old_balance = parseFloat(updatedWallet.data.availableBalance.toFixed(2)) + parseFloat(callbackPayload.amount)
+
           response = {
             success: true,
             message: 'Refund Successful',
@@ -1036,9 +1069,9 @@ export class SpribeService {
               message: "ok",
               data: {
                 operator_tx_id: transaction.data.transactionId,
-                new_balance: parseFloat(updatedWallet.data.availableBalance.toFixed(2)),
-                old_balance: parseFloat(updatedWallet.data.availableBalance.toFixed(2)) + parseFloat(callbackPayload.amount),
-                user_id: player.playerId,
+                new_balance: Math.ceil(updatedWallet.data.availableBalance),
+                old_balance: Math.ceil(old_balance),
+                user_id: player.id,
                 currency: 'KES',
                 provider: body.provider,
                 provider_tx_id: body.provider_tx_id,
@@ -1054,7 +1087,7 @@ export class SpribeService {
           response = {
             success: false,
             status: HttpStatus.BAD_REQUEST,
-            message: `Player with userId ${player.playerId} not found`,
+            message: `Player with userId ${player.id} not found`,
             data: {}
           }
     
@@ -1121,80 +1154,53 @@ export class SpribeService {
         // }
     
         let player = null;
-        let balanceType;
+        let balanceType = 'main';
         let sessionId = null;
+        let userDeets = null;
+
     
         // Handle other actions with token validation
-        sessionId = newBody.user_token ? newBody.user_token : newBody.session_token;
+        sessionId = newBody.user_token ? newBody.user_token : null;
+        userDeets = newBody.user_id ? newBody.user_id : null;
         console.log("sessionId", sessionId);
+
+        let responseData;
     
         if (sessionId) {
-            const responseData = await this.identityService.validateXpressSession({ clientId: data.clientId, sessionId: token });
-            console.log("res", responseData);
-
-            
-      // const res = {
-      //   success: true,
-      //   message: "Success",
-      //   data: {
-      //     id: 19,
-        //   username: '8137048054',
-        //   password: '$2a$10$abvFRcypU7Eqk7s6aY7d6OUz6ZE5cYkMyqbEAxTT8ZutzfsnZtjSu',
-        //   code: '231469',
-        //   roleId: 13,
-        //   auth_code: '1JCVJLDAF7OZZT5PQB6GZKXRRS7YAMATVOF0MI4E',
-        //   virtualToken: 'NMWBRXZFQLTEHQSOHVZQM982HEGWJDRDUFYCA3E0KIZP3ON05XHJMLQFYYXO',    registrationSource: null,
-        //   trackierToken: null,
-        //   trackierId: null,
-        //   lastLogin: '2025-05-19',    status: 1,
-        //   verified: 1,
-        //   pin: null,
-        //   createdAt: {},
-        //   updatedAt: {},
-        //   clientId: 4
-      //   }
-        
-
-            if (!responseData.success) {
-                response = {
-                    success: false,
-                    message: 'Invalid Session ID',
-                    status: HttpStatus.NOT_FOUND
-                };
-
-                await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
-                return response;
-            }
-
-            const res = await this.identityService.validateToken({ clientId: data.clientId, token: responseData.data.auth_code });
-
-            
-            if (!res.success) {
-                response = {
-                    success: false,
-                    message: 'Invalid Session ID',
-                    status: HttpStatus.NOT_FOUND
-                };
-
-                await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
-                return response;
-            }
-
-            token = res.data.auth_code;
-            console.log("token", token);
-
-            if (!player) {
-                player = res.data;
-            }
+          responseData = await this.identityService.validateXpressSession({ clientId: data.clientId, sessionId });
+          console.log("responseData from validateXpressSession", responseData);
+        } else if(userDeets) {
+          responseData = await this.identityService.getDetails({ clientId: data.clientId, userId: newBody.user_id });
+          console.log("responseData from getUserDetails", responseData);
         } else {
             response = {
                 success: false,
-                message: 'Token is missing',
+                message: 'Token or User ID is missing',
                 status: HttpStatus.BAD_REQUEST
             };
 
             await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
             return response;
+        }
+        
+
+        if (!responseData.success) {
+            response = {
+                success: false,
+                message: 'Invalid Session ID',
+                status: HttpStatus.NOT_FOUND
+            };
+
+            await this.callbackLogRepository.update({ id: callback.id }, { response: JSON.stringify(response) });
+            return response;
+        }
+
+
+        token = responseData.data.virtualToken;
+        console.log("token", token);
+
+        if (!player) {
+            player = responseData.data;
         }
     
         const gameSession = await this.gameSessionRepo.findOne({ where: { session_id: token } });
